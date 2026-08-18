@@ -1,0 +1,87 @@
+{
+  "total_wall_seconds": 13.503501700000001,
+  "sections_seconds": {
+    "candidate_slot_generation": 8.482210300000013,
+    "candidate_feature_encoding": 2.7099999998725366e-05,
+    "neural_network_inference": 0.5609289999999945,
+    "backpropagation_and_optimizer": 0.07473249999999965,
+    "environment_and_accounting": 0.7852457000000017,
+    "logging_and_saving": 3.592202199999999,
+    "other_or_profiler_overhead": 0.008154899999993859
+  },
+  "sections_percent": {
+    "candidate_slot_generation": 62.814894154454855,
+    "candidate_feature_encoding": 0.00020068868505956024,
+    "neural_network_inference": 4.153952155980359,
+    "backpropagation_and_optimizer": 0.5534305223955327,
+    "environment_and_accounting": 5.815126457161861,
+    "logging_and_saving": 26.60200501918698,
+    "other_or_profiler_overhead": 0.06039100213534877
+  },
+  "detail_seconds": {
+    "candidate_prepare_seconds": 0.09069520000000075,
+    "candidate_stream_seconds": 5.254467599999998,
+    "replay_candidate_generation_seconds": 3.1370475000000138,
+    "candidate_feature_encoding_seconds": 2.7099999998725366e-05,
+    "selection_inference_seconds": 0.0,
+    "bootstrap_inference_seconds": 0.4245880999999958,
+    "training_forward_seconds": 0.13634089999999865,
+    "backpropagation_seconds": 0.07473249999999965,
+    "environment_update_seconds": 0.7852457000000017,
+    "logging_seconds": 0.00090720000000033,
+    "checkpoint_seconds": 1.7900047999999984,
+    "artifact_save_seconds": 1.8012902000000004,
+    "candidate_feasibility_prepare_seconds": 0.02868549999999992,
+    "candidate_feasibility_stream_seconds": 1.3125957000002773,
+    "candidate_metric_evaluation_seconds": 1.8640644000004443,
+    "candidate_id_hash_seconds": 3.1675350999997587,
+    "candidate_object_construction_seconds": 5.930000000020641e-05,
+    "candidate_transmission_schedule_seconds": 0.01970059999995577,
+    "candidate_cpu_feasibility_seconds": 0.03668549999992621,
+    "candidate_path_feasibility_seconds": 0.043980299999878625,
+    "candidate_sla_and_item_seconds": 0.012567999999983925
+  },
+  "candidate_internal_seconds": {
+    "prepare_feasibility": 0.02868549999999992,
+    "stream_and_replay_feasibility": 1.3125957000002773,
+    "physical_metric_evaluation": 1.8640644000004443,
+    "candidate_id_hash": 3.1675350999997587,
+    "candidate_object_construction": 5.930000000020641e-05,
+    "candidate_pipeline_other": 2.1092702999995323
+  },
+  "candidate_internal_percent_of_candidate_pipeline": {
+    "prepare_feasibility": 0.33818425841198346,
+    "stream_and_replay_feasibility": 15.47468942146218,
+    "physical_metric_evaluation": 21.97616345353335,
+    "candidate_id_hash": 37.34327478298615,
+    "candidate_object_construction": 0.0006991102307402862,
+    "candidate_pipeline_other": 24.866988973375594
+  },
+  "candidate_feasibility_internal_seconds": {
+    "transmission_schedule": 0.01970059999995577,
+    "cpu_interval_feasibility": 0.03668549999992621,
+    "path_interval_feasibility": 0.043980299999878625,
+    "sla_and_item_assembly": 0.012567999999983925,
+    "feasibility_other": 1.2283468000005326
+  },
+  "candidate_feasibility_internal_percent": {
+    "transmission_schedule": 1.468789691524171,
+    "cpu_interval_feasibility": 2.735108790007541,
+    "path_interval_feasibility": 3.2789768469035083,
+    "sla_and_item_assembly": 0.9370145499676972,
+    "feasibility_other": 91.58011012159709
+  },
+  "counters": {
+    "prepare_theoretical_slot_count": 480573,
+    "selection_candidate_count": 480573,
+    "replay_candidate_feature_count": 131478,
+    "scheduler_cycle_count": 106,
+    "training_process_cycle_count": 107,
+    "prepare_feasibility_check_count": 1289,
+    "stream_feasibility_check_count": 612051,
+    "candidate_metric_evaluation_count": 131482,
+    "candidate_object_count": 4
+  },
+  "selection_candidates_per_second": 89907.56343380807,
+  "measurement_note": "CUDA is synchronized at timed neural-network boundaries when profiling is enabled; percentages are exclusive wall-clock stages."
+}

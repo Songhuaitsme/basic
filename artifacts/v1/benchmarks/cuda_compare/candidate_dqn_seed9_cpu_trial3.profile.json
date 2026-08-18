@@ -1,0 +1,87 @@
+{
+  "total_wall_seconds": 13.7330355,
+  "sections_seconds": {
+    "candidate_slot_generation": 9.074400499999996,
+    "candidate_feature_encoding": 2.360000000045659e-05,
+    "neural_network_inference": 0.29719519999999555,
+    "backpropagation_and_optimizer": 0.006613900000001394,
+    "environment_and_accounting": 0.7520890999999947,
+    "logging_and_saving": 3.594967900000002,
+    "other_or_profiler_overhead": 0.007745300000008726
+  },
+  "sections_percent": {
+    "candidate_slot_generation": 66.07716480453281,
+    "candidate_feature_encoding": 0.00017184838705511677,
+    "neural_network_inference": 2.1640896508277105,
+    "backpropagation_and_optimizer": 0.04816051047127486,
+    "environment_and_accounting": 5.4764957099251275,
+    "logging_and_saving": 26.177518437202046,
+    "other_or_profiler_overhead": 0.05639903865397221
+  },
+  "detail_seconds": {
+    "candidate_prepare_seconds": 0.08695010000000103,
+    "candidate_stream_seconds": 5.087324099999996,
+    "replay_candidate_generation_seconds": 3.9001262999999984,
+    "candidate_feature_encoding_seconds": 2.360000000045659e-05,
+    "selection_inference_seconds": 0.0,
+    "bootstrap_inference_seconds": 0.29417419999999694,
+    "training_forward_seconds": 0.003020999999998608,
+    "backpropagation_seconds": 0.006613900000001394,
+    "environment_update_seconds": 0.7520890999999947,
+    "logging_seconds": 0.0017721000000001652,
+    "checkpoint_seconds": 1.777225500000002,
+    "artifact_save_seconds": 1.8159703,
+    "candidate_feasibility_prepare_seconds": 0.029787900000000533,
+    "candidate_feasibility_stream_seconds": 1.3277514999987403,
+    "candidate_metric_evaluation_seconds": 2.3323261000003246,
+    "candidate_id_hash_seconds": 3.0863772000003102,
+    "candidate_object_construction_seconds": 5.499999999969418e-05,
+    "candidate_transmission_schedule_seconds": 0.023288299999995488,
+    "candidate_cpu_feasibility_seconds": 0.04253670000006338,
+    "candidate_path_feasibility_seconds": 0.05122800000010663,
+    "candidate_sla_and_item_seconds": 0.014064199999996418
+  },
+  "candidate_internal_seconds": {
+    "prepare_feasibility": 0.029787900000000533,
+    "stream_and_replay_feasibility": 1.3277514999987403,
+    "physical_metric_evaluation": 2.3323261000003246,
+    "candidate_id_hash": 3.0863772000003102,
+    "candidate_object_construction": 5.499999999969418e-05,
+    "candidate_pipeline_other": 2.2981028000006205
+  },
+  "candidate_internal_percent_of_candidate_pipeline": {
+    "prepare_feasibility": 0.32826300756728277,
+    "stream_and_replay_feasibility": 14.631837111429466,
+    "physical_metric_evaluation": 25.70226099234132,
+    "candidate_id_hash": 34.011912963289554,
+    "candidate_object_construction": 0.0006061006454332075,
+    "candidate_pipeline_other": 25.32511982472695
+  },
+  "candidate_feasibility_internal_seconds": {
+    "transmission_schedule": 0.023288299999995488,
+    "cpu_interval_feasibility": 0.04253670000006338,
+    "path_interval_feasibility": 0.05122800000010663,
+    "sla_and_item_assembly": 0.014064199999996418,
+    "feasibility_other": 1.226422199998579
+  },
+  "candidate_feasibility_internal_percent": {
+    "transmission_schedule": 1.7154787551666706,
+    "cpu_interval_feasibility": 3.1333676208663137,
+    "path_interval_feasibility": 3.773592132954237,
+    "sla_and_item_assembly": 1.0360067634139727,
+    "feasibility_other": 90.3415547275988
+  },
+  "counters": {
+    "prepare_theoretical_slot_count": 480573,
+    "selection_candidate_count": 480573,
+    "replay_candidate_feature_count": 131478,
+    "scheduler_cycle_count": 106,
+    "training_process_cycle_count": 107,
+    "prepare_feasibility_check_count": 1289,
+    "stream_feasibility_check_count": 612051,
+    "candidate_metric_evaluation_count": 131482,
+    "candidate_object_count": 4
+  },
+  "selection_candidates_per_second": 92876.95037575925,
+  "measurement_note": "CUDA is synchronized at timed neural-network boundaries when profiling is enabled; percentages are exclusive wall-clock stages."
+}

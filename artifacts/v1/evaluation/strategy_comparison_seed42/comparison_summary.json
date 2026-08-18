@@ -1,0 +1,89 @@
+{
+  "generated_at": "2026-08-17T00:00:00+08:00",
+  "scope": {
+    "seed": 42,
+    "arrival_count": 2416,
+    "completed_count": 2401,
+    "task_trace_hash": "db427715e1c4463a813d0fe3639fdecc1cd9107500b45a011f00dac41460bb84",
+    "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+    "comparison_baseline": "equal_weight",
+    "model": "artifacts/v1/formal/candidate_dqn_seed7_layered_pool_600000_v2.pt"
+  },
+  "policies": [
+    {
+      "policy": "earliest_feasible",
+      "policy_label": "Earliest feasible",
+      "total_economic_cost_yuan": 42226466.19676595,
+      "cost_yuan_per_completed_cpu_hour": 13.384585523482793,
+      "completed_task_green_coverage": 0.5717365723661999,
+      "system_green_absorption_rate": 0.05313988997842703,
+      "completion_rate": 0.9937913907284768,
+      "reservation_reliability": 1.0,
+      "soft_preferred_on_time_rate": 1.0,
+      "flexible_preferred_on_time_rate": 1.0,
+      "active_wait_count": 0,
+      "cost_change_vs_equal_weight": 0.05880783110377611,
+      "green_coverage_change_vs_equal_weight": -0.11256601825001211
+    },
+    {
+      "policy": "lowest_cost",
+      "policy_label": "Lowest cost",
+      "total_economic_cost_yuan": 36984463.71081995,
+      "cost_yuan_per_completed_cpu_hour": 11.723020232640927,
+      "completed_task_green_coverage": 0.42958208554232885,
+      "system_green_absorption_rate": 0.026670419038499704,
+      "completion_rate": 0.9937913907284768,
+      "reservation_reliability": 1.0,
+      "soft_preferred_on_time_rate": 0.7697690692792163,
+      "flexible_preferred_on_time_rate": 0.9263456090651558,
+      "active_wait_count": 1063,
+      "cost_change_vs_equal_weight": -0.07263279802493303,
+      "green_coverage_change_vs_equal_weight": -0.25472050507388316
+    },
+    {
+      "policy": "highest_green",
+      "policy_label": "Highest green",
+      "total_economic_cost_yuan": 41708269.82492666,
+      "cost_yuan_per_completed_cpu_hour": 13.220332052104865,
+      "completed_task_green_coverage": 0.8888863715666995,
+      "system_green_absorption_rate": 0.05834119011966385,
+      "completion_rate": 0.9937913907284768,
+      "reservation_reliability": 1.0,
+      "soft_preferred_on_time_rate": 0.5892232330300909,
+      "flexible_preferred_on_time_rate": 0.9206798866855525,
+      "active_wait_count": 1580,
+      "cost_change_vs_equal_weight": 0.045814312441894135,
+      "green_coverage_change_vs_equal_weight": 0.20458378095048746
+    },
+    {
+      "policy": "equal_weight",
+      "policy_label": "Equal weight",
+      "total_economic_cost_yuan": 39881142.69304761,
+      "cost_yuan_per_completed_cpu_hour": 12.641184859324051,
+      "completed_task_green_coverage": 0.684302590616212,
+      "system_green_absorption_rate": 0.04193945065241484,
+      "completion_rate": 0.9937913907284768,
+      "reservation_reliability": 1.0,
+      "soft_preferred_on_time_rate": 0.9944016794961511,
+      "flexible_preferred_on_time_rate": 0.9631728045325779,
+      "active_wait_count": 1947,
+      "cost_change_vs_equal_weight": 0.0,
+      "green_coverage_change_vs_equal_weight": 0.0
+    },
+    {
+      "policy": "candidate_dqn",
+      "policy_label": "Candidate DQN",
+      "total_economic_cost_yuan": 39366416.98465782,
+      "cost_yuan_per_completed_cpu_hour": 12.47803148927941,
+      "completed_task_green_coverage": 0.704673788349581,
+      "system_green_absorption_rate": 0.043187661712295475,
+      "completion_rate": 0.9937913907284768,
+      "reservation_reliability": 1.0,
+      "soft_preferred_on_time_rate": 0.9965010496850945,
+      "flexible_preferred_on_time_rate": 0.943342776203966,
+      "active_wait_count": 1134,
+      "cost_change_vs_equal_weight": -0.012906493486194097,
+      "green_coverage_change_vs_equal_weight": 0.02037119773336904
+    }
+  ]
+}

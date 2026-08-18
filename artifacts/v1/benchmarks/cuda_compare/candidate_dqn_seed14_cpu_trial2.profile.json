@@ -1,0 +1,87 @@
+{
+  "total_wall_seconds": 42.4459454,
+  "sections_seconds": {
+    "candidate_slot_generation": 34.92369150000005,
+    "candidate_feature_encoding": 6.720000000015602e-05,
+    "neural_network_inference": 2.1084052000000035,
+    "backpropagation_and_optimizer": 0.013529499999997086,
+    "environment_and_accounting": 1.8096366999999791,
+    "logging_and_saving": 3.5817829000000003,
+    "other_or_profiler_overhead": 0.008832399999967322
+  },
+  "sections_percent": {
+    "candidate_slot_generation": 82.27803897613279,
+    "candidate_feature_encoding": 0.00015831900872245863,
+    "neural_network_inference": 4.96727114953129,
+    "backpropagation_and_optimizer": 0.031874658162277816,
+    "environment_and_accounting": 4.263391197784416,
+    "logging_and_saving": 8.438457115859176,
+    "other_or_profiler_overhead": 0.020808583521306896
+  },
+  "detail_seconds": {
+    "candidate_prepare_seconds": 0.4398139999999984,
+    "candidate_stream_seconds": 5.893543700000003,
+    "replay_candidate_generation_seconds": 28.590333800000042,
+    "candidate_feature_encoding_seconds": 6.720000000015602e-05,
+    "selection_inference_seconds": 0.0,
+    "bootstrap_inference_seconds": 2.103757100000003,
+    "training_forward_seconds": 0.00464810000000071,
+    "backpropagation_seconds": 0.013529499999997086,
+    "environment_update_seconds": 1.8096366999999791,
+    "logging_seconds": 0.0011748999999987575,
+    "checkpoint_seconds": 1.7725247000000017,
+    "artifact_save_seconds": 1.8080832999999998,
+    "candidate_feasibility_prepare_seconds": 0.2994266000000039,
+    "candidate_feasibility_stream_seconds": 4.123504200002023,
+    "candidate_metric_evaluation_seconds": 17.410800899998552,
+    "candidate_id_hash_seconds": 3.3911754999990347,
+    "candidate_object_construction_seconds": 0.0001556000000011437,
+    "candidate_transmission_schedule_seconds": 0.20058550000028674,
+    "candidate_cpu_feasibility_seconds": 0.38445620000032754,
+    "candidate_path_feasibility_seconds": 0.46221239999977826,
+    "candidate_sla_and_item_seconds": 0.12557739999964035
+  },
+  "candidate_internal_seconds": {
+    "prepare_feasibility": 0.2994266000000039,
+    "stream_and_replay_feasibility": 4.123504200002023,
+    "physical_metric_evaluation": 17.410800899998552,
+    "candidate_id_hash": 3.3911754999990347,
+    "candidate_object_construction": 0.0001556000000011437,
+    "candidate_pipeline_other": 9.698628700000434
+  },
+  "candidate_internal_percent_of_candidate_pipeline": {
+    "prepare_feasibility": 0.8573738546510854,
+    "stream_and_replay_feasibility": 11.807183098046828,
+    "physical_metric_evaluation": 49.85383890474044,
+    "candidate_id_hash": 9.710243546272965,
+    "candidate_object_construction": 0.00044554282012582635,
+    "candidate_pipeline_other": 27.770915053468563
+  },
+  "candidate_feasibility_internal_seconds": {
+    "transmission_schedule": 0.20058550000028674,
+    "cpu_interval_feasibility": 0.38445620000032754,
+    "path_interval_feasibility": 0.46221239999977826,
+    "sla_and_item_assembly": 0.12557739999964035,
+    "feasibility_other": 3.2500993000019935
+  },
+  "candidate_feasibility_internal_percent": {
+    "transmission_schedule": 4.535126346543673,
+    "cpu_interval_feasibility": 8.692340382086725,
+    "path_interval_feasibility": 10.450364721952386,
+    "sla_and_item_assembly": 2.8392350158311954,
+    "feasibility_other": 73.48293353358602
+  },
+  "counters": {
+    "prepare_theoretical_slot_count": 509490,
+    "selection_candidate_count": 509490,
+    "replay_candidate_feature_count": 961248,
+    "scheduler_cycle_count": 108,
+    "training_process_cycle_count": 109,
+    "prepare_feasibility_check_count": 12208,
+    "stream_feasibility_check_count": 1470738,
+    "candidate_metric_evaluation_count": 961256,
+    "candidate_object_count": 8
+  },
+  "selection_candidates_per_second": 80444.62641374336,
+  "measurement_note": "CUDA is synchronized at timed neural-network boundaries when profiling is enabled; percentages are exclusive wall-clock stages."
+}

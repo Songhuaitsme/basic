@@ -1,0 +1,17 @@
+# Python runtime artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Matplotlib's per-project cache
+.mplconfig/
+
+# Generated runtime logs and resumable process checkpoints.
+*.stdout.log
+*.stderr.log
+*.last.pt
+artifacts/**/logs/
+
+# Generated legacy reports.
+artifacts/legacy/training_metrics*.csv
+artifacts/legacy/training_report*.png

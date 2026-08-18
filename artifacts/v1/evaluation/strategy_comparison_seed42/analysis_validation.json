@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "source_report_count": 5,
+  "all_reports_valid": true,
+  "paired_metadata_fields": [
+    "seed",
+    "arrival_cutoff_sim",
+    "task_trace_hash",
+    "exogenous_trace_hash",
+    "topology_hash",
+    "config_hash",
+    "dependency_lock_hash"
+  ],
+  "paired_metadata_match": true,
+  "all_unsettled_counts_zero": true,
+  "policy_row_count": 5,
+  "sla_row_count": 15,
+  "long_metric_row_count": 55,
+  "single_seed_limitation": "Seed 42 only; no cross-seed confidence interval."
+}

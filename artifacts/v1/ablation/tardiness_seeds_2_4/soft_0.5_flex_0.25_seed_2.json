@@ -1,0 +1,1370 @@
+{
+  "status": "VALID",
+  "metadata": {
+    "requirements_version": "1.0",
+    "algorithm_version": "1.0",
+    "task_schema_version": "1.0",
+    "candidate_schema_version": "1.0",
+    "model_schema_version": "1.0",
+    "metric_schema_version": "1.0",
+    "aggregation_schema_version": "1.0",
+    "seed": 2,
+    "candidate_mode": "complete",
+    "arrival_cutoff_sim": 1.0,
+    "evaluation_start_sim": 0.0,
+    "final_settlement_time_sim": 404.0020449752451,
+    "evaluation_safety_cap": 1000000,
+    "percentile_method": "linear",
+    "code_hash": "c07f6ea8f8924cb427cbc2643adf7d6051c01e6b8bb7436ec4d37c9f8dd8f3a3",
+    "model_hash": "66dca07c62e6583c53d63c423ee778975c359c1d5825b7c33a20d922e831363e",
+    "config_hash": "020f77689baf5a3429408499b13fdf0d44acddbc43f9afc74d188d3814ef1004",
+    "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+    "task_trace_hash": "c45853dcf639abc10c61114a45a75dbb1b7f30c63659a96af24e8ccab6865fc5",
+    "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+    "dependency_lock_hash": "ab19aa91c49320f040b3f5972d622955372d6f0a86381aa35a8bff13c2ba8c2d",
+    "tariff_mode": "exogenous_yuan_per_mwh",
+    "gamma_per_second": 0.999,
+    "ci_method": "paired_t",
+    "ci_resample_count": 0,
+    "ci_random_seed": 0
+  },
+  "metrics": {
+    "arrival_count": 4,
+    "reserved_ever_count": 4,
+    "rejected_count": 0,
+    "expired_count": 0,
+    "completed_count": 4,
+    "failed_count": 0,
+    "final_state_counts": {
+      "Arrived": 0,
+      "Queued": 0,
+      "PendingUncommitted": 0,
+      "Reserved": 0,
+      "Transmitting": 0,
+      "Running": 0,
+      "Completed": 4,
+      "Rejected": 0,
+      "Expired": 0,
+      "Failed": 0
+    },
+    "acceptance_rate": {
+      "value": 1.0,
+      "status": "VALID",
+      "reason": null,
+      "numerator": 4,
+      "denominator": 4
+    },
+    "completion_rate": {
+      "value": 1.0,
+      "status": "VALID",
+      "reason": null,
+      "numerator": 4,
+      "denominator": 4
+    },
+    "reservation_reliability": {
+      "value": 1.0,
+      "status": "VALID",
+      "reason": null,
+      "numerator": 4,
+      "denominator": 4
+    },
+    "total_economic_cost_yuan": 262420.35768096446,
+    "completed_cpu_hours": 21020.641143438297,
+    "arrived_requested_cpu_hours": 21020.641143438297,
+    "cost_yuan_per_completed_cpu_hour": {
+      "value": 12.483936902318526,
+      "status": "VALID",
+      "reason": null,
+      "numerator": 262420.35768096446,
+      "denominator": 21020.641143438297
+    },
+    "cost_yuan_per_arrived_cpu_hour": {
+      "value": 12.483936902318526,
+      "status": "VALID",
+      "reason": null,
+      "numerator": 262420.35768096446,
+      "denominator": 21020.641143438297
+    },
+    "completed_task_green_coverage": {
+      "value": 0.9999588504213206,
+      "status": "VALID",
+      "reason": null,
+      "numerator": 210.19776152911675,
+      "denominator": 210.20641143438297
+    },
+    "system_green_absorption_rate": {
+      "value": 0.0024556404973713826,
+      "status": "VALID",
+      "reason": null,
+      "numerator": 210.19776152911675,
+      "denominator": 85597.93738298459
+    },
+    "sla_metrics": {
+      "Hard": {
+        "sla_type": "Hard",
+        "count": 0,
+        "preferred_on_time_rate": {
+          "value": null,
+          "status": "NOT_APPLICABLE",
+          "reason": "Hard has no preferred start limit",
+          "numerator": null,
+          "denominator": null
+        },
+        "acceptable_tardy_rate": {
+          "value": null,
+          "status": "NOT_APPLICABLE",
+          "reason": "Hard has no tardiness region",
+          "numerator": null,
+          "denominator": null
+        },
+        "expired_rate": {
+          "value": null,
+          "status": "NOT_APPLICABLE",
+          "reason": "empty SLA subgroup",
+          "numerator": null,
+          "denominator": null
+        },
+        "start_delay_p50_sim": {
+          "value": null,
+          "status": "NOT_APPLICABLE",
+          "reason": "empty sample",
+          "numerator": null,
+          "denominator": null
+        },
+        "start_delay_p95_sim": {
+          "value": null,
+          "status": "NOT_APPLICABLE",
+          "reason": "empty sample",
+          "numerator": null,
+          "denominator": null
+        },
+        "preferred_start_tardiness_p50": {
+          "value": null,
+          "status": "NOT_APPLICABLE",
+          "reason": "Hard tardiness is not applicable",
+          "numerator": null,
+          "denominator": null
+        },
+        "preferred_start_tardiness_p95": {
+          "value": null,
+          "status": "NOT_APPLICABLE",
+          "reason": "Hard tardiness is not applicable",
+          "numerator": null,
+          "denominator": null
+        }
+      },
+      "Soft": {
+        "sla_type": "Soft",
+        "count": 3,
+        "preferred_on_time_rate": {
+          "value": 1.0,
+          "status": "VALID",
+          "reason": null,
+          "numerator": 3,
+          "denominator": 3
+        },
+        "acceptable_tardy_rate": {
+          "value": 0.0,
+          "status": "VALID",
+          "reason": null,
+          "numerator": 0,
+          "denominator": 3
+        },
+        "expired_rate": {
+          "value": 0.0,
+          "status": "VALID",
+          "reason": null,
+          "numerator": 0,
+          "denominator": 3
+        },
+        "start_delay_p50_sim": {
+          "value": 0.19222427094362893,
+          "status": "VALID",
+          "reason": null,
+          "numerator": null,
+          "denominator": null
+        },
+        "start_delay_p95_sim": {
+          "value": 0.1975955481158338,
+          "status": "VALID",
+          "reason": null,
+          "numerator": null,
+          "denominator": null
+        },
+        "preferred_start_tardiness_p50": {
+          "value": 0.0,
+          "status": "VALID",
+          "reason": null,
+          "numerator": null,
+          "denominator": null
+        },
+        "preferred_start_tardiness_p95": {
+          "value": 0.0,
+          "status": "VALID",
+          "reason": null,
+          "numerator": null,
+          "denominator": null
+        }
+      },
+      "Flexible": {
+        "sla_type": "Flexible",
+        "count": 1,
+        "preferred_on_time_rate": {
+          "value": 1.0,
+          "status": "VALID",
+          "reason": null,
+          "numerator": 1,
+          "denominator": 1
+        },
+        "acceptable_tardy_rate": {
+          "value": 0.0,
+          "status": "VALID",
+          "reason": null,
+          "numerator": 0,
+          "denominator": 1
+        },
+        "expired_rate": {
+          "value": 0.0,
+          "status": "VALID",
+          "reason": null,
+          "numerator": 0,
+          "denominator": 1
+        },
+        "start_delay_p50_sim": {
+          "value": 194.27180528736992,
+          "status": "VALID",
+          "reason": null,
+          "numerator": null,
+          "denominator": null
+        },
+        "start_delay_p95_sim": {
+          "value": 194.27180528736992,
+          "status": "VALID",
+          "reason": null,
+          "numerator": null,
+          "denominator": null
+        },
+        "preferred_start_tardiness_p50": {
+          "value": 0.0,
+          "status": "VALID",
+          "reason": null,
+          "numerator": null,
+          "denominator": null
+        },
+        "preferred_start_tardiness_p95": {
+          "value": 0.0,
+          "status": "VALID",
+          "reason": null,
+          "numerator": null,
+          "denominator": null
+        }
+      }
+    },
+    "active_wait_metrics": {
+      "count": 1,
+      "mean_active_wait_sim": {
+        "value": 194.09,
+        "status": "VALID",
+        "reason": null,
+        "numerator": null,
+        "denominator": null
+      },
+      "p95_active_wait_sim": {
+        "value": 194.09,
+        "status": "VALID",
+        "reason": null,
+        "numerator": null,
+        "denominator": null
+      },
+      "positive_benefit_rate": {
+        "value": 1.0,
+        "status": "VALID",
+        "reason": null,
+        "numerator": 1,
+        "denominator": 1
+      }
+    }
+  },
+  "unsettled_task_ids": [],
+  "cycle_results": [
+    {
+      "time_sim": 0.2931947126300821,
+      "domain_events": [
+        {
+          "event_type": "RESERVATION_COMMITTED",
+          "event_time_sim": 0.2931947126300821,
+          "task_id": "58_00000001",
+          "reservation_id": "reservation-0b4603ba3640802c3c077c16",
+          "previous_state": "Queued",
+          "new_state": "Reserved",
+          "detail": null
+        }
+      ],
+      "state_transitions": [
+        {
+          "task_id": "58_00000001",
+          "event_time_sim": 0.2931947126300821,
+          "previous_state": "Arrived",
+          "new_state": "Queued",
+          "state_version": 1,
+          "terminal_reason": null,
+          "reservation_id": null
+        }
+      ],
+      "decisions": [
+        {
+          "task_id": "58_00000001",
+          "status": "RESERVED",
+          "candidate_count": 3405831,
+          "selected_candidate_id": "candidate-c2283fbc502e429fa089667c74f23049160ce0dd18b757675e2ea47f2f81f674",
+          "reservation_id": "reservation-0b4603ba3640802c3c077c16",
+          "reason": "",
+          "decision_id": "decision-f03885de77b6b459828a9149656041e6173fd00096bce60b5dce0bb2d2cf4901",
+          "queue_order_key": [
+            334.37861739682796,
+            2,
+            223.0168098354287,
+            0.2931947126300821,
+            "58_00000001"
+          ],
+          "reservation_snapshot_version": 0,
+          "forecast_version": "perfect-v1",
+          "candidate_mode": "complete",
+          "theoretical_time_slots": 3405831,
+          "enumerated_time_slots": 3405831,
+          "candidate_set_hash": "2d5d880cccc4e17e314ee6a244ef6273d2cb013bb17a272c499816025302dea1",
+          "earliest_counterfactual_candidate_id": "candidate-f7fc8ce6dcd2e9b9af71ecb151e1ba5ee984960098d4d20cb3781e3975589b52",
+          "commit_status": "COMMITTED",
+          "active_wait_sim": 194.09,
+          "estimated_wait_benefit_vector": [
+            [
+              "economic_cost_yuan_saved",
+              -2197.769514996413
+            ],
+            [
+              "green_coverage_gain",
+              0.5696151103799826
+            ],
+            [
+              "green_absorption_gain",
+              -0.5175941512580542
+            ],
+            [
+              "capacity_margin_gain",
+              0.17619047619047623
+            ]
+          ],
+          "benefit_positive": true
+        }
+      ],
+      "calendar_version": 1,
+      "state_counts": {
+        "Arrived": 0,
+        "Queued": 0,
+        "PendingUncommitted": 0,
+        "Reserved": 1,
+        "Transmitting": 0,
+        "Running": 0,
+        "Completed": 0,
+        "Rejected": 0,
+        "Expired": 0,
+        "Failed": 0
+      }
+    },
+    {
+      "time_sim": 0.3139389059466572,
+      "domain_events": [
+        {
+          "event_type": "RESERVATION_COMMITTED",
+          "event_time_sim": 0.3139389059466572,
+          "task_id": "62_00000002",
+          "reservation_id": "reservation-a667df592701f7dd6d7cd189",
+          "previous_state": "Queued",
+          "new_state": "Reserved",
+          "detail": null
+        }
+      ],
+      "state_transitions": [
+        {
+          "task_id": "62_00000002",
+          "event_time_sim": 0.3139389059466572,
+          "previous_state": "Arrived",
+          "new_state": "Queued",
+          "state_version": 1,
+          "terminal_reason": null,
+          "reservation_id": null
+        }
+      ],
+      "decisions": [
+        {
+          "task_id": "62_00000002",
+          "status": "RESERVED",
+          "candidate_count": 397596,
+          "selected_candidate_id": "candidate-403391decd83ebd0ccf84aa01fc51f5ccb3006a86b19030472814b563d9d01b9",
+          "reservation_id": "reservation-a667df592701f7dd6d7cd189",
+          "reason": "",
+          "decision_id": "decision-8f91c2e23d9c0d9bd3af236009d4c378704899a85d0fe61a7364206bfcfb695b",
+          "queue_order_key": [
+            39.48493504620295,
+            1,
+            32.95643568949357,
+            0.3139389059466572,
+            "62_00000002"
+          ],
+          "reservation_snapshot_version": 1,
+          "forecast_version": "perfect-v1",
+          "candidate_mode": "complete",
+          "theoretical_time_slots": 397596,
+          "enumerated_time_slots": 397596,
+          "candidate_set_hash": "b1cce3bef1e63ce744842cc56ca78b7a9a8279e831c642b3f1633168e373dc9f",
+          "earliest_counterfactual_candidate_id": "candidate-c95b248e191b0d4586914dacfe59584f295af9dce8d66412d39d4c98071fa656",
+          "commit_status": "COMMITTED",
+          "active_wait_sim": 0.0,
+          "estimated_wait_benefit_vector": [
+            [
+              "economic_cost_yuan_saved",
+              0.0
+            ],
+            [
+              "green_coverage_gain",
+              0.0
+            ],
+            [
+              "green_absorption_gain",
+              0.0
+            ],
+            [
+              "capacity_margin_gain",
+              0.010514285714285698
+            ]
+          ],
+          "benefit_positive": false
+        }
+      ],
+      "calendar_version": 2,
+      "state_counts": {
+        "Arrived": 0,
+        "Queued": 0,
+        "PendingUncommitted": 0,
+        "Reserved": 2,
+        "Transmitting": 0,
+        "Running": 0,
+        "Completed": 0,
+        "Rejected": 0,
+        "Expired": 0,
+        "Failed": 0
+      }
+    },
+    {
+      "time_sim": 0.318303,
+      "domain_events": [
+        {
+          "event_type": "TRANSMISSION_STARTED",
+          "event_time_sim": 0.318303,
+          "task_id": "62_00000002",
+          "reservation_id": "reservation-a667df592701f7dd6d7cd189",
+          "previous_state": "Reserved",
+          "new_state": "Transmitting",
+          "detail": null
+        }
+      ],
+      "state_transitions": [],
+      "decisions": [],
+      "calendar_version": 2,
+      "state_counts": {
+        "Arrived": 0,
+        "Queued": 0,
+        "PendingUncommitted": 0,
+        "Reserved": 1,
+        "Transmitting": 1,
+        "Running": 0,
+        "Completed": 0,
+        "Rejected": 0,
+        "Expired": 0,
+        "Failed": 0
+      }
+    },
+    {
+      "time_sim": 0.38180764330947675,
+      "domain_events": [
+        {
+          "event_type": "RESERVATION_COMMITTED",
+          "event_time_sim": 0.38180764330947675,
+          "task_id": "76_00000003",
+          "reservation_id": "reservation-a5f7d3f30765679d8058a7f7",
+          "previous_state": "Queued",
+          "new_state": "Reserved",
+          "detail": null
+        }
+      ],
+      "state_transitions": [
+        {
+          "task_id": "76_00000003",
+          "event_time_sim": 0.38180764330947675,
+          "previous_state": "Arrived",
+          "new_state": "Queued",
+          "state_version": 1,
+          "terminal_reason": null,
+          "reservation_id": null
+        }
+      ],
+      "decisions": [
+        {
+          "task_id": "76_00000003",
+          "status": "RESERVED",
+          "candidate_count": 120360,
+          "selected_candidate_id": "candidate-6c787b000be72754dcc707e3006a62e39382276193f90e3ad18e8e31d378d558",
+          "reservation_id": "reservation-a5f7d3f30765679d8058a7f7",
+          "reason": "",
+          "decision_id": "decision-269bfa60d62093f4b822f5ca2faf883d5a55fda815321d8d28329c928283552f",
+          "queue_order_key": [
+            12.378770639518383,
+            1,
+            10.379276806816899,
+            0.38180764330947675,
+            "76_00000003"
+          ],
+          "reservation_snapshot_version": 2,
+          "forecast_version": "perfect-v1",
+          "candidate_mode": "complete",
+          "theoretical_time_slots": 120360,
+          "enumerated_time_slots": 120360,
+          "candidate_set_hash": "7e1b51ca7432f7d4500dfadc5719607dbe1fe9c3ac709a8fdf0e87a24cff2949",
+          "earliest_counterfactual_candidate_id": "candidate-e30b0d0881b17ded3ca472793bd1361bba187eb3b690a3f21cea45dee15ec5e3",
+          "commit_status": "COMMITTED",
+          "active_wait_sim": 0.0,
+          "estimated_wait_benefit_vector": [
+            [
+              "economic_cost_yuan_saved",
+              0.0
+            ],
+            [
+              "green_coverage_gain",
+              0.0
+            ],
+            [
+              "green_absorption_gain",
+              0.0
+            ],
+            [
+              "capacity_margin_gain",
+              0.012186507936507884
+            ]
+          ],
+          "benefit_positive": false
+        }
+      ],
+      "calendar_version": 3,
+      "state_counts": {
+        "Arrived": 0,
+        "Queued": 0,
+        "PendingUncommitted": 0,
+        "Reserved": 2,
+        "Transmitting": 1,
+        "Running": 0,
+        "Completed": 0,
+        "Rejected": 0,
+        "Expired": 0,
+        "Failed": 0
+      }
+    },
+    {
+      "time_sim": 0.3866363333333333,
+      "domain_events": [
+        {
+          "event_type": "TRANSMISSION_STARTED",
+          "event_time_sim": 0.3866363333333333,
+          "task_id": "76_00000003",
+          "reservation_id": "reservation-a5f7d3f30765679d8058a7f7",
+          "previous_state": "Reserved",
+          "new_state": "Transmitting",
+          "detail": null
+        }
+      ],
+      "state_transitions": [],
+      "decisions": [],
+      "calendar_version": 3,
+      "state_counts": {
+        "Arrived": 0,
+        "Queued": 0,
+        "PendingUncommitted": 0,
+        "Reserved": 1,
+        "Transmitting": 2,
+        "Running": 0,
+        "Completed": 0,
+        "Rejected": 0,
+        "Expired": 0,
+        "Failed": 0
+      }
+    },
+    {
+      "time_sim": 0.505,
+      "domain_events": [
+        {
+          "event_type": "COMPUTE_STARTED",
+          "event_time_sim": 0.505,
+          "task_id": "62_00000002",
+          "reservation_id": "reservation-a667df592701f7dd6d7cd189",
+          "previous_state": "Transmitting",
+          "new_state": "Running",
+          "detail": null
+        }
+      ],
+      "state_transitions": [],
+      "decisions": [],
+      "calendar_version": 3,
+      "state_counts": {
+        "Arrived": 0,
+        "Queued": 0,
+        "PendingUncommitted": 0,
+        "Reserved": 1,
+        "Transmitting": 1,
+        "Running": 1,
+        "Completed": 0,
+        "Rejected": 0,
+        "Expired": 0,
+        "Failed": 0
+      }
+    },
+    {
+      "time_sim": 0.58,
+      "domain_events": [
+        {
+          "event_type": "COMPUTE_STARTED",
+          "event_time_sim": 0.58,
+          "task_id": "76_00000003",
+          "reservation_id": "reservation-a5f7d3f30765679d8058a7f7",
+          "previous_state": "Transmitting",
+          "new_state": "Running",
+          "detail": null
+        }
+      ],
+      "state_transitions": [],
+      "decisions": [],
+      "calendar_version": 3,
+      "state_counts": {
+        "Arrived": 0,
+        "Queued": 0,
+        "PendingUncommitted": 0,
+        "Reserved": 1,
+        "Transmitting": 0,
+        "Running": 2,
+        "Completed": 0,
+        "Rejected": 0,
+        "Expired": 0,
+        "Failed": 0
+      }
+    },
+    {
+      "time_sim": 0.5877757290563711,
+      "domain_events": [
+        {
+          "event_type": "RESERVATION_COMMITTED",
+          "event_time_sim": 0.5877757290563711,
+          "task_id": "117_00000004",
+          "reservation_id": "reservation-092c7292dcaeefade3e07c49",
+          "previous_state": "Queued",
+          "new_state": "Reserved",
+          "detail": null
+        }
+      ],
+      "state_transitions": [
+        {
+          "task_id": "117_00000004",
+          "event_time_sim": 0.5877757290563711,
+          "previous_state": "Arrived",
+          "new_state": "Queued",
+          "state_version": 1,
+          "terminal_reason": null,
+          "reservation_id": null
+        }
+      ],
+      "decisions": [
+        {
+          "task_id": "117_00000004",
+          "status": "RESERVED",
+          "candidate_count": 70227,
+          "selected_candidate_id": "candidate-30c83682f997bc7ef0f286f77c615140055ac8ec8c232fd2a0cd633019a4b2c6",
+          "reservation_id": "reservation-092c7292dcaeefade3e07c49",
+          "reason": "",
+          "decision_id": "decision-ceab746b548700db72834e5002f872f1b057926e9e8f6bd6dd1277ad61521feb",
+          "queue_order_key": [
+            7.6648878412930355,
+            1,
+            6.485369155920258,
+            0.5877757290563711,
+            "117_00000004"
+          ],
+          "reservation_snapshot_version": 3,
+          "forecast_version": "perfect-v1",
+          "candidate_mode": "complete",
+          "theoretical_time_slots": 70227,
+          "enumerated_time_slots": 70227,
+          "candidate_set_hash": "0d11797fb94a645df431630a373305500de237135809d5f5b70aaa447dece8c9",
+          "earliest_counterfactual_candidate_id": "candidate-2c1fed2b89dc6b4a72ae10e475a653ee47aa2f7fa3406d0af6ccb054e422f732",
+          "commit_status": "COMMITTED",
+          "active_wait_sim": 0.0,
+          "estimated_wait_benefit_vector": [
+            [
+              "economic_cost_yuan_saved",
+              0.0
+            ],
+            [
+              "green_coverage_gain",
+              0.0
+            ],
+            [
+              "green_absorption_gain",
+              0.0
+            ],
+            [
+              "capacity_margin_gain",
+              0.004285714285714226
+            ]
+          ],
+          "benefit_positive": false
+        }
+      ],
+      "calendar_version": 4,
+      "state_counts": {
+        "Arrived": 0,
+        "Queued": 0,
+        "PendingUncommitted": 0,
+        "Reserved": 2,
+        "Transmitting": 0,
+        "Running": 2,
+        "Completed": 0,
+        "Rejected": 0,
+        "Expired": 0,
+        "Failed": 0
+      }
+    },
+    {
+      "time_sim": 0.5899946666666667,
+      "domain_events": [
+        {
+          "event_type": "TRANSMISSION_STARTED",
+          "event_time_sim": 0.5899946666666667,
+          "task_id": "117_00000004",
+          "reservation_id": "reservation-092c7292dcaeefade3e07c49",
+          "previous_state": "Reserved",
+          "new_state": "Transmitting",
+          "detail": null
+        }
+      ],
+      "state_transitions": [],
+      "decisions": [],
+      "calendar_version": 4,
+      "state_counts": {
+        "Arrived": 0,
+        "Queued": 0,
+        "PendingUncommitted": 0,
+        "Reserved": 1,
+        "Transmitting": 1,
+        "Running": 2,
+        "Completed": 0,
+        "Rejected": 0,
+        "Expired": 0,
+        "Failed": 0
+      }
+    },
+    {
+      "time_sim": 0.78,
+      "domain_events": [
+        {
+          "event_type": "COMPUTE_STARTED",
+          "event_time_sim": 0.78,
+          "task_id": "117_00000004",
+          "reservation_id": "reservation-092c7292dcaeefade3e07c49",
+          "previous_state": "Transmitting",
+          "new_state": "Running",
+          "detail": null
+        }
+      ],
+      "state_transitions": [],
+      "decisions": [],
+      "calendar_version": 4,
+      "state_counts": {
+        "Arrived": 0,
+        "Queued": 0,
+        "PendingUncommitted": 0,
+        "Reserved": 1,
+        "Transmitting": 0,
+        "Running": 3,
+        "Completed": 0,
+        "Rejected": 0,
+        "Expired": 0,
+        "Failed": 0
+      }
+    },
+    {
+      "time_sim": 1.0,
+      "domain_events": [],
+      "state_transitions": [],
+      "decisions": [],
+      "calendar_version": 4,
+      "state_counts": {
+        "Arrived": 0,
+        "Queued": 0,
+        "PendingUncommitted": 0,
+        "Reserved": 1,
+        "Transmitting": 0,
+        "Running": 3,
+        "Completed": 0,
+        "Rejected": 0,
+        "Expired": 0,
+        "Failed": 0
+      }
+    },
+    {
+      "time_sim": 3.8715412710392245,
+      "domain_events": [
+        {
+          "event_type": "TASK_COMPLETED",
+          "event_time_sim": 3.8715412710392245,
+          "task_id": "76_00000003",
+          "reservation_id": "reservation-a5f7d3f30765679d8058a7f7",
+          "previous_state": "Running",
+          "new_state": "Completed",
+          "detail": "COMPLETED"
+        }
+      ],
+      "state_transitions": [],
+      "decisions": [],
+      "calendar_version": 5,
+      "state_counts": {
+        "Arrived": 0,
+        "Queued": 0,
+        "PendingUncommitted": 0,
+        "Reserved": 1,
+        "Transmitting": 0,
+        "Running": 2,
+        "Completed": 1,
+        "Rejected": 0,
+        "Expired": 0,
+        "Failed": 0
+      }
+    },
+    {
+      "time_sim": 6.231449784361958,
+      "domain_events": [
+        {
+          "event_type": "TASK_COMPLETED",
+          "event_time_sim": 6.231449784361958,
+          "task_id": "117_00000004",
+          "reservation_id": "reservation-092c7292dcaeefade3e07c49",
+          "previous_state": "Running",
+          "new_state": "Completed",
+          "detail": "COMPLETED"
+        }
+      ],
+      "state_transitions": [],
+      "decisions": [],
+      "calendar_version": 6,
+      "state_counts": {
+        "Arrived": 0,
+        "Queued": 0,
+        "PendingUncommitted": 0,
+        "Reserved": 1,
+        "Transmitting": 0,
+        "Running": 1,
+        "Completed": 2,
+        "Rejected": 0,
+        "Expired": 0,
+        "Failed": 0
+      }
+    },
+    {
+      "time_sim": 7.555700462874521,
+      "domain_events": [
+        {
+          "event_type": "TASK_COMPLETED",
+          "event_time_sim": 7.555700462874521,
+          "task_id": "62_00000002",
+          "reservation_id": "reservation-a667df592701f7dd6d7cd189",
+          "previous_state": "Running",
+          "new_state": "Completed",
+          "detail": "COMPLETED"
+        }
+      ],
+      "state_transitions": [],
+      "decisions": [],
+      "calendar_version": 7,
+      "state_counts": {
+        "Arrived": 0,
+        "Queued": 0,
+        "PendingUncommitted": 0,
+        "Reserved": 1,
+        "Transmitting": 0,
+        "Running": 0,
+        "Completed": 3,
+        "Rejected": 0,
+        "Expired": 0,
+        "Failed": 0
+      }
+    },
+    {
+      "time_sim": 194.38719188888888,
+      "domain_events": [
+        {
+          "event_type": "TRANSMISSION_STARTED",
+          "event_time_sim": 194.38719188888888,
+          "task_id": "58_00000001",
+          "reservation_id": "reservation-0b4603ba3640802c3c077c16",
+          "previous_state": "Reserved",
+          "new_state": "Transmitting",
+          "detail": null
+        }
+      ],
+      "state_transitions": [],
+      "decisions": [],
+      "calendar_version": 7,
+      "state_counts": {
+        "Arrived": 0,
+        "Queued": 0,
+        "PendingUncommitted": 0,
+        "Reserved": 0,
+        "Transmitting": 1,
+        "Running": 0,
+        "Completed": 3,
+        "Rejected": 0,
+        "Expired": 0,
+        "Failed": 0
+      }
+    },
+    {
+      "time_sim": 194.565,
+      "domain_events": [
+        {
+          "event_type": "COMPUTE_STARTED",
+          "event_time_sim": 194.565,
+          "task_id": "58_00000001",
+          "reservation_id": "reservation-0b4603ba3640802c3c077c16",
+          "previous_state": "Transmitting",
+          "new_state": "Running",
+          "detail": null
+        }
+      ],
+      "state_transitions": [],
+      "decisions": [],
+      "calendar_version": 7,
+      "state_counts": {
+        "Arrived": 0,
+        "Queued": 0,
+        "PendingUncommitted": 0,
+        "Reserved": 0,
+        "Transmitting": 0,
+        "Running": 1,
+        "Completed": 3,
+        "Rejected": 0,
+        "Expired": 0,
+        "Failed": 0
+      }
+    },
+    {
+      "time_sim": 404.0020449752451,
+      "domain_events": [
+        {
+          "event_type": "TASK_COMPLETED",
+          "event_time_sim": 404.0020449752451,
+          "task_id": "58_00000001",
+          "reservation_id": "reservation-0b4603ba3640802c3c077c16",
+          "previous_state": "Running",
+          "new_state": "Completed",
+          "detail": "COMPLETED"
+        }
+      ],
+      "state_transitions": [],
+      "decisions": [],
+      "calendar_version": 8,
+      "state_counts": {
+        "Arrived": 0,
+        "Queued": 0,
+        "PendingUncommitted": 0,
+        "Reserved": 0,
+        "Transmitting": 0,
+        "Running": 0,
+        "Completed": 4,
+        "Rejected": 0,
+        "Expired": 0,
+        "Failed": 0
+      }
+    }
+  ],
+  "phase_batch_counts": {
+    "arrival": 11,
+    "admission_settlement": 0,
+    "execution_drain": 6
+  },
+  "task_records": [
+    {
+      "task_id": "117_00000004",
+      "final_state": "Completed",
+      "terminal_reason": "COMPLETED",
+      "arrival_time_sim": 0.5877757290563711,
+      "decision_time_sim": 0.5877757290563711,
+      "transmission_start_sim": 0.5899946666666667,
+      "transmission_end_sim": 0.78,
+      "compute_start_sim": 0.78,
+      "compute_end_sim": 6.231449784361958,
+      "target_node": "C3",
+      "path_id": "path-a17cc43c547491bb931b",
+      "scheduler_queue_delay_sim": 0.0,
+      "earliest_feasibility_lead_sim": 0.19222427094362893,
+      "active_wait_sim": 0.0,
+      "reservation_lead_sim": 0.19222427094362893,
+      "start_delay_sim": 0.19222427094362893,
+      "completion_delay_sim": 5.643674055305587,
+      "cpu_work_cpu_hours": 13.628624460904895,
+      "task_energy_mwh": 0.13628624460904895,
+      "task_attributed_cost_yuan": 98.35119137036705,
+      "task_attributed_green_energy_mwh": 0.13628624460904892,
+      "candidate_marginal_system_cost_yuan": 98.35119137036705,
+      "candidate_marginal_green_energy_mwh": 0.13628624460904892,
+      "estimated_vs_realized_errors": {
+        "cost_yuan": 0.0,
+        "green_coverage": -2.220446049250313e-16,
+        "green_energy_mwh": 0.0
+      }
+    },
+    {
+      "task_id": "58_00000001",
+      "final_state": "Completed",
+      "terminal_reason": "COMPLETED",
+      "arrival_time_sim": 0.2931947126300821,
+      "decision_time_sim": 0.2931947126300821,
+      "transmission_start_sim": 194.38719188888888,
+      "transmission_end_sim": 194.565,
+      "compute_start_sim": 194.565,
+      "compute_end_sim": 404.0020449752451,
+      "target_node": "I1",
+      "path_id": "path-5247bbc82423b0a081b4",
+      "scheduler_queue_delay_sim": 0.0,
+      "earliest_feasibility_lead_sim": 0.1818052873699179,
+      "active_wait_sim": 194.09,
+      "reservation_lead_sim": 194.27180528736992,
+      "start_delay_sim": 194.27180528736992,
+      "completion_delay_sim": 403.70885026261504,
+      "cpu_work_cpu_hours": 20943.70449752451,
+      "task_energy_mwh": 209.4370449752451,
+      "task_attributed_cost_yuan": 261865.33060045002,
+      "task_attributed_green_energy_mwh": 209.42839506997888,
+      "candidate_marginal_system_cost_yuan": 261865.33060045005,
+      "candidate_marginal_green_energy_mwh": 209.42839506997885,
+      "estimated_vs_realized_errors": {
+        "cost_yuan": -2.9103830456733704e-11,
+        "green_coverage": 0.0,
+        "green_energy_mwh": 2.842170943040401e-14
+      }
+    },
+    {
+      "task_id": "62_00000002",
+      "final_state": "Completed",
+      "terminal_reason": "COMPLETED",
+      "arrival_time_sim": 0.3139389059466572,
+      "decision_time_sim": 0.3139389059466572,
+      "transmission_start_sim": 0.318303,
+      "transmission_end_sim": 0.505,
+      "compute_start_sim": 0.505,
+      "compute_end_sim": 7.555700462874521,
+      "target_node": "F3",
+      "path_id": "path-1c68ec31bc188dfccae3",
+      "scheduler_queue_delay_sim": 0.0,
+      "earliest_feasibility_lead_sim": 0.19106109405334282,
+      "active_wait_sim": 0.0,
+      "reservation_lead_sim": 0.19106109405334282,
+      "start_delay_sim": 0.19106109405334282,
+      "completion_delay_sim": 7.241761556927863,
+      "cpu_work_cpu_hours": 40.5415276615285,
+      "task_energy_mwh": 0.405415276615285,
+      "task_attributed_cost_yuan": 293.19428039992715,
+      "task_attributed_green_energy_mwh": 0.405415276615285,
+      "candidate_marginal_system_cost_yuan": 293.19428039992715,
+      "candidate_marginal_green_energy_mwh": 0.405415276615285,
+      "estimated_vs_realized_errors": {
+        "cost_yuan": 0.0,
+        "green_coverage": 0.0,
+        "green_energy_mwh": 0.0
+      }
+    },
+    {
+      "task_id": "76_00000003",
+      "final_state": "Completed",
+      "terminal_reason": "COMPLETED",
+      "arrival_time_sim": 0.38180764330947675,
+      "decision_time_sim": 0.38180764330947675,
+      "transmission_start_sim": 0.3866363333333333,
+      "transmission_end_sim": 0.58,
+      "compute_start_sim": 0.58,
+      "compute_end_sim": 3.8715412710392245,
+      "target_node": "E4",
+      "path_id": "path-ceed6e874b7f8ac06a9c",
+      "scheduler_queue_delay_sim": 0.0,
+      "earliest_feasibility_lead_sim": 0.1981923566905232,
+      "active_wait_sim": 0.0,
+      "reservation_lead_sim": 0.1981923566905232,
+      "start_delay_sim": 0.1981923566905232,
+      "completion_delay_sim": 3.489733627729748,
+      "cpu_work_cpu_hours": 22.766493791354637,
+      "task_energy_mwh": 0.2276649379135464,
+      "task_attributed_cost_yuan": 163.48160874410627,
+      "task_attributed_green_energy_mwh": 0.2276649379135464,
+      "candidate_marginal_system_cost_yuan": 163.48160874410627,
+      "candidate_marginal_green_energy_mwh": 0.22766493791354636,
+      "estimated_vs_realized_errors": {
+        "cost_yuan": 0.0,
+        "green_coverage": 0.0,
+        "green_energy_mwh": 2.7755575615628914e-17
+      }
+    }
+  ],
+  "decision_records": [
+    {
+      "task_id": "58_00000001",
+      "status": "RESERVED",
+      "candidate_count": 3405831,
+      "selected_candidate_id": "candidate-c2283fbc502e429fa089667c74f23049160ce0dd18b757675e2ea47f2f81f674",
+      "reservation_id": "reservation-0b4603ba3640802c3c077c16",
+      "reason": "",
+      "decision_id": "decision-f03885de77b6b459828a9149656041e6173fd00096bce60b5dce0bb2d2cf4901",
+      "queue_order_key": [
+        334.37861739682796,
+        2,
+        223.0168098354287,
+        0.2931947126300821,
+        "58_00000001"
+      ],
+      "reservation_snapshot_version": 0,
+      "forecast_version": "perfect-v1",
+      "candidate_mode": "complete",
+      "theoretical_time_slots": 3405831,
+      "enumerated_time_slots": 3405831,
+      "candidate_set_hash": "2d5d880cccc4e17e314ee6a244ef6273d2cb013bb17a272c499816025302dea1",
+      "earliest_counterfactual_candidate_id": "candidate-f7fc8ce6dcd2e9b9af71ecb151e1ba5ee984960098d4d20cb3781e3975589b52",
+      "commit_status": "COMMITTED",
+      "active_wait_sim": 194.09,
+      "estimated_wait_benefit_vector": [
+        [
+          "economic_cost_yuan_saved",
+          -2197.769514996413
+        ],
+        [
+          "green_coverage_gain",
+          0.5696151103799826
+        ],
+        [
+          "green_absorption_gain",
+          -0.5175941512580542
+        ],
+        [
+          "capacity_margin_gain",
+          0.17619047619047623
+        ]
+      ],
+      "benefit_positive": true
+    },
+    {
+      "task_id": "62_00000002",
+      "status": "RESERVED",
+      "candidate_count": 397596,
+      "selected_candidate_id": "candidate-403391decd83ebd0ccf84aa01fc51f5ccb3006a86b19030472814b563d9d01b9",
+      "reservation_id": "reservation-a667df592701f7dd6d7cd189",
+      "reason": "",
+      "decision_id": "decision-8f91c2e23d9c0d9bd3af236009d4c378704899a85d0fe61a7364206bfcfb695b",
+      "queue_order_key": [
+        39.48493504620295,
+        1,
+        32.95643568949357,
+        0.3139389059466572,
+        "62_00000002"
+      ],
+      "reservation_snapshot_version": 1,
+      "forecast_version": "perfect-v1",
+      "candidate_mode": "complete",
+      "theoretical_time_slots": 397596,
+      "enumerated_time_slots": 397596,
+      "candidate_set_hash": "b1cce3bef1e63ce744842cc56ca78b7a9a8279e831c642b3f1633168e373dc9f",
+      "earliest_counterfactual_candidate_id": "candidate-c95b248e191b0d4586914dacfe59584f295af9dce8d66412d39d4c98071fa656",
+      "commit_status": "COMMITTED",
+      "active_wait_sim": 0.0,
+      "estimated_wait_benefit_vector": [
+        [
+          "economic_cost_yuan_saved",
+          0.0
+        ],
+        [
+          "green_coverage_gain",
+          0.0
+        ],
+        [
+          "green_absorption_gain",
+          0.0
+        ],
+        [
+          "capacity_margin_gain",
+          0.010514285714285698
+        ]
+      ],
+      "benefit_positive": false
+    },
+    {
+      "task_id": "76_00000003",
+      "status": "RESERVED",
+      "candidate_count": 120360,
+      "selected_candidate_id": "candidate-6c787b000be72754dcc707e3006a62e39382276193f90e3ad18e8e31d378d558",
+      "reservation_id": "reservation-a5f7d3f30765679d8058a7f7",
+      "reason": "",
+      "decision_id": "decision-269bfa60d62093f4b822f5ca2faf883d5a55fda815321d8d28329c928283552f",
+      "queue_order_key": [
+        12.378770639518383,
+        1,
+        10.379276806816899,
+        0.38180764330947675,
+        "76_00000003"
+      ],
+      "reservation_snapshot_version": 2,
+      "forecast_version": "perfect-v1",
+      "candidate_mode": "complete",
+      "theoretical_time_slots": 120360,
+      "enumerated_time_slots": 120360,
+      "candidate_set_hash": "7e1b51ca7432f7d4500dfadc5719607dbe1fe9c3ac709a8fdf0e87a24cff2949",
+      "earliest_counterfactual_candidate_id": "candidate-e30b0d0881b17ded3ca472793bd1361bba187eb3b690a3f21cea45dee15ec5e3",
+      "commit_status": "COMMITTED",
+      "active_wait_sim": 0.0,
+      "estimated_wait_benefit_vector": [
+        [
+          "economic_cost_yuan_saved",
+          0.0
+        ],
+        [
+          "green_coverage_gain",
+          0.0
+        ],
+        [
+          "green_absorption_gain",
+          0.0
+        ],
+        [
+          "capacity_margin_gain",
+          0.012186507936507884
+        ]
+      ],
+      "benefit_positive": false
+    },
+    {
+      "task_id": "117_00000004",
+      "status": "RESERVED",
+      "candidate_count": 70227,
+      "selected_candidate_id": "candidate-30c83682f997bc7ef0f286f77c615140055ac8ec8c232fd2a0cd633019a4b2c6",
+      "reservation_id": "reservation-092c7292dcaeefade3e07c49",
+      "reason": "",
+      "decision_id": "decision-ceab746b548700db72834e5002f872f1b057926e9e8f6bd6dd1277ad61521feb",
+      "queue_order_key": [
+        7.6648878412930355,
+        1,
+        6.485369155920258,
+        0.5877757290563711,
+        "117_00000004"
+      ],
+      "reservation_snapshot_version": 3,
+      "forecast_version": "perfect-v1",
+      "candidate_mode": "complete",
+      "theoretical_time_slots": 70227,
+      "enumerated_time_slots": 70227,
+      "candidate_set_hash": "0d11797fb94a645df431630a373305500de237135809d5f5b70aaa447dece8c9",
+      "earliest_counterfactual_candidate_id": "candidate-2c1fed2b89dc6b4a72ae10e475a653ee47aa2f7fa3406d0af6ccb054e422f732",
+      "commit_status": "COMMITTED",
+      "active_wait_sim": 0.0,
+      "estimated_wait_benefit_vector": [
+        [
+          "economic_cost_yuan_saved",
+          0.0
+        ],
+        [
+          "green_coverage_gain",
+          0.0
+        ],
+        [
+          "green_absorption_gain",
+          0.0
+        ],
+        [
+          "capacity_margin_gain",
+          0.004285714285714226
+        ]
+      ],
+      "benefit_positive": false
+    }
+  ],
+  "accounting_report": {
+    "task_records": [
+      {
+        "reservation_id": "reservation-092c7292dcaeefade3e07c49",
+        "task_id": "117_00000004",
+        "target_node": "C3",
+        "task_power_mw": 0.3,
+        "task_energy_mwh": 0.13628624460904895,
+        "task_direct_energy_cost_yuan": 98.35119137036705,
+        "task_attributed_cost_yuan": 98.35119137036705,
+        "task_attributed_green_energy_mwh": 0.13628624460904892,
+        "green_coverage": 0.9999999999999998
+      },
+      {
+        "reservation_id": "reservation-0b4603ba3640802c3c077c16",
+        "task_id": "58_00000001",
+        "target_node": "I1",
+        "task_power_mw": 12.0,
+        "task_energy_mwh": 209.4370449752451,
+        "task_direct_energy_cost_yuan": 261865.33060045002,
+        "task_attributed_cost_yuan": 261865.33060045002,
+        "task_attributed_green_energy_mwh": 209.42839506997888,
+        "green_coverage": 0.9999586992584466
+      },
+      {
+        "reservation_id": "reservation-a667df592701f7dd6d7cd189",
+        "task_id": "62_00000002",
+        "target_node": "F3",
+        "task_power_mw": 0.6900000000000001,
+        "task_energy_mwh": 0.405415276615285,
+        "task_direct_energy_cost_yuan": 293.19428039992715,
+        "task_attributed_cost_yuan": 293.19428039992715,
+        "task_attributed_green_energy_mwh": 0.405415276615285,
+        "green_coverage": 1.0
+      },
+      {
+        "reservation_id": "reservation-a5f7d3f30765679d8058a7f7",
+        "task_id": "76_00000003",
+        "target_node": "E4",
+        "task_power_mw": 0.8300000000000001,
+        "task_energy_mwh": 0.2276649379135464,
+        "task_direct_energy_cost_yuan": 163.48160874410627,
+        "task_attributed_cost_yuan": 163.48160874410627,
+        "task_attributed_green_energy_mwh": 0.2276649379135464,
+        "green_coverage": 1.0
+      }
+    ],
+    "node_bill_yuan": {
+      "E4": 163.48160874410627,
+      "C3": 98.35119137036705,
+      "F3": 293.19428039992715,
+      "I1": 261865.33060045002
+    },
+    "node_green_used_mwh": {
+      "E4": 0.2276649379135464,
+      "C3": 0.13628624460904892,
+      "F3": 0.405415276615285,
+      "I1": 209.42839506997888
+    },
+    "total_task_attributed_cost_yuan": 262420.35768096446,
+    "total_task_attributed_green_energy_mwh": 210.19776152911675,
+    "system_green_supply_mwh": 85597.93738298459,
+    "system_green_idle_mwh": 85387.73962145548,
+    "system_green_absorption_rate": {
+      "value": 0.0024556404973713826,
+      "status": "VALID",
+      "reason": null,
+      "numerator": 210.19776152911675,
+      "denominator": 85597.93738298459
+    }
+  }
+}

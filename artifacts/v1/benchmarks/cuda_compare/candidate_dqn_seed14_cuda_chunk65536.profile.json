@@ -1,0 +1,87 @@
+{
+  "total_wall_seconds": 35.529485199999996,
+  "sections_seconds": {
+    "candidate_slot_generation": 28.938529699999997,
+    "candidate_feature_encoding": 4.9399999997312705e-05,
+    "neural_network_inference": 1.283469399999996,
+    "backpropagation_and_optimizer": 0.07693829999999835,
+    "environment_and_accounting": 1.5858259999999946,
+    "logging_and_saving": 3.635069900000005,
+    "other_or_profiler_overhead": 0.009602500000006842
+  },
+  "sections_percent": {
+    "candidate_slot_generation": 81.44933577590929,
+    "candidate_feature_encoding": 0.0001390394477128892,
+    "neural_network_inference": 3.612406407734824,
+    "backpropagation_and_optimizer": 0.21654774778441865,
+    "environment_and_accounting": 4.463408324306356,
+    "logging_and_saving": 10.231135856705308,
+    "other_or_profiler_overhead": 0.027026848112076902
+  },
+  "detail_seconds": {
+    "candidate_prepare_seconds": 0.42692560000000146,
+    "candidate_stream_seconds": 6.092307999999999,
+    "replay_candidate_generation_seconds": 22.419296099999997,
+    "candidate_feature_encoding_seconds": 4.9399999997312705e-05,
+    "selection_inference_seconds": 0.0,
+    "bootstrap_inference_seconds": 1.1523344999999985,
+    "training_forward_seconds": 0.1311348999999975,
+    "backpropagation_seconds": 0.07693829999999835,
+    "environment_update_seconds": 1.5858259999999946,
+    "logging_seconds": 0.0011406000000029337,
+    "checkpoint_seconds": 1.8081731000000012,
+    "artifact_save_seconds": 1.8257562000000007,
+    "candidate_feasibility_prepare_seconds": 0.2984909,
+    "candidate_feasibility_stream_seconds": 3.520963299998434,
+    "candidate_metric_evaluation_seconds": 13.596543499998976,
+    "candidate_id_hash_seconds": 3.385280799999836,
+    "candidate_object_construction_seconds": 0.00016109999999880387,
+    "candidate_transmission_schedule_seconds": 0.18243319999942553,
+    "candidate_cpu_feasibility_seconds": 0.3492157999998575,
+    "candidate_path_feasibility_seconds": 0.4199491000001858,
+    "candidate_sla_and_item_seconds": 0.11072820000061068
+  },
+  "candidate_internal_seconds": {
+    "prepare_feasibility": 0.2984909,
+    "stream_and_replay_feasibility": 3.520963299998434,
+    "physical_metric_evaluation": 13.596543499998976,
+    "candidate_id_hash": 3.385280799999836,
+    "candidate_object_construction": 0.00016109999999880387,
+    "candidate_pipeline_other": 8.137090100002748
+  },
+  "candidate_internal_percent_of_candidate_pipeline": {
+    "prepare_feasibility": 1.0314653270031202,
+    "stream_and_replay_feasibility": 12.167042819727067,
+    "physical_metric_evaluation": 46.984223597230574,
+    "candidate_id_hash": 11.69817829410952,
+    "candidate_object_construction": 0.0005566972533466477,
+    "candidate_pipeline_other": 28.118533264676362
+  },
+  "candidate_feasibility_internal_seconds": {
+    "transmission_schedule": 0.18243319999942553,
+    "cpu_interval_feasibility": 0.3492157999998575,
+    "path_interval_feasibility": 0.4199491000001858,
+    "sla_and_item_assembly": 0.11072820000061068,
+    "feasibility_other": 2.7571278999983546
+  },
+  "candidate_feasibility_internal_percent": {
+    "transmission_schedule": 4.776420672867352,
+    "cpu_interval_feasibility": 9.143081228726363,
+    "path_interval_feasibility": 10.995002898591059,
+    "sla_and_item_assembly": 2.899058195295445,
+    "feasibility_other": 72.18643700451979
+  },
+  "counters": {
+    "prepare_theoretical_slot_count": 509490,
+    "selection_candidate_count": 509490,
+    "replay_candidate_feature_count": 961248,
+    "scheduler_cycle_count": 108,
+    "training_process_cycle_count": 109,
+    "prepare_feasibility_check_count": 12208,
+    "stream_feasibility_check_count": 1470738,
+    "candidate_metric_evaluation_count": 961256,
+    "candidate_object_count": 8
+  },
+  "selection_candidates_per_second": 78151.23227508304,
+  "measurement_note": "CUDA is synchronized at timed neural-network boundaries when profiling is enabled; percentages are exclusive wall-clock stages."
+}

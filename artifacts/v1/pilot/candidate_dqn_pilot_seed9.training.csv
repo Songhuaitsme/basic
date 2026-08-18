@@ -1,0 +1,2 @@
+cycle,time_sim,tasks,transitions,updates,replay_size,epsilon,mean_loss,candidates,candidates_since_log,wall_seconds_since_log,device
+250,1.2499999999999953,2,1,0,1,1.0,,480573,480573,32.7286133,cpu

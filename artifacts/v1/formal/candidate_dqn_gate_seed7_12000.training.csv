@@ -1,0 +1,2 @@
+cycle,time_sim,tasks,transitions,updates,replay_size,epsilon,mean_loss,candidates,candidates_since_log,wall_seconds_since_log,device
+4000,1957.1515931259546,132,130,130,130,0.9680185165925426,0.006158210699343019,242283813,234294,28.157046,cuda

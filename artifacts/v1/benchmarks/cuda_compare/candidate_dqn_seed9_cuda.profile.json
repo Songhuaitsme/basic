@@ -1,0 +1,87 @@
+{
+  "total_wall_seconds": 13.508195999999998,
+  "sections_seconds": {
+    "candidate_slot_generation": 8.428413699999998,
+    "candidate_feature_encoding": 2.3900000000409705e-05,
+    "neural_network_inference": 0.6237145000000126,
+    "backpropagation_and_optimizer": 0.0876610999999965,
+    "environment_and_accounting": 0.7770885000000005,
+    "logging_and_saving": 3.5834178000000048,
+    "other_or_profiler_overhead": 0.007876499999985853
+  },
+  "sections_percent": {
+    "candidate_slot_generation": 62.39481348952887,
+    "candidate_feature_encoding": 0.0001769296211012167,
+    "neural_network_inference": 4.6173041907299295,
+    "backpropagation_and_optimizer": 0.6489474982447435,
+    "environment_and_accounting": 5.752718571747113,
+    "logging_and_saving": 26.527730275752628,
+    "other_or_profiler_overhead": 0.05830904437562095
+  },
+  "detail_seconds": {
+    "candidate_prepare_seconds": 0.08804459999999903,
+    "candidate_stream_seconds": 5.278813199999996,
+    "replay_candidate_generation_seconds": 3.0615559000000037,
+    "candidate_feature_encoding_seconds": 2.3900000000409705e-05,
+    "selection_inference_seconds": 0.0,
+    "bootstrap_inference_seconds": 0.46923990000001403,
+    "training_forward_seconds": 0.15447459999999857,
+    "backpropagation_seconds": 0.0876610999999965,
+    "environment_update_seconds": 0.7770885000000005,
+    "logging_seconds": 0.0038509000000015448,
+    "checkpoint_seconds": 1.8188261000000026,
+    "artifact_save_seconds": 1.7607408000000007,
+    "candidate_feasibility_prepare_seconds": 0.029973499999998765,
+    "candidate_feasibility_stream_seconds": 1.2807971999988226,
+    "candidate_metric_evaluation_seconds": 1.8150751000004721,
+    "candidate_id_hash_seconds": 3.205520899999102,
+    "candidate_object_construction_seconds": 5.749999999871136e-05,
+    "candidate_transmission_schedule_seconds": 0.020060200000001416,
+    "candidate_cpu_feasibility_seconds": 0.03631189999991591,
+    "candidate_path_feasibility_seconds": 0.04380320000005078,
+    "candidate_sla_and_item_seconds": 0.012077800000042771
+  },
+  "candidate_internal_seconds": {
+    "prepare_feasibility": 0.029973499999998765,
+    "stream_and_replay_feasibility": 1.2807971999988226,
+    "physical_metric_evaluation": 1.8150751000004721,
+    "candidate_id_hash": 3.205520899999102,
+    "candidate_object_construction": 5.749999999871136e-05,
+    "candidate_pipeline_other": 2.0969895000016043
+  },
+  "candidate_internal_percent_of_candidate_pipeline": {
+    "prepare_feasibility": 0.35562445160942646,
+    "stream_and_replay_feasibility": 15.196183357715615,
+    "physical_metric_evaluation": 21.535192322138535,
+    "candidate_id_hash": 38.03231561828892,
+    "candidate_object_construction": 0.0006822161565077349,
+    "candidate_pipeline_other": 24.880002034091003
+  },
+  "candidate_feasibility_internal_seconds": {
+    "transmission_schedule": 0.020060200000001416,
+    "cpu_interval_feasibility": 0.03631189999991591,
+    "path_interval_feasibility": 0.04380320000005078,
+    "sla_and_item_assembly": 0.012077800000042771,
+    "feasibility_other": 1.1985175999988105
+  },
+  "candidate_feasibility_internal_percent": {
+    "transmission_schedule": 1.5304126038230375,
+    "cpu_interval_feasibility": 2.7702709558543352,
+    "path_interval_feasibility": 3.3417896814515435,
+    "sla_and_item_assembly": 0.9214273709393742,
+    "feasibility_other": 91.4360993879317
+  },
+  "counters": {
+    "prepare_theoretical_slot_count": 480573,
+    "selection_candidate_count": 480573,
+    "replay_candidate_feature_count": 131478,
+    "scheduler_cycle_count": 106,
+    "training_process_cycle_count": 107,
+    "prepare_feasibility_check_count": 1289,
+    "stream_feasibility_check_count": 612051,
+    "candidate_metric_evaluation_count": 131482,
+    "candidate_object_count": 4
+  },
+  "selection_candidates_per_second": 89544.17609018668,
+  "measurement_note": "CUDA is synchronized at timed neural-network boundaries when profiling is enabled; percentages are exclusive wall-clock stages."
+}

@@ -1,0 +1,38 @@
+{
+  "generated_at": "2026-07-24T07:33:41+08:00",
+  "training": {
+    "raw_log_rows": 38.0,
+    "unique_cycle_points": 35.0,
+    "duplicate_cycle_rows": 3.0,
+    "logged_wall_hours_including_rework": 11.611095726194446,
+    "final_transitions": 117.0,
+    "final_updates": 117.0,
+    "final_epsilon": 0.9711700892656754,
+    "final_selection_candidates": 242035290.0,
+    "selection_candidates_per_transition": 2068677.6923076923,
+    "logged_wall_seconds_per_transition": 357.264483882906
+  },
+  "paired_effect": {
+    "pair_count": 4,
+    "seeds": [
+      1,
+      20,
+      31,
+      34
+    ],
+    "cost_delta_mean": 308.72340761936925,
+    "cost_delta_ci95": [
+      -1091.855928924674,
+      2049.333665803423
+    ],
+    "cost_rate_delta_mean": 0.08908693629204589,
+    "green_coverage_delta_mean": 0.05135618687850094,
+    "green_absorption_delta_mean": 0.0002242733225237782,
+    "active_wait_delta_mean": 5.25,
+    "active_wait_delta_ci95": [
+      3.75,
+      6.5
+    ]
+  },
+  "model_bytes": 1156002
+}

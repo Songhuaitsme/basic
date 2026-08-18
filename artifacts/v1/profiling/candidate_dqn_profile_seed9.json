@@ -1,0 +1,44 @@
+{
+  "total_wall_seconds": 174.921396,
+  "sections_seconds": {
+    "candidate_slot_generation": 167.23356970000023,
+    "candidate_feature_encoding": 1.7711662000000779,
+    "neural_network_inference": 2.2412145000001686,
+    "backpropagation_and_optimizer": 0.02154540000000793,
+    "environment_and_accounting": 1.657089999999748,
+    "logging_and_saving": 1.9840298000000232,
+    "other_or_profiler_overhead": 0.0127803999997127
+  },
+  "sections_percent": {
+    "candidate_slot_generation": 95.60498230873954,
+    "candidate_feature_encoding": 1.0125497740711367,
+    "neural_network_inference": 1.2812695023313037,
+    "backpropagation_and_optimizer": 0.012317189602127307,
+    "environment_and_accounting": 0.9473340814177746,
+    "logging_and_saving": 1.1342407763542108,
+    "other_or_profiler_overhead": 0.007306367483891279
+  },
+  "detail_seconds": {
+    "candidate_prepare_seconds": 15.865192400000007,
+    "candidate_stream_seconds": 124.17143720000008,
+    "replay_candidate_generation_seconds": 27.19694010000015,
+    "candidate_feature_encoding_seconds": 1.7711662000000779,
+    "selection_inference_seconds": 1.663950000000014,
+    "bootstrap_inference_seconds": 0.5753825000001314,
+    "training_forward_seconds": 0.001882000000023254,
+    "backpropagation_seconds": 0.02154540000000793,
+    "environment_update_seconds": 1.657089999999748,
+    "logging_seconds": 0.005657000000006462,
+    "checkpoint_seconds": 0.0,
+    "artifact_save_seconds": 1.9783728000000167
+  },
+  "counters": {
+    "prepare_theoretical_slot_count": 480573,
+    "selection_candidate_count": 480573,
+    "replay_candidate_feature_count": 131478,
+    "scheduler_cycle_count": 86,
+    "training_process_cycle_count": 87
+  },
+  "selection_candidates_per_second": 3349.6002806707284,
+  "measurement_note": "CUDA is synchronized at timed neural-network boundaries when profiling is enabled; percentages are exclusive wall-clock stages."
+}

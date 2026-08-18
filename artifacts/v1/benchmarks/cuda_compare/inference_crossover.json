@@ -1,0 +1,300 @@
+{
+  "status": "VALID",
+  "torch_version": "2.6.0+cu126",
+  "compiled_cuda": "12.6",
+  "cuda_available": true,
+  "cuda_device": "NVIDIA GeForce RTX 3050 Laptop GPU",
+  "torch_cpu_threads": 6,
+  "model": "artifacts/v1/pilot/candidate_dqn_pilot_seed7_b1.pt",
+  "metadata": {
+    "model_schema_version": "1.0",
+    "candidate_schema_version": "1.0",
+    "feature_schema_hash": "52f00542ceea9bff042bbf9a6bd0a7332031002c8b8e54deafc9f04204fc5358",
+    "global_state_dim": 18,
+    "candidate_feature_dim": 18,
+    "gamma_per_second": 0.999,
+    "architecture": "shared_candidate_q_v1"
+  },
+  "measurement": {
+    "transfer_roundtrip": "numpy input -> device -> Q-network -> CPU numpy output",
+    "resident_forward": "input tensors and output remain on device",
+    "statistic": "median of synchronized per-call wall time"
+  },
+  "results": [
+    {
+      "device": "cpu",
+      "candidate_count": 1,
+      "repeats": 400,
+      "transfer_roundtrip": {
+        "median_seconds": 0.000311200000000067,
+        "p90_seconds": 0.00033890000000003084,
+        "median_candidates_per_second": 3213.367609253807
+      },
+      "resident_forward": {
+        "median_seconds": 0.0002710999999999686,
+        "p90_seconds": 0.00029329999999960776,
+        "median_candidates_per_second": 3688.6757654006487
+      }
+    },
+    {
+      "device": "cpu",
+      "candidate_count": 32,
+      "repeats": 300,
+      "transfer_roundtrip": {
+        "median_seconds": 0.00027644999999987263,
+        "p90_seconds": 0.0003919999999997259,
+        "median_candidates_per_second": 115753.30077777083
+      },
+      "resident_forward": {
+        "median_seconds": 0.0002625999999998907,
+        "p90_seconds": 0.0003568999999998823,
+        "median_candidates_per_second": 121858.33968017258
+      }
+    },
+    {
+      "device": "cpu",
+      "candidate_count": 256,
+      "repeats": 160,
+      "transfer_roundtrip": {
+        "median_seconds": 0.0004790500000000364,
+        "p90_seconds": 0.0005790999999999435,
+        "median_candidates_per_second": 534390.9821521356
+      },
+      "resident_forward": {
+        "median_seconds": 0.0004159500000000538,
+        "p90_seconds": 0.0005463999999997249,
+        "median_candidates_per_second": 615458.5887726095
+      }
+    },
+    {
+      "device": "cpu",
+      "candidate_count": 1024,
+      "repeats": 80,
+      "transfer_roundtrip": {
+        "median_seconds": 0.000832549999999932,
+        "p90_seconds": 0.0011463000000002666,
+        "median_candidates_per_second": 1229956.1587893625
+      },
+      "resident_forward": {
+        "median_seconds": 0.0007928499999998451,
+        "p90_seconds": 0.000982699999999781,
+        "median_candidates_per_second": 1291543.1670558115
+      }
+    },
+    {
+      "device": "cpu",
+      "candidate_count": 4096,
+      "repeats": 40,
+      "transfer_roundtrip": {
+        "median_seconds": 0.004017099999999996,
+        "p90_seconds": 0.005076599999999765,
+        "median_candidates_per_second": 1019641.0345771837
+      },
+      "resident_forward": {
+        "median_seconds": 0.004053349999999956,
+        "p90_seconds": 0.004998200000000175,
+        "median_candidates_per_second": 1010522.1606819162
+      }
+    },
+    {
+      "device": "cpu",
+      "candidate_count": 16384,
+      "repeats": 16,
+      "transfer_roundtrip": {
+        "median_seconds": 0.020252750000000486,
+        "p90_seconds": 0.02148899999999987,
+        "median_candidates_per_second": 808976.5587389173
+      },
+      "resident_forward": {
+        "median_seconds": 0.01972200000000024,
+        "p90_seconds": 0.020924500000000457,
+        "median_candidates_per_second": 830747.3887029613
+      }
+    },
+    {
+      "device": "cpu",
+      "candidate_count": 65536,
+      "repeats": 6,
+      "transfer_roundtrip": {
+        "median_seconds": 0.08315014999999981,
+        "p90_seconds": 0.08755749999999995,
+        "median_candidates_per_second": 788164.5432990819
+      },
+      "resident_forward": {
+        "median_seconds": 0.08357864999999975,
+        "p90_seconds": 0.08638119999999994,
+        "median_candidates_per_second": 784123.6966617694
+      }
+    },
+    {
+      "device": "cuda",
+      "candidate_count": 1,
+      "repeats": 400,
+      "transfer_roundtrip": {
+        "median_seconds": 0.0008708500000000896,
+        "p90_seconds": 0.0011469000000001728,
+        "median_candidates_per_second": 1148.303381753341
+      },
+      "resident_forward": {
+        "median_seconds": 0.0006585999999995096,
+        "p90_seconds": 0.0008815000000002016,
+        "median_candidates_per_second": 1518.3723048902896
+      }
+    },
+    {
+      "device": "cuda",
+      "candidate_count": 32,
+      "repeats": 300,
+      "transfer_roundtrip": {
+        "median_seconds": 0.000807200000000563,
+        "p90_seconds": 0.001007200000000097,
+        "median_candidates_per_second": 39643.21110007146
+      },
+      "resident_forward": {
+        "median_seconds": 0.0006639499999998577,
+        "p90_seconds": 0.0007149999999995771,
+        "median_candidates_per_second": 48196.40033136058
+      }
+    },
+    {
+      "device": "cuda",
+      "candidate_count": 256,
+      "repeats": 160,
+      "transfer_roundtrip": {
+        "median_seconds": 0.0007754000000002037,
+        "p90_seconds": 0.0009075000000002831,
+        "median_candidates_per_second": 330152.1795201609
+      },
+      "resident_forward": {
+        "median_seconds": 0.0006363499999997302,
+        "p90_seconds": 0.0007231999999994798,
+        "median_candidates_per_second": 402294.3348787751
+      }
+    },
+    {
+      "device": "cuda",
+      "candidate_count": 1024,
+      "repeats": 80,
+      "transfer_roundtrip": {
+        "median_seconds": 0.0007928000000010371,
+        "p90_seconds": 0.0010131999999991592,
+        "median_candidates_per_second": 1291624.6215926595
+      },
+      "resident_forward": {
+        "median_seconds": 0.000644250000000568,
+        "p90_seconds": 0.0007185999999990145,
+        "median_candidates_per_second": 1589445.0911899065
+      }
+    },
+    {
+      "device": "cuda",
+      "candidate_count": 4096,
+      "repeats": 40,
+      "transfer_roundtrip": {
+        "median_seconds": 0.0008600499999991129,
+        "p90_seconds": 0.0010116000000000014,
+        "median_candidates_per_second": 4762513.807341695
+      },
+      "resident_forward": {
+        "median_seconds": 0.0006317000000004569,
+        "p90_seconds": 0.0006620000000001625,
+        "median_candidates_per_second": 6484090.549306693
+      }
+    },
+    {
+      "device": "cuda",
+      "candidate_count": 16384,
+      "repeats": 16,
+      "transfer_roundtrip": {
+        "median_seconds": 0.001772000000000773,
+        "p90_seconds": 0.002311500000001132,
+        "median_candidates_per_second": 9246049.661395516
+      },
+      "resident_forward": {
+        "median_seconds": 0.001302950000000358,
+        "p90_seconds": 0.0016874999999991758,
+        "median_candidates_per_second": 12574542.384585362
+      }
+    },
+    {
+      "device": "cuda",
+      "candidate_count": 65536,
+      "repeats": 6,
+      "transfer_roundtrip": {
+        "median_seconds": 0.005806299999999709,
+        "p90_seconds": 0.006171900000000008,
+        "median_candidates_per_second": 11287050.272979915
+      },
+      "resident_forward": {
+        "median_seconds": 0.004432449999999477,
+        "p90_seconds": 0.004746499999999543,
+        "median_candidates_per_second": 14785502.374535017
+      }
+    }
+  ],
+  "comparison": [
+    {
+      "candidate_count": 1,
+      "transfer_roundtrip_cpu_seconds": 0.000311200000000067,
+      "transfer_roundtrip_cuda_seconds": 0.0008708500000000896,
+      "transfer_roundtrip_cuda_speedup": 0.35735201240171666,
+      "resident_forward_cpu_seconds": 0.0002710999999999686,
+      "resident_forward_cuda_seconds": 0.0006585999999995096,
+      "resident_forward_cuda_speedup": 0.41163073185570975
+    },
+    {
+      "candidate_count": 32,
+      "transfer_roundtrip_cpu_seconds": 0.00027644999999987263,
+      "transfer_roundtrip_cuda_seconds": 0.000807200000000563,
+      "transfer_roundtrip_cuda_speedup": 0.34248017839405326,
+      "resident_forward_cpu_seconds": 0.0002625999999998907,
+      "resident_forward_cuda_seconds": 0.0006639499999998577,
+      "resident_forward_cuda_speedup": 0.3955117102190632
+    },
+    {
+      "candidate_count": 256,
+      "transfer_roundtrip_cpu_seconds": 0.0004790500000000364,
+      "transfer_roundtrip_cuda_seconds": 0.0007754000000002037,
+      "transfer_roundtrip_cuda_speedup": 0.6178101624966604,
+      "resident_forward_cpu_seconds": 0.0004159500000000538,
+      "resident_forward_cuda_seconds": 0.0006363499999997302,
+      "resident_forward_cuda_speedup": 0.6536497210658131
+    },
+    {
+      "candidate_count": 1024,
+      "transfer_roundtrip_cpu_seconds": 0.000832549999999932,
+      "transfer_roundtrip_cuda_seconds": 0.0007928000000010371,
+      "transfer_roundtrip_cuda_speedup": 1.0501387487371883,
+      "resident_forward_cpu_seconds": 0.0007928499999998451,
+      "resident_forward_cuda_seconds": 0.000644250000000568,
+      "resident_forward_cuda_speedup": 1.2306558013180382
+    },
+    {
+      "candidate_count": 4096,
+      "transfer_roundtrip_cpu_seconds": 0.004017099999999996,
+      "transfer_roundtrip_cuda_seconds": 0.0008600499999991129,
+      "transfer_roundtrip_cuda_speedup": 4.670774954949293,
+      "resident_forward_cpu_seconds": 0.004053349999999956,
+      "resident_forward_cuda_seconds": 0.0006317000000004569,
+      "resident_forward_cuda_speedup": 6.416574323249998
+    },
+    {
+      "candidate_count": 16384,
+      "transfer_roundtrip_cpu_seconds": 0.020252750000000486,
+      "transfer_roundtrip_cuda_seconds": 0.001772000000000773,
+      "transfer_roundtrip_cuda_speedup": 11.429317155751496,
+      "resident_forward_cpu_seconds": 0.01972200000000024,
+      "resident_forward_cuda_seconds": 0.001302950000000358,
+      "resident_forward_cuda_speedup": 15.136421198046602
+    },
+    {
+      "candidate_count": 65536,
+      "transfer_roundtrip_cpu_seconds": 0.08315014999999981,
+      "transfer_roundtrip_cuda_seconds": 0.005806299999999709,
+      "transfer_roundtrip_cuda_speedup": 14.320677539914227,
+      "resident_forward_cpu_seconds": 0.08357864999999975,
+      "resident_forward_cuda_seconds": 0.004432449999999477,
+      "resident_forward_cuda_speedup": 18.856084106985893
+    }
+  ]
+}

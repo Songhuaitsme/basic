@@ -1,0 +1,446 @@
+{
+  "status": "VALID_PAIRED_COMPARISON",
+  "pair_count": 5,
+  "seeds": [
+    103,
+    107,
+    109,
+    113,
+    127
+  ],
+  "delta_definition": "treatment_minus_baseline",
+  "ci_method": "paired_bootstrap_percentile",
+  "ci_draws": 10000,
+  "metrics": [
+    {
+      "metric": "acceptance_rate",
+      "direction": "higher",
+      "paired_seed_count": 5,
+      "baseline_mean": 0.9977011494252874,
+      "treatment_mean": 0.9977011494252874,
+      "mean_delta_treatment_minus_baseline": 0.0,
+      "bootstrap_95_ci_low": 0.0,
+      "bootstrap_95_ci_high": 0.0,
+      "interpretation": "NO_CHANGE",
+      "per_seed": [
+        {
+          "seed": 103,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 107,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 109,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 113,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 127,
+          "baseline": 0.9885057471264368,
+          "treatment": 0.9885057471264368,
+          "delta": 0.0
+        }
+      ]
+    },
+    {
+      "metric": "completion_rate",
+      "direction": "higher",
+      "paired_seed_count": 5,
+      "baseline_mean": 0.9977011494252874,
+      "treatment_mean": 0.9977011494252874,
+      "mean_delta_treatment_minus_baseline": 0.0,
+      "bootstrap_95_ci_low": 0.0,
+      "bootstrap_95_ci_high": 0.0,
+      "interpretation": "NO_CHANGE",
+      "per_seed": [
+        {
+          "seed": 103,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 107,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 109,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 113,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 127,
+          "baseline": 0.9885057471264368,
+          "treatment": 0.9885057471264368,
+          "delta": 0.0
+        }
+      ]
+    },
+    {
+      "metric": "reservation_reliability",
+      "direction": "higher",
+      "paired_seed_count": 5,
+      "baseline_mean": 1.0,
+      "treatment_mean": 1.0,
+      "mean_delta_treatment_minus_baseline": 0.0,
+      "bootstrap_95_ci_low": 0.0,
+      "bootstrap_95_ci_high": 0.0,
+      "interpretation": "NO_CHANGE",
+      "per_seed": [
+        {
+          "seed": 103,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 107,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 109,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 113,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 127,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        }
+      ]
+    },
+    {
+      "metric": "total_economic_cost_yuan",
+      "direction": "lower",
+      "paired_seed_count": 5,
+      "baseline_mean": 2035832.3910558163,
+      "treatment_mean": 2001948.1303539332,
+      "mean_delta_treatment_minus_baseline": -33884.26070188331,
+      "bootstrap_95_ci_low": -46196.36661807001,
+      "bootstrap_95_ci_high": -20685.148645394016,
+      "interpretation": "IMPROVED",
+      "per_seed": [
+        {
+          "seed": 103,
+          "baseline": 2257765.169697717,
+          "treatment": 2215591.2969374107,
+          "delta": -42173.87276030611
+        },
+        {
+          "seed": 107,
+          "baseline": 2952933.7341328785,
+          "treatment": 2914357.83930014,
+          "delta": -38575.894832738675
+        },
+        {
+          "seed": 109,
+          "baseline": 2072841.701085087,
+          "treatment": 2018812.6047165873,
+          "delta": -54029.096368499566
+        },
+        {
+          "seed": 113,
+          "baseline": 1775987.4109556556,
+          "treatment": 1753059.643062623,
+          "delta": -22927.767893032636
+        },
+        {
+          "seed": 127,
+          "baseline": 1119633.939407744,
+          "treatment": 1107919.2677529044,
+          "delta": -11714.671654839534
+        }
+      ]
+    },
+    {
+      "metric": "cost_yuan_per_completed_cpu_hour",
+      "direction": "lower",
+      "paired_seed_count": 5,
+      "baseline_mean": 12.018551857980528,
+      "treatment_mean": 11.823329542978934,
+      "mean_delta_treatment_minus_baseline": -0.1952223150015932,
+      "bootstrap_95_ci_low": -0.2612327429818322,
+      "bootstrap_95_ci_high": -0.14165422367175573,
+      "interpretation": "IMPROVED",
+      "per_seed": [
+        {
+          "seed": 103,
+          "baseline": 12.457333778607167,
+          "treatment": 12.224637297696363,
+          "delta": -0.23269648091080342
+        },
+        {
+          "seed": 107,
+          "baseline": 12.42384403449129,
+          "treatment": 12.261544117174108,
+          "delta": -0.16229991731718307
+        },
+        {
+          "seed": 109,
+          "baseline": 11.821479127681473,
+          "treatment": 11.51334955142229,
+          "delta": -0.3081295762591818
+        },
+        {
+          "seed": 113,
+          "baseline": 11.547637334409178,
+          "treatment": 11.398558829188365,
+          "delta": -0.14907850522081212
+        },
+        {
+          "seed": 127,
+          "baseline": 11.84246501471353,
+          "treatment": 11.718557919413545,
+          "delta": -0.12390709529998567
+        }
+      ]
+    },
+    {
+      "metric": "completed_task_green_coverage",
+      "direction": "higher",
+      "paired_seed_count": 5,
+      "baseline_mean": 0.5929911384929667,
+      "treatment_mean": 0.6171194030395797,
+      "mean_delta_treatment_minus_baseline": 0.02412826454661292,
+      "bootstrap_95_ci_low": -0.029123662663447857,
+      "bootstrap_95_ci_high": 0.11236817360761642,
+      "interpretation": "IMPROVED",
+      "per_seed": [
+        {
+          "seed": 103,
+          "baseline": 0.5312808305713765,
+          "treatment": 0.4865626220111754,
+          "delta": -0.044718208560201145
+        },
+        {
+          "seed": 107,
+          "baseline": 0.5438330125210963,
+          "treatment": 0.5350271788873274,
+          "delta": -0.008805833633768856
+        },
+        {
+          "seed": 109,
+          "baseline": 0.5921224256087098,
+          "treatment": 0.5894645716058428,
+          "delta": -0.0026578540028669995
+        },
+        {
+          "seed": 113,
+          "baseline": 0.591949605916532,
+          "treatment": 0.7857873574720557,
+          "delta": 0.19383775155552374
+        },
+        {
+          "seed": 127,
+          "baseline": 0.7057698178471191,
+          "treatment": 0.688755285221497,
+          "delta": -0.017014532625622136
+        }
+      ]
+    },
+    {
+      "metric": "system_green_absorption_rate",
+      "direction": "higher",
+      "paired_seed_count": 5,
+      "baseline_mean": 0.0035575616130781263,
+      "treatment_mean": 0.007029773995561983,
+      "mean_delta_treatment_minus_baseline": 0.0034722123824838568,
+      "bootstrap_95_ci_low": 0.0020555536994761236,
+      "bootstrap_95_ci_high": 0.005384258398644628,
+      "interpretation": "IMPROVED",
+      "per_seed": [
+        {
+          "seed": 103,
+          "baseline": 0.0028377246098283478,
+          "treatment": 0.004481361398841064,
+          "delta": 0.0016436367890127162
+        },
+        {
+          "seed": 107,
+          "baseline": 0.003732027945492254,
+          "treatment": 0.0073206487567569955,
+          "delta": 0.0035886208112647414
+        },
+        {
+          "seed": 109,
+          "baseline": 0.004701201735252685,
+          "treatment": 0.006680637486152304,
+          "delta": 0.0019794357508996193
+        },
+        {
+          "seed": 113,
+          "baseline": 0.004089462275584205,
+          "treatment": 0.011207207419270464,
+          "delta": 0.007117745143686259
+        },
+        {
+          "seed": 127,
+          "baseline": 0.002427391499233142,
+          "treatment": 0.005459014916789088,
+          "delta": 0.003031623417555946
+        }
+      ]
+    },
+    {
+      "metric": "expired_count",
+      "direction": "lower",
+      "paired_seed_count": 5,
+      "baseline_mean": 0.2,
+      "treatment_mean": 0.2,
+      "mean_delta_treatment_minus_baseline": 0.0,
+      "bootstrap_95_ci_low": 0.0,
+      "bootstrap_95_ci_high": 0.0,
+      "interpretation": "NO_CHANGE",
+      "per_seed": [
+        {
+          "seed": 103,
+          "baseline": 0.0,
+          "treatment": 0.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 107,
+          "baseline": 0.0,
+          "treatment": 0.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 109,
+          "baseline": 0.0,
+          "treatment": 0.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 113,
+          "baseline": 0.0,
+          "treatment": 0.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 127,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        }
+      ]
+    },
+    {
+      "metric": "failed_count",
+      "direction": "lower",
+      "paired_seed_count": 5,
+      "baseline_mean": 0.0,
+      "treatment_mean": 0.0,
+      "mean_delta_treatment_minus_baseline": 0.0,
+      "bootstrap_95_ci_low": 0.0,
+      "bootstrap_95_ci_high": 0.0,
+      "interpretation": "NO_CHANGE",
+      "per_seed": [
+        {
+          "seed": 103,
+          "baseline": 0.0,
+          "treatment": 0.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 107,
+          "baseline": 0.0,
+          "treatment": 0.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 109,
+          "baseline": 0.0,
+          "treatment": 0.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 113,
+          "baseline": 0.0,
+          "treatment": 0.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 127,
+          "baseline": 0.0,
+          "treatment": 0.0,
+          "delta": 0.0
+        }
+      ]
+    },
+    {
+      "metric": "active_wait_count",
+      "direction": "diagnostic",
+      "paired_seed_count": 5,
+      "baseline_mean": 33.6,
+      "treatment_mean": 9.8,
+      "mean_delta_treatment_minus_baseline": -23.8,
+      "bootstrap_95_ci_low": -28.4,
+      "bootstrap_95_ci_high": -19.8,
+      "interpretation": "DIAGNOSTIC",
+      "per_seed": [
+        {
+          "seed": 103,
+          "baseline": 29.0,
+          "treatment": 8.0,
+          "delta": -21.0
+        },
+        {
+          "seed": 107,
+          "baseline": 40.0,
+          "treatment": 9.0,
+          "delta": -31.0
+        },
+        {
+          "seed": 109,
+          "baseline": 27.0,
+          "treatment": 9.0,
+          "delta": -18.0
+        },
+        {
+          "seed": 113,
+          "baseline": 38.0,
+          "treatment": 10.0,
+          "delta": -28.0
+        },
+        {
+          "seed": 127,
+          "baseline": 34.0,
+          "treatment": 13.0,
+          "delta": -21.0
+        }
+      ]
+    }
+  ]
+}

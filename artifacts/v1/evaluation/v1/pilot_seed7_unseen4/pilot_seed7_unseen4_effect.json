@@ -1,0 +1,385 @@
+{
+  "status": "VALID_PAIRED_COMPARISON",
+  "pair_count": 4,
+  "seeds": [
+    1,
+    20,
+    31,
+    34
+  ],
+  "delta_definition": "treatment_minus_baseline",
+  "ci_method": "paired_bootstrap_percentile",
+  "ci_draws": 10000,
+  "metrics": [
+    {
+      "metric": "acceptance_rate",
+      "direction": "higher",
+      "paired_seed_count": 4,
+      "baseline_mean": 1.0,
+      "treatment_mean": 1.0,
+      "mean_delta_treatment_minus_baseline": 0.0,
+      "bootstrap_95_ci_low": 0.0,
+      "bootstrap_95_ci_high": 0.0,
+      "interpretation": "NO_CHANGE",
+      "per_seed": [
+        {
+          "seed": 1,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 20,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 31,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 34,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        }
+      ]
+    },
+    {
+      "metric": "completion_rate",
+      "direction": "higher",
+      "paired_seed_count": 4,
+      "baseline_mean": 1.0,
+      "treatment_mean": 1.0,
+      "mean_delta_treatment_minus_baseline": 0.0,
+      "bootstrap_95_ci_low": 0.0,
+      "bootstrap_95_ci_high": 0.0,
+      "interpretation": "NO_CHANGE",
+      "per_seed": [
+        {
+          "seed": 1,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 20,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 31,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 34,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        }
+      ]
+    },
+    {
+      "metric": "reservation_reliability",
+      "direction": "higher",
+      "paired_seed_count": 4,
+      "baseline_mean": 1.0,
+      "treatment_mean": 1.0,
+      "mean_delta_treatment_minus_baseline": 0.0,
+      "bootstrap_95_ci_low": 0.0,
+      "bootstrap_95_ci_high": 0.0,
+      "interpretation": "NO_CHANGE",
+      "per_seed": [
+        {
+          "seed": 1,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 20,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 31,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 34,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        }
+      ]
+    },
+    {
+      "metric": "total_economic_cost_yuan",
+      "direction": "lower",
+      "paired_seed_count": 4,
+      "baseline_mean": 22389.364109097598,
+      "treatment_mean": 22698.08751671697,
+      "mean_delta_treatment_minus_baseline": 308.72340761936925,
+      "bootstrap_95_ci_low": -1091.855928924674,
+      "bootstrap_95_ci_high": 2049.333665803423,
+      "interpretation": "DEGRADED",
+      "per_seed": [
+        {
+          "seed": 1,
+          "baseline": 17587.215586342096,
+          "treatment": 17514.35565567755,
+          "delta": -72.85993066454466
+        },
+        {
+          "seed": 20,
+          "baseline": 36404.1660904235,
+          "treatment": 34944.94321764952,
+          "delta": -1459.2228727739857
+        },
+        {
+          "seed": 31,
+          "baseline": 985.4969911665911,
+          "treatment": 995.7418937898528,
+          "delta": 10.244902623261737
+        },
+        {
+          "seed": 34,
+          "baseline": 34580.577768458206,
+          "treatment": 37337.30929975095,
+          "delta": 2756.731531292746
+        }
+      ]
+    },
+    {
+      "metric": "cost_yuan_per_completed_cpu_hour",
+      "direction": "lower",
+      "paired_seed_count": 4,
+      "baseline_mean": 8.004311222820373,
+      "treatment_mean": 8.09339815911242,
+      "mean_delta_treatment_minus_baseline": 0.08908693629204589,
+      "bootstrap_95_ci_low": -0.2256525412805106,
+      "bootstrap_95_ci_high": 0.47288780414750153,
+      "interpretation": "DEGRADED",
+      "per_seed": [
+        {
+          "seed": 1,
+          "baseline": 8.561279412628299,
+          "treatment": 8.52581193221097,
+          "delta": -0.035467480417327835
+        },
+        {
+          "seed": 20,
+          "baseline": 8.13400102301817,
+          "treatment": 7.807958110498949,
+          "delta": -0.32604291251922124
+        },
+        {
+          "seed": 31,
+          "baseline": 7.264424919326953,
+          "treatment": 7.3399434917625745,
+          "delta": 0.07551857243562132
+        },
+        {
+          "seed": 34,
+          "baseline": 8.057539536308072,
+          "treatment": 8.699879101977183,
+          "delta": 0.6423395656691113
+        }
+      ]
+    },
+    {
+      "metric": "completed_task_green_coverage",
+      "direction": "higher",
+      "paired_seed_count": 4,
+      "baseline_mean": 0.948643813121499,
+      "treatment_mean": 1.0,
+      "mean_delta_treatment_minus_baseline": 0.05135618687850094,
+      "bootstrap_95_ci_low": -1.1102230246251565e-16,
+      "bootstrap_95_ci_high": 0.15332217388052957,
+      "interpretation": "IMPROVED",
+      "per_seed": [
+        {
+          "seed": 1,
+          "baseline": 1.0000000000000007,
+          "treatment": 1.0000000000000004,
+          "delta": -2.220446049250313e-16
+        },
+        {
+          "seed": 20,
+          "baseline": 0.7955704348259602,
+          "treatment": 0.9999999999999997,
+          "delta": 0.20442956517403943
+        },
+        {
+          "seed": 31,
+          "baseline": 1.0,
+          "treatment": 1.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 34,
+          "baseline": 0.9990048176600351,
+          "treatment": 0.9999999999999997,
+          "delta": 0.0009951823399645399
+        }
+      ]
+    },
+    {
+      "metric": "system_green_absorption_rate",
+      "direction": "higher",
+      "paired_seed_count": 4,
+      "baseline_mean": 0.0014133498033462237,
+      "treatment_mean": 0.0016376231258700019,
+      "mean_delta_treatment_minus_baseline": 0.0002242733225237782,
+      "bootstrap_95_ci_low": -0.00028590632471158547,
+      "bootstrap_95_ci_high": 0.0009957234746343227,
+      "interpretation": "IMPROVED",
+      "per_seed": [
+        {
+          "seed": 1,
+          "baseline": 0.0009147001739491964,
+          "treatment": 0.00092156489309602,
+          "delta": 6.864719146823669e-06
+        },
+        {
+          "seed": 20,
+          "baseline": 0.0020879916935104105,
+          "treatment": 0.003442576020972717,
+          "delta": 0.0013545843274623067
+        },
+        {
+          "seed": 31,
+          "baseline": 0.00038214854833803835,
+          "treatment": 0.0003012894644884093,
+          "delta": -8.085908384962903e-05
+        },
+        {
+          "seed": 34,
+          "baseline": 0.0022685587975872497,
+          "treatment": 0.0018850621249228612,
+          "delta": -0.0003834966726643885
+        }
+      ]
+    },
+    {
+      "metric": "expired_count",
+      "direction": "lower",
+      "paired_seed_count": 4,
+      "baseline_mean": 0.0,
+      "treatment_mean": 0.0,
+      "mean_delta_treatment_minus_baseline": 0.0,
+      "bootstrap_95_ci_low": 0.0,
+      "bootstrap_95_ci_high": 0.0,
+      "interpretation": "NO_CHANGE",
+      "per_seed": [
+        {
+          "seed": 1,
+          "baseline": 0.0,
+          "treatment": 0.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 20,
+          "baseline": 0.0,
+          "treatment": 0.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 31,
+          "baseline": 0.0,
+          "treatment": 0.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 34,
+          "baseline": 0.0,
+          "treatment": 0.0,
+          "delta": 0.0
+        }
+      ]
+    },
+    {
+      "metric": "failed_count",
+      "direction": "lower",
+      "paired_seed_count": 4,
+      "baseline_mean": 0.0,
+      "treatment_mean": 0.0,
+      "mean_delta_treatment_minus_baseline": 0.0,
+      "bootstrap_95_ci_low": 0.0,
+      "bootstrap_95_ci_high": 0.0,
+      "interpretation": "NO_CHANGE",
+      "per_seed": [
+        {
+          "seed": 1,
+          "baseline": 0.0,
+          "treatment": 0.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 20,
+          "baseline": 0.0,
+          "treatment": 0.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 31,
+          "baseline": 0.0,
+          "treatment": 0.0,
+          "delta": 0.0
+        },
+        {
+          "seed": 34,
+          "baseline": 0.0,
+          "treatment": 0.0,
+          "delta": 0.0
+        }
+      ]
+    },
+    {
+      "metric": "active_wait_count",
+      "direction": "diagnostic",
+      "paired_seed_count": 4,
+      "baseline_mean": 1.0,
+      "treatment_mean": 6.25,
+      "mean_delta_treatment_minus_baseline": 5.25,
+      "bootstrap_95_ci_low": 3.75,
+      "bootstrap_95_ci_high": 6.5,
+      "interpretation": "DIAGNOSTIC",
+      "per_seed": [
+        {
+          "seed": 1,
+          "baseline": 2.0,
+          "treatment": 5.0,
+          "delta": 3.0
+        },
+        {
+          "seed": 20,
+          "baseline": 1.0,
+          "treatment": 7.0,
+          "delta": 6.0
+        },
+        {
+          "seed": 31,
+          "baseline": 1.0,
+          "treatment": 6.0,
+          "delta": 5.0
+        },
+        {
+          "seed": 34,
+          "baseline": 0.0,
+          "treatment": 7.0,
+          "delta": 7.0
+        }
+      ]
+    }
+  ]
+}

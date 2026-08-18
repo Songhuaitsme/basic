@@ -1,0 +1,1037 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "Pilot 模型效果诊断",
+    "description": "117 次 candidate-DQN 更新后的训练吞吐与 4 个未见种子配对效果。",
+    "generatedAt": "2026-07-24T07:33:41+08:00",
+    "sources": [
+      {
+        "id": "paired_effect",
+        "label": "4-seed paired Pilot evaluation (treatment minus baseline; 10,000 paired bootstrap draws)",
+        "path": "artifacts/v1/pilot/diagnostic/pilot_diagnostic.sqlite",
+        "query": {
+          "engine": "SQLite",
+          "language": "SQL",
+          "sql": "SELECT * FROM paired_seed_effects ORDER BY seed;",
+          "description": "Read all reviewed paired seed effects used by the report.",
+          "executed_at": "2026-07-24T07:33:41+08:00",
+          "filters": [
+            "cutoff_time=1.0",
+            "candidate_dqn evaluation epsilon=0",
+            "paired seeds=1,20,31,34",
+            "raw input=artifacts/v1/evaluation/v1/pilot_seed7_unseen4/pilot_seed7_unseen4_effect.json"
+          ],
+          "metric_definitions": [
+            "Every delta is treatment minus baseline at seed grain.",
+            "Economic cost is lower-is-better; green coverage and absorption are higher-is-better.",
+            "Intervals in the raw effect file are paired seed-level bootstrap percentile intervals with 10,000 draws."
+          ],
+          "tables_used": [
+            "pilot_diagnostic.paired_seed_effects"
+          ]
+        }
+      },
+      {
+        "id": "training_log",
+        "label": "Pilot training curve (last resumed row retained per cycle)",
+        "path": "artifacts/v1/pilot/diagnostic/pilot_diagnostic.sqlite",
+        "query": {
+          "engine": "SQLite",
+          "language": "SQL",
+          "sql": "SELECT * FROM training_curve ORDER BY cycle;",
+          "description": "Read the reviewed training curve after keeping the last resumed row for each cycle.",
+          "executed_at": "2026-07-24T07:33:41+08:00",
+          "filters": [
+            "cycles=100..3500",
+            "seed=7",
+            "batch_size=1",
+            "updates_per_transition=1",
+            "device=cpu",
+            "raw input=artifacts/v1/pilot/candidate_dqn_pilot_seed7_b1.training.csv"
+          ],
+          "metric_definitions": [
+            "Selection candidates are the cumulative candidate counter written by the trainer.",
+            "Logged wall hours include repeated work recorded across resume attempts.",
+            "Curve points keep the final occurrence of each cycle after resume duplication."
+          ],
+          "tables_used": [
+            "pilot_diagnostic.training_curve"
+          ]
+        }
+      },
+      {
+        "id": "pilot_model",
+        "label": "Pilot candidate-DQN model",
+        "path": "artifacts/v1/pilot/candidate_dqn_pilot_seed7_b1.pt"
+      }
+    ],
+    "charts": [
+      {
+        "id": "cost_delta_by_seed",
+        "title": "各未见种子的经济成本差值",
+        "subtitle": "模型减基线，人民币；负值表示模型更好，n=4",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "经济成本变化是普遍改善，还是由种子差异主导？",
+        "rationale": "四个离散配对种子适合用横向条形图直接比较正负差值。",
+        "comparisonContext": {
+          "baseline": "equal_weight",
+          "grain": "paired seed",
+          "unit": "CNY",
+          "semanticFamily": "treatment minus baseline"
+        },
+        "type": "horizontalBar",
+        "dataset": "paired_seed_effects",
+        "sourceId": "paired_effect",
+        "encodings": {
+          "x": {
+            "field": "seed_label",
+            "type": "nominal",
+            "label": "未见种子"
+          },
+          "y": {
+            "field": "total_economic_cost_yuan_delta",
+            "type": "quantitative",
+            "format": "currency",
+            "label": "经济成本差值",
+            "unit": "CNY"
+          }
+        },
+        "xAxisTitle": "未见种子",
+        "yAxisTitle": "模型 - 基线（元）",
+        "valueFormat": "currency",
+        "unit": "CNY",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "diverging",
+            "root": "blue"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      },
+      {
+        "id": "waiting_delta_by_seed",
+        "title": "各未见种子的活跃等待任务差值",
+        "subtitle": "模型减基线，任务数；正值表示等待任务更多，n=4",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "等待任务增加是否只由单个异常种子造成？",
+        "rationale": "同一单位的四个配对差值用横向条形图可直接检查方向一致性。",
+        "comparisonContext": {
+          "baseline": "equal_weight",
+          "grain": "paired seed",
+          "unit": "tasks",
+          "semanticFamily": "treatment minus baseline"
+        },
+        "type": "horizontalBar",
+        "dataset": "paired_seed_effects",
+        "sourceId": "paired_effect",
+        "encodings": {
+          "x": {
+            "field": "seed_label",
+            "type": "nominal",
+            "label": "未见种子"
+          },
+          "y": {
+            "field": "active_wait_count_delta",
+            "type": "quantitative",
+            "format": "number",
+            "label": "活跃等待任务差值",
+            "unit": "tasks"
+          }
+        },
+        "xAxisTitle": "未见种子",
+        "yAxisTitle": "模型 - 基线（任务数）",
+        "valueFormat": "number",
+        "unit": "tasks",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "single",
+            "root": "orange"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      },
+      {
+        "id": "training_transitions",
+        "title": "Pilot 训练 transition 累积曲线",
+        "subtitle": "Seed 7，3500 cycle；恢复重复 cycle 按最后一次记录去重",
+        "showDescription": true,
+        "intent": "trend",
+        "question": "当前仿真 cycle 能以多快速度产生有效训练 transition？",
+        "rationale": "35 个有序检查点足以显示 transition 随 cycle 的稀疏累积。",
+        "comparisonContext": {
+          "grain": "100 simulation cycles",
+          "unit": "transitions",
+          "semanticFamily": "cumulative training progress"
+        },
+        "type": "line",
+        "dataset": "training_curve",
+        "sourceId": "training_log",
+        "encodings": {
+          "x": {
+            "field": "cycle",
+            "type": "quantitative",
+            "label": "仿真 cycle"
+          },
+          "y": {
+            "field": "transitions",
+            "type": "quantitative",
+            "format": "number",
+            "label": "累计 transition"
+          }
+        },
+        "xAxisTitle": "仿真 cycle",
+        "yAxisTitle": "累计 transition",
+        "valueFormat": "number",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "single",
+            "root": "blue"
+          },
+          "points": "always",
+          "valueLabels": {
+            "mode": "endpoints"
+          }
+        }
+      }
+    ],
+    "tables": [
+      {
+        "id": "paired_seed_audit",
+        "title": "未见种子配对明细",
+        "subtitle": "模型减基线；经济成本为负更好，等待任务为正更差",
+        "showDescription": true,
+        "dataset": "paired_seed_effects",
+        "defaultSort": {
+          "field": "seed",
+          "direction": "asc"
+        },
+        "density": "spacious",
+        "sourceId": "paired_effect",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "seed",
+            "label": "Seed",
+            "type": "number"
+          },
+          {
+            "field": "total_economic_cost_yuan_baseline",
+            "label": "基线成本（元）",
+            "format": "currency"
+          },
+          {
+            "field": "total_economic_cost_yuan_treatment",
+            "label": "模型成本（元）",
+            "format": "currency"
+          },
+          {
+            "field": "total_economic_cost_yuan_delta",
+            "label": "成本差值（元）",
+            "format": "currency",
+            "movement": true
+          },
+          {
+            "field": "completed_task_green_coverage_delta",
+            "label": "绿色覆盖差值",
+            "format": "percent",
+            "movement": true
+          },
+          {
+            "field": "active_wait_count_delta",
+            "label": "等待任务差值",
+            "format": "number",
+            "movement": true
+          }
+        ]
+      }
+    ],
+    "blocks": [
+      {
+        "id": "title",
+        "type": "markdown",
+        "body": "# Pilot 模型效果诊断",
+        "layout": "full"
+      },
+      {
+        "id": "executive_summary",
+        "type": "markdown",
+        "body": "## Executive Summary\n\n- **还不能进入正式大规模训练。** 117 次更新后的冻结策略在 4 个未见种子上，经济成本平均增加 **309 元**；95% 配对 bootstrap 区间为 **[-1092, 2049] 元**，没有证明改善。\n- **出现了目标间权衡。** 完成任务绿色覆盖平均提高 **5.1%**，系统绿色吸收率提高 **0.0224%**，但成本/完成 CPU 小时增加 **0.089 元**，活跃等待任务平均增加 **5.25 个**。\n- **训练吞吐是当前硬约束。** 3500 cycle 只产生 **117** 条 transition，却累计扫描 **242.0M** 个选择候选，约 **2.07M 候选/transition**。\n- **下一步门槛明确。** 先完成同一负载的 CUDA/CPU 对照；随后必须提高每次候选枚举产生的训练样本效率，再进行至少 10 个配对种子的正式评估。",
+        "layout": "full"
+      },
+      {
+        "id": "definitions",
+        "type": "markdown",
+        "body": "## 比较口径与成功标准\n\n处理组是 seed 7 Pilot 训练后的 candidate-DQN 冻结策略，评估时 epsilon=0；基线是 equal-weight。比较粒度为未参与训练的 seeds 1、20、31、34，所有差值均定义为“模型减基线”。主成功标准是降低经济成本，同时不牺牲完成率、可靠性或等待队列；绿色指标属于共同目标，但不能单独替代经济与服务约束。",
+        "layout": "full"
+      },
+      {
+        "id": "cost_finding",
+        "type": "markdown",
+        "sourceId": "paired_effect",
+        "body": "## 经济目标没有改善，种子差异主导结果\n\n平均成本变化为 **+309 元**，但区间跨过 0，证据不足以判断真实平均效果。四个种子中，seed 1 和 20 成本下降，seed 31 基本不变，seed 34 增加约 2757 元。这说明小样本均值易被场景差异左右，不能据此宣称模型优于基线。",
+        "layout": "full"
+      },
+      {
+        "id": "cost_chart",
+        "type": "chart",
+        "chartId": "cost_delta_by_seed",
+        "layout": "full"
+      },
+      {
+        "id": "waiting_finding",
+        "type": "markdown",
+        "sourceId": "paired_effect",
+        "body": "## 等待任务增加是跨种子一致现象\n\n活跃等待任务平均增加 **5.25 个**，95% 区间为 **[3.75, 6.50]**。四个种子的差值均为正，范围从 +3 到 +7。与成本的不确定结果不同，这个方向一致的服务侧退化需要在下一轮奖励设计或状态/动作表达中直接处理。",
+        "layout": "full"
+      },
+      {
+        "id": "waiting_chart",
+        "type": "chart",
+        "chartId": "waiting_delta_by_seed",
+        "layout": "full"
+      },
+      {
+        "id": "training_finding",
+        "type": "markdown",
+        "sourceId": "training_log",
+        "body": "## 训练样本产出远慢于候选枚举\n\n最终只有 **117 次更新**，epsilon 仍为 **0.971**。原始日志记录了约 **11.6 小时**计算（含恢复重算），相当于约 **357 秒/transition**。loss 能下降只说明数值参数发生学习，不能抵消样本稀少和策略效果未改善的证据。",
+        "layout": "full"
+      },
+      {
+        "id": "training_chart",
+        "type": "chart",
+        "chartId": "training_transitions",
+        "layout": "full"
+      },
+      {
+        "id": "audit_table_intro",
+        "type": "markdown",
+        "sourceId": "paired_effect",
+        "body": "## 配对明细保留了均值背后的差异\n\n下表给出每个种子的基线、模型和差值，便于核对成本权衡是否由单一场景主导。绿色覆盖差值按比例展示；等待任务差值为期末活跃等待计数之差。",
+        "layout": "full"
+      },
+      {
+        "id": "audit_table",
+        "type": "table",
+        "tableId": "paired_seed_audit",
+        "layout": "full"
+      },
+      {
+        "id": "next_steps",
+        "type": "markdown",
+        "body": "## 建议的下一步\n\n1. 完成相同候选评分负载的 CPU/GPU 对照，分别记录神经网络推理时间与端到端时间。\n2. 正式训练前提高样本效率：减少无决策 cycle 的重复枚举、缓存可复用候选特征，或让一次昂贵枚举支持更多 replay 更新，但必须保持完整候选语义。\n3. 只有当小规模门槛同时满足“成本不劣化、等待不增加、绿色指标不倒退”时，才扩大训练；最终用至少 10 个固定配对种子报告区间，而不是只看均值。",
+        "layout": "full"
+      },
+      {
+        "id": "further_questions",
+        "type": "markdown",
+        "body": "## 仍需回答的问题\n\n- 等待任务增加来自模型偏好更晚的槽位、奖励延迟，还是状态中缺少队列压力？\n- CUDA 是否只加速约占少数的网络评分，端到端收益是否不足以改变训练可行性？\n- 提高 replay 更新比后，样本相关性和离策略偏差是否仍可接受？",
+        "layout": "full"
+      },
+      {
+        "id": "caveats",
+        "type": "markdown",
+        "body": "## 限制与假设\n\n效果评估只有 4 个未见种子，区间较宽，不能作为最终统计结论。训练日志在恢复时重复了1100–1300 cycle：曲线按 cycle 保留最后一条，计算成本则保留全部原始区间以反映实际投入。候选计数是训练器记录的选择候选累计值，不等同于包含 replay 重评分在内的全部模型输入行数。完成率、接受率和预约可靠性在本样本中均为 1，可能存在天花板效应。",
+        "layout": "full"
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-07-24T07:33:41+08:00",
+    "status": "ready",
+    "datasets": {
+      "paired_seed_effects": [
+        {
+          "seed": 1,
+          "seed_label": "Seed 1",
+          "total_economic_cost_yuan_baseline": 17587.215586342096,
+          "total_economic_cost_yuan_treatment": 17514.35565567755,
+          "total_economic_cost_yuan_delta": -72.85993066454466,
+          "cost_yuan_per_completed_cpu_hour_baseline": 8.561279412628299,
+          "cost_yuan_per_completed_cpu_hour_treatment": 8.52581193221097,
+          "cost_yuan_per_completed_cpu_hour_delta": -0.035467480417327835,
+          "completed_task_green_coverage_baseline": 1.0000000000000007,
+          "completed_task_green_coverage_treatment": 1.0000000000000004,
+          "completed_task_green_coverage_delta": -2.220446049250313e-16,
+          "system_green_absorption_rate_baseline": 0.0009147001739491964,
+          "system_green_absorption_rate_treatment": 0.00092156489309602,
+          "system_green_absorption_rate_delta": 6.864719146823669e-06,
+          "active_wait_count_baseline": 2.0,
+          "active_wait_count_treatment": 5.0,
+          "active_wait_count_delta": 3.0
+        },
+        {
+          "seed": 20,
+          "seed_label": "Seed 20",
+          "total_economic_cost_yuan_baseline": 36404.1660904235,
+          "total_economic_cost_yuan_treatment": 34944.94321764952,
+          "total_economic_cost_yuan_delta": -1459.2228727739857,
+          "cost_yuan_per_completed_cpu_hour_baseline": 8.13400102301817,
+          "cost_yuan_per_completed_cpu_hour_treatment": 7.807958110498949,
+          "cost_yuan_per_completed_cpu_hour_delta": -0.32604291251922124,
+          "completed_task_green_coverage_baseline": 0.7955704348259602,
+          "completed_task_green_coverage_treatment": 0.9999999999999997,
+          "completed_task_green_coverage_delta": 0.20442956517403943,
+          "system_green_absorption_rate_baseline": 0.0020879916935104105,
+          "system_green_absorption_rate_treatment": 0.003442576020972717,
+          "system_green_absorption_rate_delta": 0.0013545843274623067,
+          "active_wait_count_baseline": 1.0,
+          "active_wait_count_treatment": 7.0,
+          "active_wait_count_delta": 6.0
+        },
+        {
+          "seed": 31,
+          "seed_label": "Seed 31",
+          "total_economic_cost_yuan_baseline": 985.4969911665911,
+          "total_economic_cost_yuan_treatment": 995.7418937898528,
+          "total_economic_cost_yuan_delta": 10.244902623261737,
+          "cost_yuan_per_completed_cpu_hour_baseline": 7.264424919326953,
+          "cost_yuan_per_completed_cpu_hour_treatment": 7.3399434917625745,
+          "cost_yuan_per_completed_cpu_hour_delta": 0.07551857243562132,
+          "completed_task_green_coverage_baseline": 1.0,
+          "completed_task_green_coverage_treatment": 1.0,
+          "completed_task_green_coverage_delta": 0.0,
+          "system_green_absorption_rate_baseline": 0.00038214854833803835,
+          "system_green_absorption_rate_treatment": 0.0003012894644884093,
+          "system_green_absorption_rate_delta": -8.085908384962903e-05,
+          "active_wait_count_baseline": 1.0,
+          "active_wait_count_treatment": 6.0,
+          "active_wait_count_delta": 5.0
+        },
+        {
+          "seed": 34,
+          "seed_label": "Seed 34",
+          "total_economic_cost_yuan_baseline": 34580.577768458206,
+          "total_economic_cost_yuan_treatment": 37337.30929975095,
+          "total_economic_cost_yuan_delta": 2756.731531292746,
+          "cost_yuan_per_completed_cpu_hour_baseline": 8.057539536308072,
+          "cost_yuan_per_completed_cpu_hour_treatment": 8.699879101977183,
+          "cost_yuan_per_completed_cpu_hour_delta": 0.6423395656691113,
+          "completed_task_green_coverage_baseline": 0.9990048176600351,
+          "completed_task_green_coverage_treatment": 0.9999999999999997,
+          "completed_task_green_coverage_delta": 0.0009951823399645399,
+          "system_green_absorption_rate_baseline": 0.0022685587975872497,
+          "system_green_absorption_rate_treatment": 0.0018850621249228612,
+          "system_green_absorption_rate_delta": -0.0003834966726643885,
+          "active_wait_count_baseline": 0.0,
+          "active_wait_count_treatment": 7.0,
+          "active_wait_count_delta": 7.0
+        }
+      ],
+      "training_curve": [
+        {
+          "cycle": 100,
+          "simulated_time": 0.5000000000000003,
+          "tasks": 1,
+          "transitions": 0,
+          "updates": 0,
+          "replay_size": 0,
+          "epsilon": 1.0,
+          "mean_loss": null,
+          "selection_candidates_total": 555543,
+          "selection_candidates_since_log": 555543,
+          "wall_seconds_since_log": 36.929101100000004,
+          "device": "cpu",
+          "selection_candidates_per_transition": null
+        },
+        {
+          "cycle": 200,
+          "simulated_time": 1.0000000000000007,
+          "tasks": 4,
+          "transitions": 3,
+          "updates": 3,
+          "replay_size": 3,
+          "epsilon": 0.999250187484375,
+          "mean_loss": 0.06331674133737882,
+          "selection_candidates_total": 792438,
+          "selection_candidates_since_log": 236895,
+          "wall_seconds_since_log": 28.7064916,
+          "device": "cpu",
+          "selection_candidates_per_transition": 264146.0
+        },
+        {
+          "cycle": 300,
+          "simulated_time": 1.49999999999999,
+          "tasks": 6,
+          "transitions": 5,
+          "updates": 5,
+          "replay_size": 5,
+          "epsilon": 0.9987506248437695,
+          "mean_loss": 0.06697713769972324,
+          "selection_candidates_total": 1531785,
+          "selection_candidates_since_log": 739347,
+          "wall_seconds_since_log": 68.5559009,
+          "device": "cpu",
+          "selection_candidates_per_transition": 306357.0
+        },
+        {
+          "cycle": 400,
+          "simulated_time": 1.9999999999999793,
+          "tasks": 9,
+          "transitions": 8,
+          "updates": 8,
+          "replay_size": 8,
+          "epsilon": 0.9980017491252735,
+          "mean_loss": 0.07219469423095386,
+          "selection_candidates_total": 15738600,
+          "selection_candidates_since_log": 14206815,
+          "wall_seconds_since_log": 1421.2649104,
+          "device": "cpu",
+          "selection_candidates_per_transition": 1967325.0
+        },
+        {
+          "cycle": 500,
+          "simulated_time": 2.499999999999969,
+          "tasks": 12,
+          "transitions": 11,
+          "updates": 11,
+          "replay_size": 11,
+          "epsilon": 0.9972534349231639,
+          "mean_loss": 0.04287596885114908,
+          "selection_candidates_total": 33862929,
+          "selection_candidates_since_log": 18124329,
+          "wall_seconds_since_log": 1722.2630311,
+          "device": "cpu",
+          "selection_candidates_per_transition": 3078448.090909091
+        },
+        {
+          "cycle": 600,
+          "simulated_time": 2.9999999999999583,
+          "tasks": 13,
+          "transitions": 12,
+          "updates": 12,
+          "replay_size": 12,
+          "epsilon": 0.9970041215644331,
+          "mean_loss": 0.05142844840884209,
+          "selection_candidates_total": 33870222,
+          "selection_candidates_since_log": 7293,
+          "wall_seconds_since_log": 57.37101140000004,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2822518.5
+        },
+        {
+          "cycle": 700,
+          "simulated_time": 3.4999999999999476,
+          "tasks": 16,
+          "transitions": 15,
+          "updates": 15,
+          "replay_size": 15,
+          "epsilon": 0.9962565553959545,
+          "mean_loss": 0.04634455715616544,
+          "selection_candidates_total": 35635026,
+          "selection_candidates_since_log": 1764804,
+          "wall_seconds_since_log": 1675.7544913000002,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2375668.4
+        },
+        {
+          "cycle": 800,
+          "simulated_time": 3.999999999999937,
+          "tasks": 19,
+          "transitions": 18,
+          "updates": 18,
+          "replay_size": 18,
+          "epsilon": 0.9955095497619452,
+          "mean_loss": 0.046594092001517616,
+          "selection_candidates_total": 41778996,
+          "selection_candidates_since_log": 6143970,
+          "wall_seconds_since_log": 927.6610014000007,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2321055.3333333335
+        },
+        {
+          "cycle": 900,
+          "simulated_time": 4.499999999999926,
+          "tasks": 24,
+          "transitions": 23,
+          "updates": 23,
+          "replay_size": 23,
+          "epsilon": 0.9942657848626825,
+          "mean_loss": 0.04084831029176712,
+          "selection_candidates_total": 44256984,
+          "selection_candidates_since_log": 2477988,
+          "wall_seconds_since_log": 338.6487562000002,
+          "device": "cpu",
+          "selection_candidates_per_transition": 1924216.6956521738
+        },
+        {
+          "cycle": 1000,
+          "simulated_time": 4.999999999999916,
+          "tasks": 28,
+          "transitions": 27,
+          "updates": 27,
+          "replay_size": 27,
+          "epsilon": 0.9932718918653515,
+          "mean_loss": 0.032144465018063784,
+          "selection_candidates_total": 45247608,
+          "selection_candidates_since_log": 990624,
+          "wall_seconds_since_log": 1216.3623582,
+          "device": "cpu",
+          "selection_candidates_per_transition": 1675837.3333333333
+        },
+        {
+          "cycle": 1100,
+          "simulated_time": 5.499999999999905,
+          "tasks": 33,
+          "transitions": 32,
+          "updates": 32,
+          "replay_size": 32,
+          "epsilon": 0.9920309226402729,
+          "mean_loss": 0.03722917288541794,
+          "selection_candidates_total": 75027630,
+          "selection_candidates_since_log": 29780022,
+          "wall_seconds_since_log": 1942.9390323,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2344613.4375
+        },
+        {
+          "cycle": 1200,
+          "simulated_time": 5.999999999999894,
+          "tasks": 34,
+          "transitions": 33,
+          "updates": 33,
+          "replay_size": 33,
+          "epsilon": 0.9917829149096129,
+          "mean_loss": 0.00012121360487071797,
+          "selection_candidates_total": 87557463,
+          "selection_candidates_since_log": 12529833,
+          "wall_seconds_since_log": 1953.9880195,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2653256.4545454546
+        },
+        {
+          "cycle": 1300,
+          "simulated_time": 6.499999999999884,
+          "tasks": 38,
+          "transitions": 37,
+          "updates": 37,
+          "replay_size": 37,
+          "epsilon": 0.990791503851314,
+          "mean_loss": 0.014724530492458143,
+          "selection_candidates_total": 90872718,
+          "selection_candidates_since_log": 3315255,
+          "wall_seconds_since_log": 1236.4224814,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2456019.4054054054
+        },
+        {
+          "cycle": 1400,
+          "simulated_time": 6.999999999999873,
+          "tasks": 44,
+          "transitions": 43,
+          "updates": 43,
+          "replay_size": 43,
+          "epsilon": 0.9893062451530077,
+          "mean_loss": 0.022765696048736572,
+          "selection_candidates_total": 102677535,
+          "selection_candidates_since_log": 11804817,
+          "wall_seconds_since_log": 1104.3133846,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2387849.6511627906
+        },
+        {
+          "cycle": 1500,
+          "simulated_time": 7.499999999999862,
+          "tasks": 45,
+          "transitions": 44,
+          "updates": 44,
+          "replay_size": 44,
+          "epsilon": 0.9890589185917195,
+          "mean_loss": 0.004066059831529856,
+          "selection_candidates_total": 103686060,
+          "selection_candidates_since_log": 1008525,
+          "wall_seconds_since_log": 106.85795589999998,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2356501.3636363638
+        },
+        {
+          "cycle": 1600,
+          "simulated_time": 7.999999999999852,
+          "tasks": 46,
+          "transitions": 45,
+          "updates": 45,
+          "replay_size": 45,
+          "epsilon": 0.9888116538620716,
+          "mean_loss": 0.034272339195013046,
+          "selection_candidates_total": 103718445,
+          "selection_candidates_since_log": 32385,
+          "wall_seconds_since_log": 67.8477582000005,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2304854.3333333335
+        },
+        {
+          "cycle": 1700,
+          "simulated_time": 8.499999999999929,
+          "tasks": 53,
+          "transitions": 52,
+          "updates": 52,
+          "replay_size": 52,
+          "epsilon": 0.9870825307424875,
+          "mean_loss": 0.014774833207151719,
+          "selection_candidates_total": 117254355,
+          "selection_candidates_since_log": 13535910,
+          "wall_seconds_since_log": 1236.5370432,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2254891.4423076925
+        },
+        {
+          "cycle": 1800,
+          "simulated_time": 9.000000000000007,
+          "tasks": 56,
+          "transitions": 55,
+          "updates": 55,
+          "replay_size": 55,
+          "epsilon": 0.986342403906982,
+          "mean_loss": 0.009415845076243082,
+          "selection_candidates_total": 122338290,
+          "selection_candidates_since_log": 5083935,
+          "wall_seconds_since_log": 294.33508000000006,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2224332.5454545454
+        },
+        {
+          "cycle": 1900,
+          "simulated_time": 9.500000000000085,
+          "tasks": 62,
+          "transitions": 61,
+          "updates": 61,
+          "replay_size": 61,
+          "epsilon": 0.9848638146889512,
+          "mean_loss": 0.008171607701418301,
+          "selection_candidates_total": 126608418,
+          "selection_candidates_since_log": 4270128,
+          "wall_seconds_since_log": 1450.808741,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2075547.8360655739
+        },
+        {
+          "cycle": 2000,
+          "simulated_time": 10.000000000000163,
+          "tasks": 63,
+          "transitions": 62,
+          "updates": 62,
+          "replay_size": 62,
+          "epsilon": 0.984617598735279,
+          "mean_loss": 0.006212798412889242,
+          "selection_candidates_total": 127647951,
+          "selection_candidates_since_log": 1039533,
+          "wall_seconds_since_log": 83.72313989999975,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2058837.9193548388
+        },
+        {
+          "cycle": 2100,
+          "simulated_time": 10.500000000000242,
+          "tasks": 63,
+          "transitions": 62,
+          "updates": 62,
+          "replay_size": 62,
+          "epsilon": 0.984617598735279,
+          "mean_loss": null,
+          "selection_candidates_total": 127647951,
+          "selection_candidates_since_log": 0,
+          "wall_seconds_since_log": 2.3183936999998878,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2058837.9193548388
+        },
+        {
+          "cycle": 2200,
+          "simulated_time": 11.00000000000032,
+          "tasks": 67,
+          "transitions": 66,
+          "updates": 66,
+          "replay_size": 66,
+          "epsilon": 0.9836333503066086,
+          "mean_loss": 0.023235044558532536,
+          "selection_candidates_total": 148253583,
+          "selection_candidates_since_log": 20605632,
+          "wall_seconds_since_log": 1529.7926747000001,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2246266.409090909
+        },
+        {
+          "cycle": 2300,
+          "simulated_time": 11.500000000000398,
+          "tasks": 70,
+          "transitions": 69,
+          "updates": 69,
+          "replay_size": 69,
+          "epsilon": 0.9828958097097626,
+          "mean_loss": 0.005270779132843018,
+          "selection_candidates_total": 148382001,
+          "selection_candidates_since_log": 128418,
+          "wall_seconds_since_log": 601.8676830999993,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2150463.782608696
+        },
+        {
+          "cycle": 2400,
+          "simulated_time": 12.000000000000476,
+          "tasks": 73,
+          "transitions": 72,
+          "updates": 72,
+          "replay_size": 72,
+          "epsilon": 0.982158822130087,
+          "mean_loss": 0.002663360869822403,
+          "selection_candidates_total": 150484221,
+          "selection_candidates_since_log": 2102220,
+          "wall_seconds_since_log": 170.17709680000007,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2090058.625
+        },
+        {
+          "cycle": 2500,
+          "simulated_time": 12.500000000000554,
+          "tasks": 76,
+          "transitions": 75,
+          "updates": 75,
+          "replay_size": 75,
+          "epsilon": 0.9814223871529224,
+          "mean_loss": 0.010359972172106305,
+          "selection_candidates_total": 155615841,
+          "selection_candidates_since_log": 5131620,
+          "wall_seconds_since_log": 376.3466642000003,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2074877.88
+        },
+        {
+          "cycle": 2600,
+          "simulated_time": 13.000000000000632,
+          "tasks": 78,
+          "transitions": 77,
+          "updates": 77,
+          "replay_size": 77,
+          "epsilon": 0.9809317372982452,
+          "mean_loss": 0.007219906197860837,
+          "selection_candidates_total": 157459899,
+          "selection_candidates_since_log": 1844058,
+          "wall_seconds_since_log": 146.0338855,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2044933.7532467532
+        },
+        {
+          "cycle": 2700,
+          "simulated_time": 13.50000000000071,
+          "tasks": 85,
+          "transitions": 84,
+          "updates": 84,
+          "replay_size": 84,
+          "epsilon": 0.9792163936945657,
+          "mean_loss": 0.0035588994863766338,
+          "selection_candidates_total": 170456739,
+          "selection_candidates_since_log": 12996840,
+          "wall_seconds_since_log": 4550.764839300001,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2029246.892857143
+        },
+        {
+          "cycle": 2800,
+          "simulated_time": 14.000000000000789,
+          "tasks": 86,
+          "transitions": 85,
+          "updates": 85,
+          "replay_size": 85,
+          "epsilon": 0.9789715895961421,
+          "mean_loss": 0.005134148523211479,
+          "selection_candidates_total": 171647742,
+          "selection_candidates_since_log": 1191003,
+          "wall_seconds_since_log": 67.80551700000069,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2019385.2
+        },
+        {
+          "cycle": 2900,
+          "simulated_time": 14.500000000000867,
+          "tasks": 88,
+          "transitions": 87,
+          "updates": 87,
+          "replay_size": 87,
+          "epsilon": 0.9784821649870683,
+          "mean_loss": 0.0017642112070461735,
+          "selection_candidates_total": 192805092,
+          "selection_candidates_since_log": 21157350,
+          "wall_seconds_since_log": 1169.0020118000011,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2216150.4827586208
+        },
+        {
+          "cycle": 3000,
+          "simulated_time": 15.000000000000945,
+          "tasks": 93,
+          "transitions": 92,
+          "updates": 92,
+          "replay_size": 92,
+          "epsilon": 0.977259673679319,
+          "mean_loss": 0.006403236636833754,
+          "selection_candidates_total": 199938258,
+          "selection_candidates_since_log": 7133166,
+          "wall_seconds_since_log": 455.01480300000003,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2173241.934782609
+        },
+        {
+          "cycle": 3100,
+          "simulated_time": 15.500000000001023,
+          "tasks": 98,
+          "transitions": 97,
+          "updates": 97,
+          "replay_size": 97,
+          "epsilon": 0.9760387097218384,
+          "mean_loss": 0.001389437832403928,
+          "selection_candidates_total": 222368823,
+          "selection_candidates_since_log": 22430565,
+          "wall_seconds_since_log": 1825.8395703000006,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2292462.092783505
+        },
+        {
+          "cycle": 3200,
+          "simulated_time": 16.0000000000011,
+          "tasks": 105,
+          "transitions": 104,
+          "updates": 104,
+          "replay_size": 104,
+          "epsilon": 0.9743319224969941,
+          "mean_loss": 0.03676053771466416,
+          "selection_candidates_total": 225095793,
+          "selection_candidates_since_log": 2726970,
+          "wall_seconds_since_log": 374.17017289999967,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2164382.625
+        },
+        {
+          "cycle": 3300,
+          "simulated_time": 16.500000000001002,
+          "tasks": 108,
+          "transitions": 107,
+          "updates": 107,
+          "replay_size": 107,
+          "epsilon": 0.973601356227133,
+          "mean_loss": 0.008657438564114273,
+          "selection_candidates_total": 226658178,
+          "selection_candidates_since_log": 1562385,
+          "wall_seconds_since_log": 336.84279080000124,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2118300.728971963
+        },
+        {
+          "cycle": 3400,
+          "simulated_time": 17.000000000000902,
+          "tasks": 114,
+          "transitions": 113,
+          "updates": 113,
+          "replay_size": 113,
+          "epsilon": 0.9721418666398703,
+          "mean_loss": 0.003803106810664758,
+          "selection_candidates_total": 239819391,
+          "selection_candidates_since_log": 13161213,
+          "wall_seconds_since_log": 3383.1827140999994,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2122295.4955752213
+        },
+        {
+          "cycle": 3500,
+          "simulated_time": 17.500000000000803,
+          "tasks": 118,
+          "transitions": 117,
+          "updates": 117,
+          "replay_size": 117,
+          "epsilon": 0.9711700892656754,
+          "mean_loss": 0.006959593796636909,
+          "selection_candidates_total": 242035290,
+          "selection_candidates_since_log": 2215899,
+          "wall_seconds_since_log": 611.5915166999985,
+          "device": "cpu",
+          "selection_candidates_per_transition": 2068677.6923076923
+        }
+      ],
+      "training_summary": [
+        {
+          "raw_log_rows": 38.0,
+          "unique_cycle_points": 35.0,
+          "duplicate_cycle_rows": 3.0,
+          "logged_wall_hours_including_rework": 11.611095726194446,
+          "final_transitions": 117.0,
+          "final_updates": 117.0,
+          "final_epsilon": 0.9711700892656754,
+          "final_selection_candidates": 242035290.0,
+          "selection_candidates_per_transition": 2068677.6923076923,
+          "logged_wall_seconds_per_transition": 357.264483882906
+        }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "id": "paired_effect",
+      "label": "4-seed paired Pilot evaluation (treatment minus baseline; 10,000 paired bootstrap draws)",
+      "path": "artifacts/v1/pilot/diagnostic/pilot_diagnostic.sqlite",
+      "query": {
+        "engine": "SQLite",
+        "language": "SQL",
+        "sql": "SELECT * FROM paired_seed_effects ORDER BY seed;",
+        "description": "Read all reviewed paired seed effects used by the report.",
+        "executed_at": "2026-07-24T07:33:41+08:00",
+        "filters": [
+          "cutoff_time=1.0",
+          "candidate_dqn evaluation epsilon=0",
+          "paired seeds=1,20,31,34",
+          "raw input=artifacts/v1/evaluation/v1/pilot_seed7_unseen4/pilot_seed7_unseen4_effect.json"
+        ],
+        "metric_definitions": [
+          "Every delta is treatment minus baseline at seed grain.",
+          "Economic cost is lower-is-better; green coverage and absorption are higher-is-better.",
+          "Intervals in the raw effect file are paired seed-level bootstrap percentile intervals with 10,000 draws."
+        ],
+        "tables_used": [
+          "pilot_diagnostic.paired_seed_effects"
+        ]
+      }
+    },
+    {
+      "id": "training_log",
+      "label": "Pilot training curve (last resumed row retained per cycle)",
+      "path": "artifacts/v1/pilot/diagnostic/pilot_diagnostic.sqlite",
+      "query": {
+        "engine": "SQLite",
+        "language": "SQL",
+        "sql": "SELECT * FROM training_curve ORDER BY cycle;",
+        "description": "Read the reviewed training curve after keeping the last resumed row for each cycle.",
+        "executed_at": "2026-07-24T07:33:41+08:00",
+        "filters": [
+          "cycles=100..3500",
+          "seed=7",
+          "batch_size=1",
+          "updates_per_transition=1",
+          "device=cpu",
+          "raw input=artifacts/v1/pilot/candidate_dqn_pilot_seed7_b1.training.csv"
+        ],
+        "metric_definitions": [
+          "Selection candidates are the cumulative candidate counter written by the trainer.",
+          "Logged wall hours include repeated work recorded across resume attempts.",
+          "Curve points keep the final occurrence of each cycle after resume duplication."
+        ],
+        "tables_used": [
+          "pilot_diagnostic.training_curve"
+        ]
+      }
+    },
+    {
+      "id": "pilot_model",
+      "label": "Pilot candidate-DQN model",
+      "path": "artifacts/v1/pilot/candidate_dqn_pilot_seed7_b1.pt"
+    }
+  ]
+}

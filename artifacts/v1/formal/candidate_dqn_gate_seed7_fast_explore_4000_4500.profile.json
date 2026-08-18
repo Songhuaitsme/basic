@@ -1,0 +1,87 @@
+{
+  "total_wall_seconds": 26.7164592,
+  "sections_seconds": {
+    "candidate_slot_generation": 16.69522350000001,
+    "candidate_feature_encoding": 0.00011010000000144515,
+    "neural_network_inference": 2.1701599999999717,
+    "backpropagation_and_optimizer": 1.8205227000000042,
+    "environment_and_accounting": 2.21074949999998,
+    "logging_and_saving": 3.7201614999999997,
+    "other_or_profiler_overhead": 0.09953190000003076
+  },
+  "sections_percent": {
+    "candidate_slot_generation": 62.490404791365506,
+    "candidate_feature_encoding": 0.0004121055083581029,
+    "neural_network_inference": 8.122932697608267,
+    "backpropagation_and_optimizer": 6.814236446422527,
+    "environment_and_accounting": 8.274859641579974,
+    "logging_and_saving": 13.92460532344795,
+    "other_or_profiler_overhead": 0.3725489940674128
+  },
+  "detail_seconds": {
+    "candidate_prepare_seconds": 0.5497557000000031,
+    "candidate_stream_seconds": 11.422750099999998,
+    "replay_candidate_generation_seconds": 4.722717700000009,
+    "candidate_feature_encoding_seconds": 0.00011010000000144515,
+    "selection_inference_seconds": 0.0,
+    "bootstrap_inference_seconds": 2.045624699999971,
+    "training_forward_seconds": 0.12453530000000068,
+    "backpropagation_seconds": 1.8205227000000042,
+    "environment_update_seconds": 2.21074949999998,
+    "logging_seconds": 0.004792499999997091,
+    "checkpoint_seconds": 1.8002274000000007,
+    "artifact_save_seconds": 1.9151416000000019,
+    "candidate_feasibility_prepare_seconds": 0.23100020000000043,
+    "candidate_feasibility_stream_seconds": 0.835983900000028,
+    "candidate_metric_evaluation_seconds": 2.512711199999967,
+    "candidate_id_hash_seconds": 0.0008026999999914963,
+    "candidate_object_construction_seconds": 0.00031110000000467153,
+    "candidate_transmission_schedule_seconds": 0.008553300000004427,
+    "candidate_cpu_feasibility_seconds": 0.17995699999998394,
+    "candidate_path_feasibility_seconds": 0.3183575999999526,
+    "candidate_sla_and_item_seconds": 0.05610040000001071
+  },
+  "candidate_internal_seconds": {
+    "prepare_feasibility": 0.23100020000000043,
+    "stream_and_replay_feasibility": 0.835983900000028,
+    "physical_metric_evaluation": 2.512711199999967,
+    "candidate_id_hash": 0.0008026999999914963,
+    "candidate_object_construction": 0.00031110000000467153,
+    "candidate_pipeline_other": 13.114414400000019
+  },
+  "candidate_internal_percent_of_candidate_pipeline": {
+    "prepare_feasibility": 1.3836304737100422,
+    "stream_and_replay_feasibility": 5.007323801325735,
+    "physical_metric_evaluation": 15.050479557820628,
+    "candidate_id_hash": 0.004807961989796038,
+    "candidate_object_construction": 0.0018634072194641258,
+    "candidate_pipeline_other": 78.55189479793432
+  },
+  "candidate_feasibility_internal_seconds": {
+    "transmission_schedule": 0.008553300000004427,
+    "cpu_interval_feasibility": 0.17995699999998394,
+    "path_interval_feasibility": 0.3183575999999526,
+    "sla_and_item_assembly": 0.05610040000001071,
+    "feasibility_other": 0.5040158000000767
+  },
+  "candidate_feasibility_internal_percent": {
+    "transmission_schedule": 0.8016333139363744,
+    "cpu_interval_feasibility": 16.8659495488245,
+    "path_interval_feasibility": 29.837145651930907,
+    "sla_and_item_assembly": 5.257847797357919,
+    "feasibility_other": 47.2374236879503
+  },
+  "counters": {
+    "prepare_theoretical_slot_count": 21348039,
+    "selection_candidate_count": 21348039,
+    "replay_candidate_feature_count": 7119396,
+    "scheduler_cycle_count": 528,
+    "training_process_cycle_count": 529,
+    "prepare_feasibility_check_count": 6507877,
+    "stream_feasibility_check_count": 28467435,
+    "candidate_metric_evaluation_count": 7119416,
+    "candidate_object_count": 20
+  },
+  "selection_candidates_per_second": 1783072.2357008043,
+  "measurement_note": "CUDA is synchronized at timed neural-network boundaries when profiling is enabled; percentages are exclusive wall-clock stages."
+}

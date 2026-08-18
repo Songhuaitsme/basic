@@ -1,0 +1,11 @@
+﻿metric,direction,paired_seed_count,baseline_mean,treatment_mean,mean_delta_treatment_minus_baseline,bootstrap_95_ci_low,bootstrap_95_ci_high,interpretation
+acceptance_rate,higher,5,0.9977011494252874,0.9977011494252874,0.0,0.0,0.0,NO_CHANGE
+completion_rate,higher,5,0.9977011494252874,0.9977011494252874,0.0,0.0,0.0,NO_CHANGE
+reservation_reliability,higher,5,1.0,1.0,0.0,0.0,0.0,NO_CHANGE
+total_economic_cost_yuan,lower,5,2035832.3910558163,2001948.1303539332,-33884.26070188331,-46196.36661807001,-20685.148645394016,IMPROVED
+cost_yuan_per_completed_cpu_hour,lower,5,12.018551857980528,11.823329542978934,-0.1952223150015932,-0.2612327429818322,-0.14165422367175573,IMPROVED
+completed_task_green_coverage,higher,5,0.5929911384929667,0.6171194030395797,0.02412826454661292,-0.029123662663447857,0.11236817360761642,IMPROVED
+system_green_absorption_rate,higher,5,0.0035575616130781263,0.007029773995561983,0.0034722123824838568,0.0020555536994761236,0.005384258398644628,IMPROVED
+expired_count,lower,5,0.2,0.2,0.0,0.0,0.0,NO_CHANGE
+failed_count,lower,5,0.0,0.0,0.0,0.0,0.0,NO_CHANGE
+active_wait_count,diagnostic,5,33.6,9.8,-23.8,-28.4,-19.8,DIAGNOSTIC

@@ -1,0 +1,56 @@
+﻿policy,policy_label,metric_group,metric,unit,direction,value,equal_weight_value,absolute_delta_vs_equal_weight,relative_delta_vs_equal_weight
+earliest_feasible,Earliest feasible,Cost,total_economic_cost_yuan,CNY,lower,42226466.19676595,39881142.69304761,2345323.503718339,0.05880783110377611
+earliest_feasible,Earliest feasible,Cost,cost_yuan_per_completed_cpu_hour,CNY/CPU-hour,lower,13.384585523482793,12.641184859324051,0.7434006641587416,0.058807831103776194
+earliest_feasible,Earliest feasible,Green,completed_task_green_coverage,fraction,higher,0.5717365723661999,0.684302590616212,-0.11256601825001211,-0.16449743109791068
+earliest_feasible,Earliest feasible,Green,system_green_absorption_rate,fraction,higher,0.05313988997842703,0.04193945065241484,0.011200439326012189,0.2670621372425458
+earliest_feasible,Earliest feasible,Reliability,completion_rate,fraction,higher,0.9937913907284768,0.9937913907284768,0.0,0.0
+earliest_feasible,Earliest feasible,Reliability,reservation_reliability,fraction,higher,1.0,1.0,0.0,0.0
+earliest_feasible,Earliest feasible,SLA,soft_preferred_on_time_rate,fraction,higher,1.0,0.9944016794961511,0.005598320503848897,0.005629838142153465
+earliest_feasible,Earliest feasible,SLA,flexible_preferred_on_time_rate,fraction,higher,1.0,0.9631728045325779,0.03682719546742208,0.03823529411764704
+earliest_feasible,Earliest feasible,SLA,hard_start_delay_p95_sim,simulation time,lower,0.056998787016803484,0.7748709157882304,-0.7178721287714269,-0.9264409260233726
+earliest_feasible,Earliest feasible,Waiting,active_wait_count,tasks,lower diagnostic,0,1947,-1947,-1.0
+earliest_feasible,Earliest feasible,Waiting,p95_active_wait_sim,simulation time,lower diagnostic,,779.0495000000001,,
+lowest_cost,Lowest cost,Cost,total_economic_cost_yuan,CNY,lower,36984463.71081995,39881142.69304761,-2896678.9822276607,-0.07263279802493303
+lowest_cost,Lowest cost,Cost,cost_yuan_per_completed_cpu_hour,CNY/CPU-hour,lower,11.723020232640927,12.641184859324051,-0.918164626683124,-0.07263279802493293
+lowest_cost,Lowest cost,Green,completed_task_green_coverage,fraction,higher,0.42958208554232885,0.684302590616212,-0.25472050507388316,-0.3722337290065032
+lowest_cost,Lowest cost,Green,system_green_absorption_rate,fraction,higher,0.026670419038499704,0.04193945065241484,-0.015269031613915136,-0.36407323835644845
+lowest_cost,Lowest cost,Reliability,completion_rate,fraction,higher,0.9937913907284768,0.9937913907284768,0.0,0.0
+lowest_cost,Lowest cost,Reliability,reservation_reliability,fraction,higher,1.0,1.0,0.0,0.0
+lowest_cost,Lowest cost,SLA,soft_preferred_on_time_rate,fraction,higher,0.7697690692792163,0.9944016794961511,-0.2246326102169348,-0.2258972554539056
+lowest_cost,Lowest cost,SLA,flexible_preferred_on_time_rate,fraction,higher,0.9263456090651558,0.9631728045325779,-0.03682719546742208,-0.03823529411764704
+lowest_cost,Lowest cost,SLA,hard_start_delay_p95_sim,simulation time,lower,0.8520390802617728,0.7748709157882304,0.07716816447354236,0.09958841260036679
+lowest_cost,Lowest cost,Waiting,active_wait_count,tasks,lower diagnostic,1063,1947,-884,-0.45403184386235235
+lowest_cost,Lowest cost,Waiting,p95_active_wait_sim,simulation time,lower diagnostic,793.723,779.0495000000001,14.673499999999876,0.018835131785592412
+highest_green,Highest green,Cost,total_economic_cost_yuan,CNY,lower,41708269.82492666,39881142.69304761,1827127.1318790466,0.045814312441894135
+highest_green,Highest green,Cost,cost_yuan_per_completed_cpu_hour,CNY/CPU-hour,lower,13.220332052104865,12.641184859324051,0.5791471927808143,0.045814312441894184
+highest_green,Highest green,Green,completed_task_green_coverage,fraction,higher,0.8888863715666995,0.684302590616212,0.20458378095048746,0.29896683682909997
+highest_green,Highest green,Green,system_green_absorption_rate,fraction,higher,0.05834119011966385,0.04193945065241484,0.01640173946724901,0.3910814093199051
+highest_green,Highest green,Reliability,completion_rate,fraction,higher,0.9937913907284768,0.9937913907284768,0.0,0.0
+highest_green,Highest green,Reliability,reservation_reliability,fraction,higher,1.0,1.0,0.0,0.0
+highest_green,Highest green,SLA,soft_preferred_on_time_rate,fraction,higher,0.5892232330300909,0.9944016794961511,-0.40517844646606016,-0.4074595355383533
+highest_green,Highest green,SLA,flexible_preferred_on_time_rate,fraction,higher,0.9206798866855525,0.9631728045325779,-0.04249291784702547,-0.0441176470588235
+highest_green,Highest green,SLA,hard_start_delay_p95_sim,simulation time,lower,0.7660268022077332,0.7748709157882304,-0.008844113580497193,-0.011413660521121248
+highest_green,Highest green,Waiting,active_wait_count,tasks,lower diagnostic,1580,1947,-367,-0.18849512069851052
+highest_green,Highest green,Waiting,p95_active_wait_sim,simulation time,lower diagnostic,545.0847499999998,779.0495000000001,-233.96475000000032,-0.30032077550913044
+equal_weight,Equal weight,Cost,total_economic_cost_yuan,CNY,lower,39881142.69304761,39881142.69304761,0.0,0.0
+equal_weight,Equal weight,Cost,cost_yuan_per_completed_cpu_hour,CNY/CPU-hour,lower,12.641184859324051,12.641184859324051,0.0,0.0
+equal_weight,Equal weight,Green,completed_task_green_coverage,fraction,higher,0.684302590616212,0.684302590616212,0.0,0.0
+equal_weight,Equal weight,Green,system_green_absorption_rate,fraction,higher,0.04193945065241484,0.04193945065241484,0.0,0.0
+equal_weight,Equal weight,Reliability,completion_rate,fraction,higher,0.9937913907284768,0.9937913907284768,0.0,0.0
+equal_weight,Equal weight,Reliability,reservation_reliability,fraction,higher,1.0,1.0,0.0,0.0
+equal_weight,Equal weight,SLA,soft_preferred_on_time_rate,fraction,higher,0.9944016794961511,0.9944016794961511,0.0,0.0
+equal_weight,Equal weight,SLA,flexible_preferred_on_time_rate,fraction,higher,0.9631728045325779,0.9631728045325779,0.0,0.0
+equal_weight,Equal weight,SLA,hard_start_delay_p95_sim,simulation time,lower,0.7748709157882304,0.7748709157882304,0.0,0.0
+equal_weight,Equal weight,Waiting,active_wait_count,tasks,lower diagnostic,1947,1947,0,0.0
+equal_weight,Equal weight,Waiting,p95_active_wait_sim,simulation time,lower diagnostic,779.0495000000001,779.0495000000001,0.0,0.0
+candidate_dqn,Candidate DQN,Cost,total_economic_cost_yuan,CNY,lower,39366416.98465782,39881142.69304761,-514725.7083897963,-0.012906493486194097
+candidate_dqn,Candidate DQN,Cost,cost_yuan_per_completed_cpu_hour,CNY/CPU-hour,lower,12.47803148927941,12.641184859324051,-0.16315337004464148,-0.01290649348619411
+candidate_dqn,Candidate DQN,Green,completed_task_green_coverage,fraction,higher,0.704673788349581,0.684302590616212,0.02037119773336904,0.029769283373638628
+candidate_dqn,Candidate DQN,Green,system_green_absorption_rate,fraction,higher,0.043187661712295475,0.04193945065241484,0.0012482110598806342,0.0297622176843836
+candidate_dqn,Candidate DQN,Reliability,completion_rate,fraction,higher,0.9937913907284768,0.9937913907284768,0.0,0.0
+candidate_dqn,Candidate DQN,Reliability,reservation_reliability,fraction,higher,1.0,1.0,0.0,0.0
+candidate_dqn,Candidate DQN,SLA,soft_preferred_on_time_rate,fraction,higher,0.9965010496850945,0.9944016794961511,0.0020993701889433503,0.0021111893033075634
+candidate_dqn,Candidate DQN,SLA,flexible_preferred_on_time_rate,fraction,higher,0.943342776203966,0.9631728045325779,-0.019830028328611915,-0.020588235294117664
+candidate_dqn,Candidate DQN,SLA,hard_start_delay_p95_sim,simulation time,lower,0.6715531008655263,0.7748709157882304,-0.10331781492270409,-0.13333551797799117
+candidate_dqn,Candidate DQN,Waiting,active_wait_count,tasks,lower diagnostic,1134,1947,-813,-0.41756548536209553
+candidate_dqn,Candidate DQN,Waiting,p95_active_wait_sim,simulation time,lower diagnostic,680.4692499999976,779.0495000000001,-98.58025000000248,-0.126539135189744

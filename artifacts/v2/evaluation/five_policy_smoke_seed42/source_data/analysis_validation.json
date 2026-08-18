@@ -1,0 +1,42 @@
+{
+  "status": "PASS",
+  "seeds": [
+    42
+  ],
+  "seed_count": 1,
+  "policies": [
+    "earliest_feasible",
+    "lowest_cost",
+    "highest_green",
+    "equal_weight",
+    "candidate_dqn"
+  ],
+  "reports_per_seed": 5,
+  "source_report_count": 5,
+  "long_metric_row_count": 270,
+  "wide_metric_row_count": 54,
+  "all_reports_valid": true,
+  "all_unsettled_counts_zero": true,
+  "paired_metadata_fields": [
+    "system_version",
+    "requirements_version",
+    "algorithm_version",
+    "task_schema_version",
+    "candidate_schema_version",
+    "model_schema_version",
+    "metric_schema_version",
+    "aggregation_schema_version",
+    "candidate_mode",
+    "seed",
+    "arrival_cutoff_sim",
+    "code_hash",
+    "config_hash",
+    "topology_hash",
+    "task_trace_hash",
+    "exogenous_trace_hash",
+    "dependency_lock_hash",
+    "tariff_mode",
+    "gamma_per_second"
+  ],
+  "paired_metadata_match": true
+}

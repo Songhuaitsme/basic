@@ -1,0 +1,1134 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "五种调度策略：Seed 42 初步对比",
+    "description": "Seed 42 同一轨迹下五种冻结调度策略的完整源指标、成本、绿电、SLA 与等待队列比较。",
+    "generatedAt": "2026-08-17T00:00:00+08:00",
+    "sources": [
+      {
+        "id": "strategy_summary",
+        "label": "Seed 42 five-policy reviewed aggregate metrics",
+        "path": "artifacts/v1/evaluation/strategy_comparison_seed42/strategy_comparison.sqlite",
+        "query": {
+          "engine": "SQLite",
+          "language": "SQL",
+          "sql": "SELECT * FROM policy_metrics ORDER BY policy;",
+          "description": "Read one reviewed aggregate metric row per policy after paired metadata validation.",
+          "executed_at": "2026-08-17T00:00:00+08:00",
+          "filters": [
+            "seed=42",
+            "evaluation status=VALID",
+            "identical task and exogenous trace hashes",
+            "zero unsettled tasks",
+            "candidate_dqn epsilon=0"
+          ],
+          "metric_definitions": [
+            "Economic cost is total attributed yuan; lower is better.",
+            "Cost per completed CPU-hour divides total economic cost by completed CPU-hours; lower is better.",
+            "Completed-task green coverage divides completed-task green energy by completed-task energy; higher is better.",
+            "Completion rate divides completed tasks by arrivals; reservation reliability divides completed reservations by tasks ever reserved.",
+            "All changes versus equal-weight are policy minus equal-weight."
+          ],
+          "tables_used": [
+            "strategy_comparison.policy_metrics"
+          ]
+        }
+      },
+      {
+        "id": "sla_summary",
+        "label": "Seed 42 policy-by-SLA reviewed metrics",
+        "path": "artifacts/v1/evaluation/strategy_comparison_seed42/strategy_comparison.sqlite",
+        "query": {
+          "engine": "SQLite",
+          "language": "SQL",
+          "sql": "SELECT * FROM sla_metrics ORDER BY policy, sla_type;",
+          "description": "Read the reviewed SLA metrics at policy and SLA-type grain.",
+          "executed_at": "2026-08-17T00:00:00+08:00",
+          "filters": [
+            "seed=42",
+            "evaluation status=VALID"
+          ],
+          "metric_definitions": [
+            "Preferred on-time rate is the share starting within the preferred window for Soft and Flexible tasks.",
+            "Start-delay percentiles use simulation-time units.",
+            "Hard tasks do not have a preferred-start deadline, so preferred on-time is not applicable."
+          ],
+          "tables_used": [
+            "strategy_comparison.sla_metrics"
+          ]
+        }
+      },
+      {
+        "id": "source_manifest",
+        "label": "Five raw evaluation report audit manifest",
+        "path": "artifacts/v1/evaluation/strategy_comparison_seed42/strategy_comparison.sqlite",
+        "query": {
+          "engine": "SQLite",
+          "language": "SQL",
+          "sql": "SELECT * FROM source_manifest ORDER BY policy;",
+          "description": "List each raw evaluation JSON and the metadata used to verify comparability.",
+          "executed_at": "2026-08-17T00:00:00+08:00",
+          "filters": [
+            "seed=42"
+          ],
+          "metric_definitions": [
+            "Comparable reports must be VALID and share seed, task trace, exogenous trace, topology, configuration, and dependency lock metadata."
+          ],
+          "tables_used": [
+            "strategy_comparison.source_manifest"
+          ]
+        }
+      }
+    ],
+    "charts": [
+      {
+        "id": "cost_per_cpu",
+        "title": "每完成 CPU 小时成本",
+        "subtitle": "Seed 42，同一任务轨迹；人民币/完成 CPU 小时，越低越好",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "五种策略中谁的单位计算成本最低？",
+        "rationale": "五个离散策略的一项同单位指标适合横向条形图。",
+        "comparisonContext": {
+          "baseline": "equal_weight",
+          "grain": "policy",
+          "unit": "CNY per completed CPU-hour",
+          "semanticFamily": "policy comparison"
+        },
+        "type": "horizontalBar",
+        "dataset": "strategy_comparison",
+        "sourceId": "strategy_summary",
+        "encodings": {
+          "x": {
+            "field": "policy_label",
+            "type": "nominal",
+            "label": "策略"
+          },
+          "y": {
+            "field": "cost_yuan_per_completed_cpu_hour",
+            "type": "quantitative",
+            "format": "number",
+            "label": "单位成本",
+            "unit": "CNY/CPU-hour"
+          }
+        },
+        "xAxisTitle": "策略",
+        "yAxisTitle": "人民币/完成 CPU 小时",
+        "valueFormat": "number",
+        "unit": "CNY/CPU-hour",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "single",
+            "root": "blue"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      },
+      {
+        "id": "green_coverage",
+        "title": "完成任务绿电覆盖率",
+        "subtitle": "Seed 42，同一任务轨迹；完成任务绿色能源占比，越高越好",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "五种策略中谁为完成任务匹配了更多绿电？",
+        "rationale": "五个离散策略的一项比例指标适合横向条形图。",
+        "comparisonContext": {
+          "baseline": "equal_weight",
+          "grain": "policy",
+          "unit": "fraction",
+          "semanticFamily": "policy comparison"
+        },
+        "type": "horizontalBar",
+        "dataset": "strategy_comparison",
+        "sourceId": "strategy_summary",
+        "encodings": {
+          "x": {
+            "field": "policy_label",
+            "type": "nominal",
+            "label": "策略"
+          },
+          "y": {
+            "field": "completed_task_green_coverage",
+            "type": "quantitative",
+            "format": "percent",
+            "label": "绿电覆盖率"
+          }
+        },
+        "xAxisTitle": "策略",
+        "yAxisTitle": "完成任务绿电覆盖率",
+        "valueFormat": "percent",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "single",
+            "root": "olive"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      },
+      {
+        "id": "soft_ontime",
+        "title": "Soft 任务首选窗口准时率",
+        "subtitle": "Seed 42，同一任务轨迹；比例越高越好，Soft 任务数为 1,429",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "五种策略对 Soft 任务首选开始窗口的保障程度如何？",
+        "rationale": "五个策略的一项同口径比例指标适合用横向条形图直接比较。",
+        "comparisonContext": {
+          "baseline": "equal_weight",
+          "grain": "policy",
+          "unit": "fraction",
+          "semanticFamily": "Soft SLA"
+        },
+        "type": "horizontalBar",
+        "dataset": "strategy_comparison",
+        "sourceId": "strategy_summary",
+        "encodings": {
+          "x": {
+            "field": "policy_label",
+            "type": "nominal",
+            "label": "策略"
+          },
+          "y": {
+            "field": "soft_preferred_on_time_rate",
+            "type": "quantitative",
+            "format": "percent",
+            "label": "Soft 准时率"
+          }
+        },
+        "xAxisTitle": "策略",
+        "yAxisTitle": "Soft 首选窗口准时率",
+        "valueFormat": "percent",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "single",
+            "root": "gold"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      },
+      {
+        "id": "flexible_ontime",
+        "title": "Flexible 任务首选窗口准时率",
+        "subtitle": "Seed 42，同一任务轨迹；比例越高越好，Flexible 任务数为 353",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "五种策略对 Flexible 任务首选开始窗口的保障程度如何？",
+        "rationale": "五个策略的一项同口径比例指标适合用横向条形图直接比较。",
+        "comparisonContext": {
+          "baseline": "equal_weight",
+          "grain": "policy",
+          "unit": "fraction",
+          "semanticFamily": "Flexible SLA"
+        },
+        "type": "horizontalBar",
+        "dataset": "strategy_comparison",
+        "sourceId": "strategy_summary",
+        "encodings": {
+          "x": {
+            "field": "policy_label",
+            "type": "nominal",
+            "label": "策略"
+          },
+          "y": {
+            "field": "flexible_preferred_on_time_rate",
+            "type": "quantitative",
+            "format": "percent",
+            "label": "Flexible 准时率"
+          }
+        },
+        "xAxisTitle": "策略",
+        "yAxisTitle": "Flexible 首选窗口准时率",
+        "valueFormat": "percent",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "single",
+            "root": "orange"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      },
+      {
+        "id": "active_wait_count",
+        "title": "活跃等待任务数",
+        "subtitle": "Seed 42，同一任务轨迹；用于诊断主动等待行为，不等同于失败任务",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "各策略有多少任务主动等待未来时隙？",
+        "rationale": "任务数为同单位离散策略比较，横向条形图便于查看差异幅度。",
+        "comparisonContext": {
+          "baseline": "equal_weight",
+          "grain": "policy",
+          "unit": "tasks",
+          "semanticFamily": "active waiting"
+        },
+        "type": "horizontalBar",
+        "dataset": "strategy_comparison",
+        "sourceId": "strategy_summary",
+        "encodings": {
+          "x": {
+            "field": "policy_label",
+            "type": "nominal",
+            "label": "策略"
+          },
+          "y": {
+            "field": "active_wait_count",
+            "type": "quantitative",
+            "format": "number",
+            "label": "活跃等待任务"
+          }
+        },
+        "xAxisTitle": "策略",
+        "yAxisTitle": "活跃等待任务数",
+        "valueFormat": "number",
+        "unit": "tasks",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "single",
+            "root": "pink"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      }
+    ],
+    "tables": [
+      {
+        "id": "policy_metrics",
+        "title": "五策略关键指标明细",
+        "subtitle": "Seed 42；成本变化和绿电变化均以 equal-weight 为基线",
+        "showDescription": true,
+        "dataset": "strategy_comparison",
+        "defaultSort": {
+          "field": "cost_yuan_per_completed_cpu_hour",
+          "direction": "asc"
+        },
+        "density": "spacious",
+        "sourceId": "strategy_summary",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "policy_label",
+            "label": "策略",
+            "type": "string"
+          },
+          {
+            "field": "total_economic_cost_yuan",
+            "label": "总经济成本（元）",
+            "format": "currency"
+          },
+          {
+            "field": "cost_yuan_per_completed_cpu_hour",
+            "label": "元/完成 CPU 小时",
+            "format": "number"
+          },
+          {
+            "field": "cost_change_vs_equal_weight",
+            "label": "成本相对 Equal-weight",
+            "format": "percent",
+            "movement": true
+          },
+          {
+            "field": "completed_task_green_coverage",
+            "label": "任务绿电覆盖率",
+            "format": "percent"
+          },
+          {
+            "field": "green_coverage_change_vs_equal_weight",
+            "label": "绿电覆盖变化",
+            "format": "percent",
+            "movement": true
+          },
+          {
+            "field": "completion_rate",
+            "label": "完成率",
+            "format": "percent"
+          },
+          {
+            "field": "reservation_reliability",
+            "label": "预约可靠性",
+            "format": "percent"
+          },
+          {
+            "field": "soft_preferred_on_time_rate",
+            "label": "Soft 准时率",
+            "format": "percent"
+          },
+          {
+            "field": "flexible_preferred_on_time_rate",
+            "label": "Flexible 准时率",
+            "format": "percent"
+          },
+          {
+            "field": "active_wait_count",
+            "label": "活跃等待任务",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "sla_detail",
+        "title": "策略与 SLA 类型明细",
+        "subtitle": "Seed 42；Hard 的首选窗口指标不适用，延迟使用仿真时间单位",
+        "showDescription": true,
+        "dataset": "sla_comparison",
+        "defaultSort": {
+          "field": "policy_label",
+          "direction": "asc"
+        },
+        "density": "dense",
+        "sourceId": "sla_summary",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "policy_label",
+            "label": "策略",
+            "type": "string"
+          },
+          {
+            "field": "sla_type",
+            "label": "SLA 类型",
+            "type": "string"
+          },
+          {
+            "field": "task_count",
+            "label": "任务数",
+            "format": "number"
+          },
+          {
+            "field": "preferred_on_time_rate",
+            "label": "首选窗口准时率",
+            "format": "percent"
+          },
+          {
+            "field": "acceptable_tardy_rate",
+            "label": "可接受迟到率",
+            "format": "percent"
+          },
+          {
+            "field": "expired_rate",
+            "label": "过期率",
+            "format": "percent"
+          },
+          {
+            "field": "start_delay_p50_sim",
+            "label": "开始延迟 P50",
+            "format": "number"
+          },
+          {
+            "field": "start_delay_p95_sim",
+            "label": "开始延迟 P95",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "raw_source_manifest",
+        "title": "五份原始评估文件",
+        "subtitle": "Seed 42；状态、轨迹哈希与任务总量用于验证可比性",
+        "showDescription": true,
+        "dataset": "source_reports",
+        "defaultSort": {
+          "field": "policy",
+          "direction": "asc"
+        },
+        "density": "dense",
+        "sourceId": "source_manifest",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "policy",
+            "label": "策略",
+            "type": "string"
+          },
+          {
+            "field": "source_file",
+            "label": "源文件",
+            "type": "string"
+          },
+          {
+            "field": "status",
+            "label": "状态",
+            "type": "string"
+          },
+          {
+            "field": "seed",
+            "label": "Seed",
+            "format": "number"
+          },
+          {
+            "field": "arrival_count",
+            "label": "到达任务",
+            "format": "number"
+          },
+          {
+            "field": "completed_count",
+            "label": "完成任务",
+            "format": "number"
+          },
+          {
+            "field": "unsettled_count",
+            "label": "未结算任务",
+            "format": "number"
+          }
+        ]
+      }
+    ],
+    "blocks": [
+      {
+        "id": "title",
+        "type": "markdown",
+        "body": "# 五种调度策略：Seed 42 初步对比",
+        "layout": "full"
+      },
+      {
+        "id": "executive_summary",
+        "type": "markdown",
+        "sourceId": "strategy_summary",
+        "body": "## Executive Summary\n\n- **DQN 在 seed 42 上优于 equal-weight，但还不能宣布稳定胜出。** DQN 的总经济成本低 **51.47 万元（-1.29%）**，完成任务绿电覆盖率高 **2.04 个百分点**，完成率同为 **99.38%**。\n- **DQN 找到了较好的成本—绿电折中，但不是单项冠军。** Lowest-cost 成本最低，却明显牺牲绿电与准时性；Highest-green 绿电覆盖最高，却付出更高成本。\n- **服务侧存在一项需要继续观察的权衡。** 相比 equal-weight，DQN 的 Soft 准时率提高约 **0.21 个百分点**，但 Flexible 准时率下降约 **1.98 个百分点**。\n- **下一步不是继续盲目训练，而是做正式配对评估。** 至少使用 10 个未参与训练的 seeds，逐 seed 运行 equal-weight 与 DQN，并计算配对 bootstrap 区间和质量门禁。",
+        "layout": "full"
+      },
+      {
+        "id": "definitions",
+        "type": "markdown",
+        "sourceId": "strategy_summary",
+        "body": "## 比较口径\n\n五个策略均使用 seed 42、相同任务轨迹和相同外生轨迹，共到达 **2,416** 个任务、完成 **2,401** 个任务。DQN 使用冻结模型并以 epsilon=0 推理。成本越低越好，绿电覆盖率、完成率和准时率越高越好。单一 seed 只适合诊断，不提供跨场景不确定性。",
+        "layout": "full"
+      },
+      {
+        "id": "cost_finding",
+        "type": "markdown",
+        "sourceId": "strategy_summary",
+        "body": "## DQN 降低了成本，但 Lowest-cost 仍是成本下界\n\nDQN 的单位完成计算成本为 **12.48 元/CPU 小时**，低于 equal-weight 的 **12.64 元/CPU 小时**。Lowest-cost 达到 **11.72 元/CPU 小时**，但其任务绿电覆盖只有 **42.96%**，Soft 准时率只有 **76.98%**。因此，DQN 的价值不是击败纯成本启发式，而是在较少牺牲服务与绿电的前提下降本。",
+        "layout": "full"
+      },
+      {
+        "id": "cost_chart_block",
+        "type": "chart",
+        "chartId": "cost_per_cpu",
+        "layout": "full"
+      },
+      {
+        "id": "green_finding",
+        "type": "markdown",
+        "sourceId": "strategy_summary",
+        "body": "## DQN 的绿电覆盖高于综合基线，但低于绿色优先策略\n\nDQN 的完成任务绿电覆盖率为 **70.47%**，比 equal-weight 高 **2.04 个百分点**。Highest-green 达到 **88.89%**，但单位成本升至 **13.22 元/CPU 小时**，Soft 准时率降至 **58.92%**。DQN 在 seed 42 上呈现出更均衡的多目标折中。",
+        "layout": "full"
+      },
+      {
+        "id": "green_chart_block",
+        "type": "chart",
+        "chartId": "green_coverage",
+        "layout": "full"
+      },
+      {
+        "id": "service_finding",
+        "type": "markdown",
+        "sourceId": "strategy_summary",
+        "body": "## 完成率一致，Flexible 准时率是当前主要风险\n\n五种策略完成率均为 **99.38%**，预约可靠性均为 **100%**。DQN 相比 equal-weight 将活跃等待任务从 **1,947** 降至 **1,134**，但 Flexible 准时率从 **96.32%** 降至 **94.33%**。正式门禁应保留完成率、可靠性、等待队列与分 SLA 准时率，避免总体指标掩盖局部退化。",
+        "layout": "full"
+      },
+      {
+        "id": "soft_chart",
+        "type": "chart",
+        "chartId": "soft_ontime",
+        "layout": "full"
+      },
+      {
+        "id": "flexible_finding",
+        "type": "markdown",
+        "sourceId": "strategy_summary",
+        "body": "## Flexible 准时率揭示局部服务权衡\n\nEarliest-feasible 的 Flexible 准时率为 **100%**，equal-weight 为 **96.32%**，DQN 为 **94.33%**。DQN 相比 equal-weight 下降 **1.98 个百分点**；这项退化没有影响总体完成率，但在正式多 seed 评估中必须作为独立护栏。",
+        "layout": "full"
+      },
+      {
+        "id": "flexible_chart",
+        "type": "chart",
+        "chartId": "flexible_ontime",
+        "layout": "full"
+      },
+      {
+        "id": "waiting_finding",
+        "type": "markdown",
+        "sourceId": "strategy_summary",
+        "body": "## DQN 的主动等待少于 Equal-weight\n\nDQN 记录 **1,134** 个活跃等待任务，比 equal-weight 少 **813 个（-41.8%）**。Lowest-cost 为 1,063，Highest-green 为 1,580；Earliest-feasible 不主动等待未来时隙。等待数量只描述策略行为，不应单独解释为服务质量改善。",
+        "layout": "full"
+      },
+      {
+        "id": "waiting_chart",
+        "type": "chart",
+        "chartId": "active_wait_count",
+        "layout": "full"
+      },
+      {
+        "id": "metrics_table_block",
+        "type": "table",
+        "tableId": "policy_metrics",
+        "layout": "full"
+      },
+      {
+        "id": "sla_detail_intro",
+        "type": "markdown",
+        "sourceId": "sla_summary",
+        "body": "## SLA 源指标明细\n\n下面按策略与 Hard、Soft、Flexible 三类 SLA 展开任务数、首选窗口准时率、可接受迟到率、过期率和开始延迟分位数。Hard 没有首选开始窗口，对应准时率字段为空属于定义上的不适用，而不是缺失数据。",
+        "layout": "full"
+      },
+      {
+        "id": "sla_detail_table",
+        "type": "table",
+        "tableId": "sla_detail",
+        "layout": "full"
+      },
+      {
+        "id": "source_data_intro",
+        "type": "markdown",
+        "sourceId": "source_manifest",
+        "body": "## 原始评估文件与可比性\n\n五份 JSON 均为 `VALID`，seed、任务轨迹、外生轨迹、拓扑、配置和依赖锁一致；每份均包含 2,416 个到达任务、2,401 个完成任务和 0 个未结算任务。由此支持 seed 42 内的公平横向比较。",
+        "layout": "full"
+      },
+      {
+        "id": "source_manifest_table",
+        "type": "table",
+        "tableId": "raw_source_manifest",
+        "layout": "full"
+      },
+      {
+        "id": "next_steps",
+        "type": "markdown",
+        "body": "## 接下来怎么做\n\n1. 冻结当前模型、代码、配置和 seed 列表，不再根据测试结果调参。\n2. 选至少 10 个未参与训练的 seeds；每个 seed 用相同轨迹分别评估 `equal_weight` 与 `candidate_dqn`。\n3. 用 `v1.analyze_v1` 对各 seed 的成对结果做 bootstrap 汇总，重点看成本、绿电、完成率和等待任务。\n4. 应用正式质量门禁：完成率不劣、物理约束零违规，并确认成本或绿电的改善区间不跨越不可接受阈值。\n5. 如果门禁通过，再扩大到 25 个左右 seeds 做最终确认；如果 Flexible 准时率持续下降，回到奖励权重或状态特征设计。",
+        "layout": "full"
+      },
+      {
+        "id": "questions",
+        "type": "markdown",
+        "body": "## 仍需回答的问题\n\n- DQN 的 -1.29% 成本变化在不同 seeds 上是否稳定，95% 区间是否排除 0？\n- Flexible 准时率下降是否跨 seeds 重复出现，是否超过业务可接受阈值？\n- 活跃等待任务减少是否来自更好的排队决策，还是任务类型构成偶然差异？",
+        "layout": "full"
+      },
+      {
+        "id": "caveats",
+        "type": "markdown",
+        "body": "## 限制与假设\n\n本报告只覆盖一个未见 seed，因此结论属于诊断性证据，不能替代正式统计验收。五份结果的任务与外生轨迹哈希一致，支持 seed 42 内的公平比较；但跨 seed 的方差、置信区间和泛化稳定性仍未知。",
+        "layout": "full"
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-08-17T00:00:00+08:00",
+    "status": "ready",
+    "datasets": {
+      "strategy_comparison": [
+        {
+          "policy": "earliest_feasible",
+          "policy_label": "Earliest feasible",
+          "arrival_count": 2416,
+          "reserved_ever_count": 2401,
+          "rejected_count": 0,
+          "expired_count": 15,
+          "completed_count": 2401,
+          "failed_count": 0,
+          "acceptance_rate": 0.9937913907284768,
+          "completion_rate": 0.9937913907284768,
+          "reservation_reliability": 1.0,
+          "total_economic_cost_yuan": 42226466.19676595,
+          "completed_cpu_hours": 3154857.9612481147,
+          "cost_yuan_per_completed_cpu_hour": 13.384585523482793,
+          "cost_yuan_per_arrived_cpu_hour": 13.384353801298083,
+          "completed_task_green_coverage": 0.5717365723661999,
+          "system_green_absorption_rate": 0.05313988997842703,
+          "hard_start_delay_p95_sim": 0.056998787016803484,
+          "soft_preferred_on_time_rate": 1.0,
+          "soft_start_delay_p95_sim": 0.19954990992607122,
+          "flexible_preferred_on_time_rate": 1.0,
+          "flexible_start_delay_p95_sim": 0.19561182670458663,
+          "active_wait_count": 0,
+          "mean_active_wait_sim": null,
+          "p95_active_wait_sim": null,
+          "positive_wait_benefit_rate": null,
+          "cost_change_vs_equal_weight": 0.05880783110377611,
+          "green_coverage_change_vs_equal_weight": -0.11256601825001211,
+          "soft_ontime_change_vs_equal_weight": 0.005598320503848897,
+          "flexible_ontime_change_vs_equal_weight": 0.03682719546742208,
+          "active_wait_change_vs_equal_weight": -1947
+        },
+        {
+          "policy": "lowest_cost",
+          "policy_label": "Lowest cost",
+          "arrival_count": 2416,
+          "reserved_ever_count": 2401,
+          "rejected_count": 0,
+          "expired_count": 15,
+          "completed_count": 2401,
+          "failed_count": 0,
+          "acceptance_rate": 0.9937913907284768,
+          "completion_rate": 0.9937913907284768,
+          "reservation_reliability": 1.0,
+          "total_economic_cost_yuan": 36984463.71081995,
+          "completed_cpu_hours": 3154857.9612481147,
+          "cost_yuan_per_completed_cpu_hour": 11.723020232640927,
+          "cost_yuan_per_arrived_cpu_hour": 11.722817276497464,
+          "completed_task_green_coverage": 0.42958208554232885,
+          "system_green_absorption_rate": 0.026670419038499704,
+          "hard_start_delay_p95_sim": 0.8520390802617728,
+          "soft_preferred_on_time_rate": 0.7697690692792163,
+          "soft_start_delay_p95_sim": 11.595677490886288,
+          "flexible_preferred_on_time_rate": 0.9263456090651558,
+          "flexible_start_delay_p95_sim": 1080.3888317440715,
+          "active_wait_count": 1063,
+          "mean_active_wait_sim": 141.01333019755427,
+          "p95_active_wait_sim": 793.723,
+          "positive_wait_benefit_rate": 0.9068673565380997,
+          "cost_change_vs_equal_weight": -0.07263279802493303,
+          "green_coverage_change_vs_equal_weight": -0.25472050507388316,
+          "soft_ontime_change_vs_equal_weight": -0.2246326102169348,
+          "flexible_ontime_change_vs_equal_weight": -0.03682719546742208,
+          "active_wait_change_vs_equal_weight": -884
+        },
+        {
+          "policy": "highest_green",
+          "policy_label": "Highest green",
+          "arrival_count": 2416,
+          "reserved_ever_count": 2401,
+          "rejected_count": 0,
+          "expired_count": 15,
+          "completed_count": 2401,
+          "failed_count": 0,
+          "acceptance_rate": 0.9937913907284768,
+          "completion_rate": 0.9937913907284768,
+          "reservation_reliability": 1.0,
+          "total_economic_cost_yuan": 41708269.82492666,
+          "completed_cpu_hours": 3154857.9612481147,
+          "cost_yuan_per_completed_cpu_hour": 13.220332052104865,
+          "cost_yuan_per_arrived_cpu_hour": 13.220103173577375,
+          "completed_task_green_coverage": 0.8888863715666995,
+          "system_green_absorption_rate": 0.05834119011966385,
+          "hard_start_delay_p95_sim": 0.7660268022077332,
+          "soft_preferred_on_time_rate": 0.5892232330300909,
+          "soft_start_delay_p95_sim": 45.19732371190514,
+          "flexible_preferred_on_time_rate": 0.9206798866855525,
+          "flexible_start_delay_p95_sim": 1069.4090217834687,
+          "active_wait_count": 1580,
+          "mean_active_wait_sim": 87.73145253164559,
+          "p95_active_wait_sim": 545.0847499999998,
+          "positive_wait_benefit_rate": 0.9626582278481013,
+          "cost_change_vs_equal_weight": 0.045814312441894135,
+          "green_coverage_change_vs_equal_weight": 0.20458378095048746,
+          "soft_ontime_change_vs_equal_weight": -0.40517844646606016,
+          "flexible_ontime_change_vs_equal_weight": -0.04249291784702547,
+          "active_wait_change_vs_equal_weight": -367
+        },
+        {
+          "policy": "equal_weight",
+          "policy_label": "Equal weight",
+          "arrival_count": 2416,
+          "reserved_ever_count": 2401,
+          "rejected_count": 0,
+          "expired_count": 15,
+          "completed_count": 2401,
+          "failed_count": 0,
+          "acceptance_rate": 0.9937913907284768,
+          "completion_rate": 0.9937913907284768,
+          "reservation_reliability": 1.0,
+          "total_economic_cost_yuan": 39881142.69304761,
+          "completed_cpu_hours": 3154857.9612481147,
+          "cost_yuan_per_completed_cpu_hour": 12.641184859324051,
+          "cost_yuan_per_arrived_cpu_hour": 12.64096600734931,
+          "completed_task_green_coverage": 0.684302590616212,
+          "system_green_absorption_rate": 0.04193945065241484,
+          "hard_start_delay_p95_sim": 0.7748709157882304,
+          "soft_preferred_on_time_rate": 0.9944016794961511,
+          "soft_start_delay_p95_sim": 43.289352155483385,
+          "flexible_preferred_on_time_rate": 0.9631728045325779,
+          "flexible_start_delay_p95_sim": 1236.7638263067715,
+          "active_wait_count": 1947,
+          "mean_active_wait_sim": 106.2597175141243,
+          "p95_active_wait_sim": 779.0495000000001,
+          "positive_wait_benefit_rate": 0.997431946584489,
+          "cost_change_vs_equal_weight": 0.0,
+          "green_coverage_change_vs_equal_weight": 0.0,
+          "soft_ontime_change_vs_equal_weight": 0.0,
+          "flexible_ontime_change_vs_equal_weight": 0.0,
+          "active_wait_change_vs_equal_weight": 0
+        },
+        {
+          "policy": "candidate_dqn",
+          "policy_label": "Candidate DQN",
+          "arrival_count": 2416,
+          "reserved_ever_count": 2401,
+          "rejected_count": 0,
+          "expired_count": 15,
+          "completed_count": 2401,
+          "failed_count": 0,
+          "acceptance_rate": 0.9937913907284768,
+          "completion_rate": 0.9937913907284768,
+          "reservation_reliability": 1.0,
+          "total_economic_cost_yuan": 39366416.98465782,
+          "completed_cpu_hours": 3154857.9612481147,
+          "cost_yuan_per_completed_cpu_hour": 12.47803148927941,
+          "cost_yuan_per_arrived_cpu_hour": 12.477815461916254,
+          "completed_task_green_coverage": 0.704673788349581,
+          "system_green_absorption_rate": 0.043187661712295475,
+          "hard_start_delay_p95_sim": 0.6715531008655263,
+          "soft_preferred_on_time_rate": 0.9965010496850945,
+          "soft_start_delay_p95_sim": 9.956930773051603,
+          "flexible_preferred_on_time_rate": 0.943342776203966,
+          "flexible_start_delay_p95_sim": 1225.9372978039962,
+          "active_wait_count": 1134,
+          "mean_active_wait_sim": 122.4931349206351,
+          "p95_active_wait_sim": 680.4692499999976,
+          "positive_wait_benefit_rate": 0.9770723104056437,
+          "cost_change_vs_equal_weight": -0.012906493486194097,
+          "green_coverage_change_vs_equal_weight": 0.02037119773336904,
+          "soft_ontime_change_vs_equal_weight": 0.0020993701889433503,
+          "flexible_ontime_change_vs_equal_weight": -0.019830028328611915,
+          "active_wait_change_vs_equal_weight": -813
+        }
+      ],
+      "sla_comparison": [
+        {
+          "policy": "earliest_feasible",
+          "policy_label": "Earliest feasible",
+          "sla_type": "Hard",
+          "task_count": 634,
+          "preferred_on_time_rate": null,
+          "acceptable_tardy_rate": null,
+          "expired_rate": 0.02365930599369085,
+          "start_delay_p50_sim": 0.026224084094224054,
+          "start_delay_p95_sim": 0.056998787016803484,
+          "preferred_start_tardiness_p50": null,
+          "preferred_start_tardiness_p95": null
+        },
+        {
+          "policy": "earliest_feasible",
+          "policy_label": "Earliest feasible",
+          "sla_type": "Soft",
+          "task_count": 1429,
+          "preferred_on_time_rate": 1.0,
+          "acceptable_tardy_rate": 0.0,
+          "expired_rate": 0.0,
+          "start_delay_p50_sim": 0.18478138108275743,
+          "start_delay_p95_sim": 0.19954990992607122,
+          "preferred_start_tardiness_p50": 0.0,
+          "preferred_start_tardiness_p95": 0.0
+        },
+        {
+          "policy": "earliest_feasible",
+          "policy_label": "Earliest feasible",
+          "sla_type": "Flexible",
+          "task_count": 353,
+          "preferred_on_time_rate": 1.0,
+          "acceptable_tardy_rate": 0.0,
+          "expired_rate": 0.0,
+          "start_delay_p50_sim": 0.18212104731043155,
+          "start_delay_p95_sim": 0.19561182670458663,
+          "preferred_start_tardiness_p50": 0.0,
+          "preferred_start_tardiness_p95": 0.0
+        },
+        {
+          "policy": "lowest_cost",
+          "policy_label": "Lowest cost",
+          "sla_type": "Hard",
+          "task_count": 634,
+          "preferred_on_time_rate": null,
+          "acceptable_tardy_rate": null,
+          "expired_rate": 0.02365930599369085,
+          "start_delay_p50_sim": 0.044028364019254695,
+          "start_delay_p95_sim": 0.8520390802617728,
+          "preferred_start_tardiness_p50": null,
+          "preferred_start_tardiness_p95": null
+        },
+        {
+          "policy": "lowest_cost",
+          "policy_label": "Lowest cost",
+          "sla_type": "Soft",
+          "task_count": 1429,
+          "preferred_on_time_rate": 0.7697690692792163,
+          "acceptable_tardy_rate": 0.23023093072078377,
+          "expired_rate": 0.0,
+          "start_delay_p50_sim": 0.18870258095029158,
+          "start_delay_p95_sim": 11.595677490886288,
+          "preferred_start_tardiness_p50": 0.0,
+          "preferred_start_tardiness_p95": 0.9990395104915883
+        },
+        {
+          "policy": "lowest_cost",
+          "policy_label": "Lowest cost",
+          "sla_type": "Flexible",
+          "task_count": 353,
+          "preferred_on_time_rate": 0.9263456090651558,
+          "acceptable_tardy_rate": 0.07365439093484419,
+          "expired_rate": 0.0,
+          "start_delay_p50_sim": 267.01356772431234,
+          "start_delay_p95_sim": 1080.3888317440715,
+          "preferred_start_tardiness_p50": 0.0,
+          "preferred_start_tardiness_p95": 0.4001211231035731
+        },
+        {
+          "policy": "highest_green",
+          "policy_label": "Highest green",
+          "sla_type": "Hard",
+          "task_count": 634,
+          "preferred_on_time_rate": null,
+          "acceptable_tardy_rate": null,
+          "expired_rate": 0.02365930599369085,
+          "start_delay_p50_sim": 0.03886171118608672,
+          "start_delay_p95_sim": 0.7660268022077332,
+          "preferred_start_tardiness_p50": null,
+          "preferred_start_tardiness_p95": null
+        },
+        {
+          "policy": "highest_green",
+          "policy_label": "Highest green",
+          "sla_type": "Soft",
+          "task_count": 1429,
+          "preferred_on_time_rate": 0.5892232330300909,
+          "acceptable_tardy_rate": 0.410776766969909,
+          "expired_rate": 0.0,
+          "start_delay_p50_sim": 3.6033566955069887,
+          "start_delay_p95_sim": 45.19732371190514,
+          "preferred_start_tardiness_p50": 0.0,
+          "preferred_start_tardiness_p95": 0.9995753622502064
+        },
+        {
+          "policy": "highest_green",
+          "policy_label": "Highest green",
+          "sla_type": "Flexible",
+          "task_count": 353,
+          "preferred_on_time_rate": 0.9206798866855525,
+          "acceptable_tardy_rate": 0.07932011331444759,
+          "expired_rate": 0.0,
+          "start_delay_p50_sim": 230.378664864032,
+          "start_delay_p95_sim": 1069.4090217834687,
+          "preferred_start_tardiness_p50": 0.0,
+          "preferred_start_tardiness_p95": 0.9999689469580822
+        },
+        {
+          "policy": "equal_weight",
+          "policy_label": "Equal weight",
+          "sla_type": "Hard",
+          "task_count": 634,
+          "preferred_on_time_rate": null,
+          "acceptable_tardy_rate": null,
+          "expired_rate": 0.02365930599369085,
+          "start_delay_p50_sim": 0.057882109283610816,
+          "start_delay_p95_sim": 0.7748709157882304,
+          "preferred_start_tardiness_p50": null,
+          "preferred_start_tardiness_p95": null
+        },
+        {
+          "policy": "equal_weight",
+          "policy_label": "Equal weight",
+          "sla_type": "Soft",
+          "task_count": 1429,
+          "preferred_on_time_rate": 0.9944016794961511,
+          "acceptable_tardy_rate": 0.005598320503848845,
+          "expired_rate": 0.0,
+          "start_delay_p50_sim": 4.699633160603639,
+          "start_delay_p95_sim": 43.289352155483385,
+          "preferred_start_tardiness_p50": 0.0,
+          "preferred_start_tardiness_p95": 0.0
+        },
+        {
+          "policy": "equal_weight",
+          "policy_label": "Equal weight",
+          "sla_type": "Flexible",
+          "task_count": 353,
+          "preferred_on_time_rate": 0.9631728045325779,
+          "acceptable_tardy_rate": 0.036827195467422094,
+          "expired_rate": 0.0,
+          "start_delay_p50_sim": 473.85235005197677,
+          "start_delay_p95_sim": 1236.7638263067715,
+          "preferred_start_tardiness_p50": 0.0,
+          "preferred_start_tardiness_p95": 0.0
+        },
+        {
+          "policy": "candidate_dqn",
+          "policy_label": "Candidate DQN",
+          "sla_type": "Hard",
+          "task_count": 634,
+          "preferred_on_time_rate": null,
+          "acceptable_tardy_rate": null,
+          "expired_rate": 0.02365930599369085,
+          "start_delay_p50_sim": 0.035933133709903586,
+          "start_delay_p95_sim": 0.6715531008655263,
+          "preferred_start_tardiness_p50": null,
+          "preferred_start_tardiness_p95": null
+        },
+        {
+          "policy": "candidate_dqn",
+          "policy_label": "Candidate DQN",
+          "sla_type": "Soft",
+          "task_count": 1429,
+          "preferred_on_time_rate": 0.9965010496850945,
+          "acceptable_tardy_rate": 0.0034989503149055285,
+          "expired_rate": 0.0,
+          "start_delay_p50_sim": 0.19105935580620326,
+          "start_delay_p95_sim": 9.956930773051603,
+          "preferred_start_tardiness_p50": 0.0,
+          "preferred_start_tardiness_p95": 0.0
+        },
+        {
+          "policy": "candidate_dqn",
+          "policy_label": "Candidate DQN",
+          "sla_type": "Flexible",
+          "task_count": 353,
+          "preferred_on_time_rate": 0.943342776203966,
+          "acceptable_tardy_rate": 0.056657223796033995,
+          "expired_rate": 0.0,
+          "start_delay_p50_sim": 295.6292896075163,
+          "start_delay_p95_sim": 1225.9372978039962,
+          "preferred_start_tardiness_p50": 0.0,
+          "preferred_start_tardiness_p95": 3.701353175612167e-06
+        }
+      ],
+      "source_reports": [
+        {
+          "policy": "earliest_feasible",
+          "source_file": "artifacts/v1/evaluation/earliest_feasible_seed42.json",
+          "status": "VALID",
+          "seed": 42,
+          "task_trace_hash": "db427715e1c4463a813d0fe3639fdecc1cd9107500b45a011f00dac41460bb84",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "arrival_count": 2416,
+          "completed_count": 2401,
+          "unsettled_count": 0
+        },
+        {
+          "policy": "lowest_cost",
+          "source_file": "artifacts/v1/evaluation/lowest_cost_seed42.json",
+          "status": "VALID",
+          "seed": 42,
+          "task_trace_hash": "db427715e1c4463a813d0fe3639fdecc1cd9107500b45a011f00dac41460bb84",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "arrival_count": 2416,
+          "completed_count": 2401,
+          "unsettled_count": 0
+        },
+        {
+          "policy": "highest_green",
+          "source_file": "artifacts/v1/evaluation/highest_green_seed42.json",
+          "status": "VALID",
+          "seed": 42,
+          "task_trace_hash": "db427715e1c4463a813d0fe3639fdecc1cd9107500b45a011f00dac41460bb84",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "arrival_count": 2416,
+          "completed_count": 2401,
+          "unsettled_count": 0
+        },
+        {
+          "policy": "equal_weight",
+          "source_file": "artifacts/v1/evaluation/equal_weight_seed42.json",
+          "status": "VALID",
+          "seed": 42,
+          "task_trace_hash": "db427715e1c4463a813d0fe3639fdecc1cd9107500b45a011f00dac41460bb84",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "arrival_count": 2416,
+          "completed_count": 2401,
+          "unsettled_count": 0
+        },
+        {
+          "policy": "candidate_dqn",
+          "source_file": "artifacts/v1/evaluation/candidate_dqn_seed42.json",
+          "status": "VALID",
+          "seed": 42,
+          "task_trace_hash": "db427715e1c4463a813d0fe3639fdecc1cd9107500b45a011f00dac41460bb84",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "arrival_count": 2416,
+          "completed_count": 2401,
+          "unsettled_count": 0
+        }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "id": "strategy_summary",
+      "label": "Seed 42 five-policy reviewed aggregate metrics",
+      "path": "artifacts/v1/evaluation/strategy_comparison_seed42/strategy_comparison.sqlite",
+      "query": {
+        "engine": "SQLite",
+        "language": "SQL",
+        "sql": "SELECT * FROM policy_metrics ORDER BY policy;",
+        "description": "Read one reviewed aggregate metric row per policy after paired metadata validation.",
+        "executed_at": "2026-08-17T00:00:00+08:00",
+        "filters": [
+          "seed=42",
+          "evaluation status=VALID",
+          "identical task and exogenous trace hashes",
+          "zero unsettled tasks",
+          "candidate_dqn epsilon=0"
+        ],
+        "metric_definitions": [
+          "Economic cost is total attributed yuan; lower is better.",
+          "Cost per completed CPU-hour divides total economic cost by completed CPU-hours; lower is better.",
+          "Completed-task green coverage divides completed-task green energy by completed-task energy; higher is better.",
+          "Completion rate divides completed tasks by arrivals; reservation reliability divides completed reservations by tasks ever reserved.",
+          "All changes versus equal-weight are policy minus equal-weight."
+        ],
+        "tables_used": [
+          "strategy_comparison.policy_metrics"
+        ]
+      }
+    },
+    {
+      "id": "sla_summary",
+      "label": "Seed 42 policy-by-SLA reviewed metrics",
+      "path": "artifacts/v1/evaluation/strategy_comparison_seed42/strategy_comparison.sqlite",
+      "query": {
+        "engine": "SQLite",
+        "language": "SQL",
+        "sql": "SELECT * FROM sla_metrics ORDER BY policy, sla_type;",
+        "description": "Read the reviewed SLA metrics at policy and SLA-type grain.",
+        "executed_at": "2026-08-17T00:00:00+08:00",
+        "filters": [
+          "seed=42",
+          "evaluation status=VALID"
+        ],
+        "metric_definitions": [
+          "Preferred on-time rate is the share starting within the preferred window for Soft and Flexible tasks.",
+          "Start-delay percentiles use simulation-time units.",
+          "Hard tasks do not have a preferred-start deadline, so preferred on-time is not applicable."
+        ],
+        "tables_used": [
+          "strategy_comparison.sla_metrics"
+        ]
+      }
+    },
+    {
+      "id": "source_manifest",
+      "label": "Five raw evaluation report audit manifest",
+      "path": "artifacts/v1/evaluation/strategy_comparison_seed42/strategy_comparison.sqlite",
+      "query": {
+        "engine": "SQLite",
+        "language": "SQL",
+        "sql": "SELECT * FROM source_manifest ORDER BY policy;",
+        "description": "List each raw evaluation JSON and the metadata used to verify comparability.",
+        "executed_at": "2026-08-17T00:00:00+08:00",
+        "filters": [
+          "seed=42"
+        ],
+        "metric_definitions": [
+          "Comparable reports must be VALID and share seed, task trace, exogenous trace, topology, configuration, and dependency lock metadata."
+        ],
+        "tables_used": [
+          "strategy_comparison.source_manifest"
+        ]
+      }
+    }
+  ]
+}
