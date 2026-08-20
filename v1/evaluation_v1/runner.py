@@ -110,6 +110,7 @@ class EvaluationReport:
     task_records: Tuple[TaskEvaluationRecord, ...]
     decision_records: tuple
     accounting_report: Optional[AccountingReport]
+    diagnostics: Optional[Mapping[str, object]] = None
 
 
 class EvaluationRunner:

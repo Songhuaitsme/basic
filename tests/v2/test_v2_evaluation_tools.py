@@ -120,6 +120,62 @@ class V2EvaluationToolsTest(unittest.TestCase):
                     root / "source_data",
                 )
 
+    def test_export_writes_four_level_and_runtime_tables(self):
+        with self._temporary_directory() as temporary:
+            root = Path(temporary)
+            paths = self._write_reports(root)
+            for path in paths:
+                report = json.loads(path.read_text(encoding="utf-8"))
+                report.update({
+                    "task_records": [{
+                        "task_id": "task-1", "final_state": "Completed",
+                        "target_node": "N", "path_id": "local-N",
+                        "cpu_work_cpu_hours": 1.0,
+                        "scheduler_queue_delay_sim": 0.0,
+                        "start_delay_sim": 0.0,
+                        "completion_delay_sim": 1.0,
+                        "reservation_lead_sim": 0.0,
+                        "transmission_start_sim": None,
+                        "task_attributed_cost_yuan": 5.0,
+                        "task_attributed_green_energy_mwh": 0.5,
+                    }],
+                    "decision_records": [{
+                        "task_id": "task-1", "decision_id": "decision-1",
+                        "candidate_count": 3, "decision_wall_seconds": 0.01,
+                    }],
+                    "accounting_report": {"task_records": []},
+                    "diagnostics": {
+                        "task_summary": {"decision_wall_seconds": {
+                            "count": 1, "mean": 0.01, "p50": 0.01,
+                            "p95": 0.01, "maximum": 0.01,
+                        }},
+                        "time_records": [{
+                            "start_sim": 0.0, "end_sim": 1.0,
+                            "mean_node_cpu_utilization": 1.0,
+                        }],
+                        "node_records": [{"node": "N", "reservation_count": 1}],
+                        "network_records": [{"edge": "A--N", "peak_utilization": 0.2}],
+                        "runtime_summary": {"total_wall_seconds": 0.1},
+                    },
+                })
+                path.write_text(json.dumps(report), encoding="utf-8")
+
+            output = root / "source_data"
+            validation = export_reports(paths, output)
+
+            self.assertEqual(validation["task_row_count"], 5)
+            self.assertEqual(validation["decision_row_count"], 5)
+            self.assertEqual(validation["time_row_count"], 5)
+            self.assertEqual(validation["node_row_count"], 5)
+            self.assertEqual(validation["network_row_count"], 5)
+            self.assertEqual(validation["runtime_row_count"], 5)
+            self.assertTrue(all(validation["granularity_coverage"].values()))
+            for filename in (
+                "task_metrics.csv", "decision_metrics.csv", "time_metrics.csv",
+                "node_metrics.csv", "network_metrics.csv", "runtime_metrics.csv",
+            ):
+                self.assertTrue((output / filename).is_file())
+
 
 if __name__ == "__main__":
     unittest.main()

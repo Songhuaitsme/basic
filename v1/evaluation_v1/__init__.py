@@ -18,6 +18,11 @@ from .runner import (
     EvaluationStatus,
     TaskEvaluationRecord,
 )
+from .diagnostics import (
+    DIAGNOSTIC_SCHEMA_VERSION,
+    METRIC_DEFINITIONS,
+    build_evaluation_diagnostics,
+)
 from .statistics import (
     BootstrapSummary,
     LoadMetrics,
@@ -47,8 +52,11 @@ __all__ = [
     "SlaMetrics",
     "TaskOutcome",
     "TaskEvaluationRecord",
+    "DIAGNOSTIC_SCHEMA_VERSION",
+    "METRIC_DEFINITIONS",
     "UtilizationInterval",
     "build_seed_metrics",
+    "build_evaluation_diagnostics",
     "linear_percentile",
     "ratio_metric",
     "summarize_active_wait",

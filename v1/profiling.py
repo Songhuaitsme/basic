@@ -4,6 +4,9 @@ import math
 
 
 PROFILE_DETAIL_KEYS = (
+    "scheduler_decision_seconds",
+    "policy_selection_seconds",
+    "reservation_commit_seconds",
     "candidate_prepare_seconds",
     "candidate_stream_seconds",
     "replay_candidate_generation_seconds",
@@ -28,7 +31,17 @@ PROFILE_DETAIL_KEYS = (
     "candidate_sla_and_item_seconds",
 )
 
-PROFILE_NESTED_STAGE_KEYS = PROFILE_DETAIL_KEYS[:9]
+PROFILE_NESTED_STAGE_KEYS = (
+    "candidate_prepare_seconds",
+    "candidate_stream_seconds",
+    "replay_candidate_generation_seconds",
+    "transition_feature_cache_seconds",
+    "candidate_feature_encoding_seconds",
+    "selection_inference_seconds",
+    "bootstrap_inference_seconds",
+    "training_forward_seconds",
+    "backpropagation_seconds",
+)
 
 
 class TrainingPerformanceProfiler:
@@ -37,6 +50,9 @@ class TrainingPerformanceProfiler:
     def __init__(self):
         self.timings = {key: 0.0 for key in PROFILE_DETAIL_KEYS}
         self.counters = {
+            "scheduler_decision_count": 0,
+            "policy_selection_count": 0,
+            "reservation_commit_attempt_count": 0,
             "prepare_theoretical_slot_count": 0,
             "selection_candidate_count": 0,
             "replay_candidate_feature_count": 0,
@@ -56,6 +72,9 @@ class TrainingPerformanceProfiler:
             self.timings.setdefault(key, 0.0)
         self.counters.setdefault("virtual_cycle_count", 0)
         self.counters.setdefault("idle_cycle_skip_count", 0)
+        self.counters.setdefault("scheduler_decision_count", 0)
+        self.counters.setdefault("policy_selection_count", 0)
+        self.counters.setdefault("reservation_commit_attempt_count", 0)
 
     def add(self, key, seconds):
         if key not in self.timings:
@@ -181,6 +200,17 @@ class TrainingPerformanceProfiler:
                 for key, seconds in feasibility_internal.items()
             },
             "counters": dict(self.counters),
+            "decision_stage_seconds": {
+                "scheduler_decision_total": self.timings[
+                    "scheduler_decision_seconds"
+                ],
+                "policy_selection_total": self.timings[
+                    "policy_selection_seconds"
+                ],
+                "reservation_commit_total": self.timings[
+                    "reservation_commit_seconds"
+                ],
+            },
             "selection_candidates_per_second": (
                 selected / selection_scan_seconds
                 if selection_scan_seconds > 0.0 else None

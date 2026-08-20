@@ -1,0 +1,2689 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "V2 五种调度策略指标对比",
+    "description": "冻结策略在配对仿真任务上的成本、绿电、可靠性、SLA 与等待行为比较。",
+    "generatedAt": "2026-08-19T16:23:12.725083+00:00",
+    "cards": [
+      {
+        "id": "dqn_cost_card",
+        "description": "DQN 单位成本及相对基线变化。",
+        "dataset": "headline",
+        "sourceId": "metrics_long",
+        "metrics": [
+          {
+            "label": "DQN 单位成本",
+            "field": "dqn_cost",
+            "format": "number"
+          },
+          {
+            "label": "相对 Equal weight",
+            "field": "dqn_cost_delta",
+            "format": "percent",
+            "signed": true
+          }
+        ]
+      },
+      {
+        "id": "dqn_green_card",
+        "description": "DQN 任务绿电覆盖率及百分点变化。",
+        "dataset": "headline",
+        "sourceId": "metrics_long",
+        "metrics": [
+          {
+            "label": "DQN 绿电覆盖率",
+            "field": "dqn_green",
+            "format": "percent"
+          },
+          {
+            "label": "相对 Equal weight",
+            "field": "dqn_green_delta",
+            "format": "percent",
+            "signed": true
+          }
+        ]
+      },
+      {
+        "id": "completion_card",
+        "description": "DQN 完成任务数占到达任务数的比例。",
+        "dataset": "headline",
+        "sourceId": "metrics_long",
+        "metrics": [
+          {
+            "label": "DQN 完成率",
+            "field": "completion",
+            "format": "percent"
+          }
+        ]
+      },
+      {
+        "id": "soft_card",
+        "description": "DQN Soft 准时率相对基线变化。",
+        "dataset": "headline",
+        "sourceId": "metrics_long",
+        "metrics": [
+          {
+            "label": "Soft 准时率变化",
+            "field": "soft_delta",
+            "format": "percent",
+            "signed": true
+          }
+        ]
+      },
+      {
+        "id": "flexible_card",
+        "description": "DQN Flexible 准时率相对基线变化。",
+        "dataset": "headline",
+        "sourceId": "metrics_long",
+        "metrics": [
+          {
+            "label": "Flexible 准时率变化",
+            "field": "flexible_delta",
+            "format": "percent",
+            "signed": true
+          }
+        ]
+      }
+    ],
+    "charts": [
+      {
+        "id": "cost_chart",
+        "title": "每完成 CPU 小时成本",
+        "subtitle": "Seeds: 42；人民币/完成 CPU 小时，越低越好",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "五种策略的CNY/CPU-hour如何比较？",
+        "rationale": "五个离散策略的一项同单位指标适合使用横向条形图直接比较。",
+        "comparisonContext": {
+          "baseline": "equal_weight",
+          "grain": "policy",
+          "unit": "CNY/CPU-hour",
+          "semanticFamily": "policy comparison"
+        },
+        "type": "horizontalBar",
+        "dataset": "cost_comparison",
+        "sourceId": "metrics_long",
+        "encodings": {
+          "x": {
+            "field": "policy_label",
+            "type": "nominal",
+            "label": "策略"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "format": "number",
+            "label": "CNY/CPU-hour"
+          },
+          "tooltip": [
+            {
+              "field": "seed_count",
+              "type": "quantitative",
+              "label": "Seed 数"
+            },
+            {
+              "field": "ci_low",
+              "type": "quantitative",
+              "label": "95% CI 下界"
+            },
+            {
+              "field": "ci_high",
+              "type": "quantitative",
+              "label": "95% CI 上界"
+            }
+          ]
+        },
+        "xAxisTitle": "策略",
+        "yAxisTitle": "CNY/CPU-hour",
+        "valueFormat": "number",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "single",
+            "root": "blue"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      },
+      {
+        "id": "green_chart",
+        "title": "完成任务绿电覆盖率",
+        "subtitle": "Seeds: 42；完成任务绿电能量占比，越高越好",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "五种策略的绿电覆盖率如何比较？",
+        "rationale": "五个离散策略的一项同单位指标适合使用横向条形图直接比较。",
+        "comparisonContext": {
+          "baseline": "equal_weight",
+          "grain": "policy",
+          "unit": "绿电覆盖率",
+          "semanticFamily": "policy comparison"
+        },
+        "type": "horizontalBar",
+        "dataset": "green_comparison",
+        "sourceId": "metrics_long",
+        "encodings": {
+          "x": {
+            "field": "policy_label",
+            "type": "nominal",
+            "label": "策略"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "format": "percent",
+            "label": "绿电覆盖率"
+          },
+          "tooltip": [
+            {
+              "field": "seed_count",
+              "type": "quantitative",
+              "label": "Seed 数"
+            },
+            {
+              "field": "ci_low",
+              "type": "quantitative",
+              "label": "95% CI 下界"
+            },
+            {
+              "field": "ci_high",
+              "type": "quantitative",
+              "label": "95% CI 上界"
+            }
+          ]
+        },
+        "xAxisTitle": "策略",
+        "yAxisTitle": "绿电覆盖率",
+        "valueFormat": "percent",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "single",
+            "root": "olive"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      },
+      {
+        "id": "reliability_chart",
+        "title": "任务完成率",
+        "subtitle": "Seeds: 42；完成任务数/到达任务数，越高越好",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "五种策略的完成率如何比较？",
+        "rationale": "五个离散策略的一项同单位指标适合使用横向条形图直接比较。",
+        "comparisonContext": {
+          "baseline": "equal_weight",
+          "grain": "policy",
+          "unit": "完成率",
+          "semanticFamily": "policy comparison"
+        },
+        "type": "horizontalBar",
+        "dataset": "reliability_comparison",
+        "sourceId": "metrics_long",
+        "encodings": {
+          "x": {
+            "field": "policy_label",
+            "type": "nominal",
+            "label": "策略"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "format": "percent",
+            "label": "完成率"
+          },
+          "tooltip": [
+            {
+              "field": "seed_count",
+              "type": "quantitative",
+              "label": "Seed 数"
+            },
+            {
+              "field": "ci_low",
+              "type": "quantitative",
+              "label": "95% CI 下界"
+            },
+            {
+              "field": "ci_high",
+              "type": "quantitative",
+              "label": "95% CI 上界"
+            }
+          ]
+        },
+        "xAxisTitle": "策略",
+        "yAxisTitle": "完成率",
+        "valueFormat": "percent",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "single",
+            "root": "gold"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      },
+      {
+        "id": "sla_chart",
+        "title": "Soft 与 Flexible 首选窗口准时率",
+        "subtitle": "Seeds: 42；同一策略内比较两类 SLA，越高越好",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "五种策略在 Soft 和 Flexible 任务上的首选窗口准时率如何？",
+        "rationale": "两个同单位 SLA 序列使用分组柱形图，保留策略和 SLA 类型两个维度。",
+        "comparisonContext": {
+          "baseline": "equal_weight",
+          "grain": "policy by SLA type",
+          "unit": "fraction",
+          "semanticFamily": "SLA comparison"
+        },
+        "type": "bar",
+        "dataset": "sla_ontime",
+        "sourceId": "metrics_long",
+        "encodings": {
+          "x": {
+            "field": "policy_label",
+            "type": "nominal",
+            "label": "策略"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "format": "percent",
+            "label": "准时率"
+          },
+          "color": {
+            "field": "sla_type",
+            "type": "nominal",
+            "label": "SLA 类型"
+          },
+          "tooltip": [
+            {
+              "field": "seed_count",
+              "type": "quantitative",
+              "label": "Seed 数"
+            }
+          ]
+        },
+        "xAxisTitle": "策略",
+        "yAxisTitle": "首选窗口准时率",
+        "valueFormat": "percent",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "categorical",
+            "roots": [
+              "gold",
+              "orange"
+            ]
+          },
+          "legend": {
+            "position": "top"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      },
+      {
+        "id": "waiting_chart",
+        "title": "主动等待任务数",
+        "subtitle": "Seeds: 42；仅描述等待行为，不直接等同于服务质量",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "五种策略的任务数如何比较？",
+        "rationale": "五个离散策略的一项同单位指标适合使用横向条形图直接比较。",
+        "comparisonContext": {
+          "baseline": "equal_weight",
+          "grain": "policy",
+          "unit": "任务数",
+          "semanticFamily": "policy comparison"
+        },
+        "type": "horizontalBar",
+        "dataset": "waiting_comparison",
+        "sourceId": "metrics_long",
+        "encodings": {
+          "x": {
+            "field": "policy_label",
+            "type": "nominal",
+            "label": "策略"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "format": "number",
+            "label": "任务数"
+          },
+          "tooltip": [
+            {
+              "field": "seed_count",
+              "type": "quantitative",
+              "label": "Seed 数"
+            },
+            {
+              "field": "ci_low",
+              "type": "quantitative",
+              "label": "95% CI 下界"
+            },
+            {
+              "field": "ci_high",
+              "type": "quantitative",
+              "label": "95% CI 上界"
+            }
+          ]
+        },
+        "xAxisTitle": "策略",
+        "yAxisTitle": "任务数",
+        "valueFormat": "number",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "single",
+            "root": "pink"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      },
+      {
+        "id": "task_latency_chart",
+        "title": "任务完成时延 P95",
+        "subtitle": "Seeds: 42；同一任务与实验条件下的策略比较",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "五种策略的sim-time如何比较？",
+        "rationale": "五个离散策略的一项同单位指标适合使用横向条形图直接比较。",
+        "comparisonContext": {
+          "baseline": "equal_weight",
+          "grain": "policy",
+          "unit": "sim-time",
+          "semanticFamily": "policy comparison"
+        },
+        "type": "horizontalBar",
+        "dataset": "task_latency_chart_data",
+        "sourceId": "metrics_long",
+        "encodings": {
+          "x": {
+            "field": "policy_label",
+            "type": "nominal",
+            "label": "策略"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "format": "number",
+            "label": "sim-time"
+          },
+          "tooltip": [
+            {
+              "field": "seed_count",
+              "type": "quantitative",
+              "label": "Seed 数"
+            },
+            {
+              "field": "ci_low",
+              "type": "quantitative",
+              "label": "95% CI 下界"
+            },
+            {
+              "field": "ci_high",
+              "type": "quantitative",
+              "label": "95% CI 上界"
+            }
+          ]
+        },
+        "xAxisTitle": "策略",
+        "yAxisTitle": "sim-time",
+        "valueFormat": "number",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "single",
+            "root": "orange"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      },
+      {
+        "id": "load_balance_chart",
+        "title": "节点 CPU 工作量变异系数",
+        "subtitle": "Seeds: 42；同一任务与实验条件下的策略比较",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "五种策略的fraction如何比较？",
+        "rationale": "五个离散策略的一项同单位指标适合使用横向条形图直接比较。",
+        "comparisonContext": {
+          "baseline": "equal_weight",
+          "grain": "policy",
+          "unit": "fraction",
+          "semanticFamily": "policy comparison"
+        },
+        "type": "horizontalBar",
+        "dataset": "load_balance_chart_data",
+        "sourceId": "metrics_long",
+        "encodings": {
+          "x": {
+            "field": "policy_label",
+            "type": "nominal",
+            "label": "策略"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "format": "percent",
+            "label": "fraction"
+          },
+          "tooltip": [
+            {
+              "field": "seed_count",
+              "type": "quantitative",
+              "label": "Seed 数"
+            },
+            {
+              "field": "ci_low",
+              "type": "quantitative",
+              "label": "95% CI 下界"
+            },
+            {
+              "field": "ci_high",
+              "type": "quantitative",
+              "label": "95% CI 上界"
+            }
+          ]
+        },
+        "xAxisTitle": "策略",
+        "yAxisTitle": "fraction",
+        "valueFormat": "percent",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "single",
+            "root": "gold"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      },
+      {
+        "id": "network_chart",
+        "title": "远程调度任务比例",
+        "subtitle": "Seeds: 42；同一任务与实验条件下的策略比较",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "五种策略的fraction如何比较？",
+        "rationale": "五个离散策略的一项同单位指标适合使用横向条形图直接比较。",
+        "comparisonContext": {
+          "baseline": "equal_weight",
+          "grain": "policy",
+          "unit": "fraction",
+          "semanticFamily": "policy comparison"
+        },
+        "type": "horizontalBar",
+        "dataset": "network_chart_data",
+        "sourceId": "metrics_long",
+        "encodings": {
+          "x": {
+            "field": "policy_label",
+            "type": "nominal",
+            "label": "策略"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "format": "percent",
+            "label": "fraction"
+          },
+          "tooltip": [
+            {
+              "field": "seed_count",
+              "type": "quantitative",
+              "label": "Seed 数"
+            },
+            {
+              "field": "ci_low",
+              "type": "quantitative",
+              "label": "95% CI 下界"
+            },
+            {
+              "field": "ci_high",
+              "type": "quantitative",
+              "label": "95% CI 上界"
+            }
+          ]
+        },
+        "xAxisTitle": "策略",
+        "yAxisTitle": "fraction",
+        "valueFormat": "percent",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "single",
+            "root": "olive"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      }
+    ],
+    "tables": [
+      {
+        "id": "core_metrics_table",
+        "title": "五策略关键指标",
+        "subtitle": "Seeds: 42；跨 seed 时显示均值",
+        "showDescription": true,
+        "dataset": "policy_summary",
+        "sourceId": "metrics_long",
+        "defaultSort": {
+          "field": "cost_per_cpu_hour",
+          "direction": "asc"
+        },
+        "density": "spacious",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "policy_label",
+            "label": "策略",
+            "type": "text"
+          },
+          {
+            "field": "cost_per_cpu_hour",
+            "label": "元/完成 CPU 小时",
+            "format": "number"
+          },
+          {
+            "field": "green_coverage",
+            "label": "任务绿电覆盖率",
+            "format": "percent"
+          },
+          {
+            "field": "completion_rate",
+            "label": "完成率",
+            "format": "percent"
+          },
+          {
+            "field": "soft_ontime",
+            "label": "Soft 准时率",
+            "format": "percent"
+          },
+          {
+            "field": "flexible_ontime",
+            "label": "Flexible 准时率",
+            "format": "percent"
+          },
+          {
+            "field": "active_wait_count",
+            "label": "主动等待任务",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "dqn_delta_table",
+        "title": "Candidate DQN 相对 Equal weight",
+        "subtitle": "差值定义为 DQN - Equal weight；比例指标以百分点表示",
+        "showDescription": true,
+        "dataset": "dqn_deltas",
+        "sourceId": "metrics_long",
+        "defaultSort": {
+          "field": "group",
+          "direction": "asc"
+        },
+        "density": "spacious",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "group",
+            "label": "方面",
+            "type": "text"
+          },
+          {
+            "field": "metric",
+            "label": "指标",
+            "type": "text"
+          },
+          {
+            "field": "direction",
+            "label": "方向",
+            "type": "text"
+          },
+          {
+            "field": "equal_weight",
+            "label": "Equal weight",
+            "type": "text"
+          },
+          {
+            "field": "candidate_dqn",
+            "label": "Candidate DQN",
+            "type": "text"
+          },
+          {
+            "field": "delta",
+            "label": "DQN 差值",
+            "type": "text"
+          },
+          {
+            "field": "paired_95_ci",
+            "label": "配对 95% CI",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "best_policy_table",
+        "title": "全部指标的最佳策略标记",
+        "subtitle": "只对存在明确优劣方向的指标判优；规模和等待行为等诊断指标不强行排名",
+        "showDescription": true,
+        "dataset": "best_by_metric",
+        "sourceId": "metrics_long",
+        "defaultSort": {
+          "field": "group",
+          "direction": "asc"
+        },
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "group",
+            "label": "方面",
+            "type": "text"
+          },
+          {
+            "field": "metric",
+            "label": "指标",
+            "type": "text"
+          },
+          {
+            "field": "direction",
+            "label": "方向",
+            "type": "text"
+          },
+          {
+            "field": "best_policy",
+            "label": "最佳策略",
+            "type": "text"
+          },
+          {
+            "field": "best_value",
+            "label": "最佳值",
+            "type": "text"
+          },
+          {
+            "field": "uncertainty",
+            "label": "不确定性",
+            "type": "text"
+          }
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "id": "metrics_long",
+        "label": "V2 five-policy validated metric source rows",
+        "path": "artifacts/v2/evaluation/five_policy/source_data/metrics_long.csv",
+        "query": {
+          "engine": "Python csv",
+          "language": "Python",
+          "sql": "SELECT * FROM read_csv_auto('artifacts/v2/evaluation/five_policy/source_data/metrics_long.csv')",
+          "description": "读取已校验的 V2 五策略评估源数据并进行配对聚合。",
+          "executed_at": "2026-08-19T16:23:12.725083+00:00",
+          "filters": [
+            "evaluation status=VALID",
+            "zero unsettled tasks",
+            "identical paired metadata within each seed",
+            "candidate_dqn epsilon=0 during evaluation"
+          ],
+          "metric_definitions": [
+            "成本为任务归因经济成本；每完成 CPU 小时成本=总经济成本/完成 CPU 小时。",
+            "完成任务绿电覆盖率=完成任务绿电能量/完成任务总能量。",
+            "完成率=完成任务数/到达任务数；预留可靠性=完成任务数/曾获预留任务数。",
+            "Soft 和 Flexible 准时率为首选开始窗口内启动的任务占比。",
+            "所有 DQN 差值均为 candidate_dqn - equal_weight。"
+          ],
+          "tables_used": [
+            "artifacts/v2/evaluation/five_policy/source_data/metrics_long.csv"
+          ]
+        }
+      },
+      {
+        "id": "source_manifest",
+        "label": "V2 five-policy report provenance manifest",
+        "path": "artifacts/v2/evaluation/five_policy/source_data/source_manifest.csv",
+        "query": {
+          "engine": "Python csv",
+          "language": "Python",
+          "sql": "SELECT * FROM read_csv_auto('artifacts/v2/evaluation/five_policy/source_data/source_manifest.csv')",
+          "description": "读取已校验的 V2 五策略评估源数据并进行配对聚合。",
+          "executed_at": "2026-08-19T16:23:12.725083+00:00",
+          "filters": [
+            "evaluation status=VALID",
+            "zero unsettled tasks",
+            "identical paired metadata within each seed",
+            "candidate_dqn epsilon=0 during evaluation"
+          ],
+          "metric_definitions": [
+            "同一 seed 内报告必须有效、无未结算任务且配对元数据完全一致。"
+          ],
+          "tables_used": [
+            "artifacts/v2/evaluation/five_policy/source_data/source_manifest.csv"
+          ]
+        }
+      }
+    ],
+    "blocks": [
+      {
+        "id": "title",
+        "type": "markdown",
+        "body": "# V2 五种调度策略指标对比",
+        "layout": "full"
+      },
+      {
+        "id": "executive_summary",
+        "type": "markdown",
+        "sourceId": "metrics_long",
+        "layout": "full",
+        "body": "## Executive Summary\n\n- **DQN 在当前样本中改善了成本与任务绿电覆盖。** 相对 Equal weight，每完成 CPU 小时成本变化 **-1.29%**，任务绿电覆盖率变化 **+2.04 个百分点**。\n- **可靠性没有被牺牲。** DQN 完成率为 **99.38%**；五种策略在相同任务轨迹上的完成率一致。\n- **SLA 存在局部权衡。** DQN 的 Soft 准时率相对基线变化 **+0.21 个百分点**，Flexible 准时率变化 **-1.98 个百分点**。\n- **证据强度仍受 seed 数限制。** 当前只有 1 个 seed，所有差异均为诊断性点估计，不能代表跨场景稳定性。"
+      },
+      {
+        "id": "definitions",
+        "type": "markdown",
+        "sourceId": "metrics_long",
+        "layout": "full",
+        "body": "## 比较口径\n\n报告覆盖 seeds **42**，每个 seed 的五种策略共享相同任务轨迹、外生轨迹、配置和拓扑。成本越低越好；绿电覆盖率、完成率、预留可靠性和准时率越高越好。主动等待数量和等待时长用于描述策略行为，不直接作为越低越好的服务质量指标。"
+      },
+      {
+        "id": "headline_metrics",
+        "type": "metric-strip",
+        "cardIds": [
+          "dqn_cost_card",
+          "dqn_green_card",
+          "completion_card",
+          "soft_card",
+          "flexible_card"
+        ],
+        "layout": "full"
+      },
+      {
+        "id": "cost_finding",
+        "type": "markdown",
+        "sourceId": "metrics_long",
+        "layout": "full",
+        "body": "## 成本：Lowest cost 最低，DQN 优于 Equal weight\n\n**DQN 的每完成 CPU 小时成本为 ¥12.478，相对 Equal weight 变化 -1.29%。** Lowest cost 是成本下界型基准，但需要结合绿电与 SLA 一起判断，不宜单独作为部署结论。"
+      },
+      {
+        "id": "cost_chart_block",
+        "type": "chart",
+        "chartId": "cost_chart",
+        "layout": "full"
+      },
+      {
+        "id": "green_finding",
+        "type": "markdown",
+        "sourceId": "metrics_long",
+        "layout": "full",
+        "body": "## 绿电：Highest green 最高，DQN 同时超过 Equal weight\n\n**DQN 的完成任务绿电覆盖率为 70.47%，比 Equal weight 高 2.04 个百分点。** Highest green 展示可达到的绿电上界，但其成本与部分 SLA 指标需要同时检查。"
+      },
+      {
+        "id": "green_chart_block",
+        "type": "chart",
+        "chartId": "green_chart",
+        "layout": "full"
+      },
+      {
+        "id": "reliability_finding",
+        "type": "markdown",
+        "sourceId": "metrics_long",
+        "layout": "full",
+        "body": "## 可靠性：五种策略完成率一致\n\n**五种策略在当前配对任务轨迹上的完成率均为 99.38%。** 这说明当前成本和绿电差异不是通过减少完成任务取得的；仍需在更多 seed 上复核非劣性。"
+      },
+      {
+        "id": "reliability_chart_block",
+        "type": "chart",
+        "chartId": "reliability_chart",
+        "layout": "full"
+      },
+      {
+        "id": "sla_finding",
+        "type": "markdown",
+        "sourceId": "metrics_long",
+        "layout": "full",
+        "body": "## SLA：DQN 改善 Soft，但 Flexible 准时率低于基线\n\n**相对 Equal weight，DQN 的 Soft 准时率变化 +0.21 个百分点，Flexible 准时率变化 -1.98 个百分点。** 因此，Flexible SLA 是后续正式评估必须保留的独立护栏。"
+      },
+      {
+        "id": "sla_chart_block",
+        "type": "chart",
+        "chartId": "sla_chart",
+        "layout": "full"
+      },
+      {
+        "id": "waiting_finding",
+        "type": "markdown",
+        "sourceId": "metrics_long",
+        "layout": "full",
+        "body": "## 等待行为：策略通过不同程度的主动等待换取目标收益\n\n**主动等待反映策略是否把任务推迟到未来时隙，而不是失败数量。** 应把等待数量、P95 等待时间和正收益率与成本、绿电及 SLA 联合解释，避免把等待更少直接当作更优。"
+      },
+      {
+        "id": "waiting_chart_block",
+        "type": "chart",
+        "chartId": "waiting_chart",
+        "layout": "full"
+      },
+      {
+        "id": "fine_grained_evaluation",
+        "type": "markdown",
+        "sourceId": "metrics_long",
+        "layout": "full",
+        "body": "## 细粒度评估：任务、节点、网络与算法效率\n\n以下指标由任务执行记录、资源预留区间和决策墙钟计时逐层汇总。单 seed 只表示当前工作负载的诊断结果；运行效率应在相同设备、进程并发和审计配置下比较。"
+      },
+      {
+        "id": "task_latency_chart_block",
+        "type": "chart",
+        "chartId": "task_latency_chart",
+        "layout": "full"
+      },
+      {
+        "id": "load_balance_chart_block",
+        "type": "chart",
+        "chartId": "load_balance_chart",
+        "layout": "full"
+      },
+      {
+        "id": "network_chart_block",
+        "type": "chart",
+        "chartId": "network_chart",
+        "layout": "full"
+      },
+      {
+        "id": "exact_values",
+        "type": "markdown",
+        "layout": "full",
+        "body": "## 关键指标精确值\n\n下表提供五种策略的核心指标精确值，便于复核图表和后续引用。"
+      },
+      {
+        "id": "core_metrics_table_block",
+        "type": "table",
+        "tableId": "core_metrics_table",
+        "layout": "full"
+      },
+      {
+        "id": "dqn_delta",
+        "type": "markdown",
+        "sourceId": "metrics_long",
+        "layout": "full",
+        "body": "## DQN 相对 Equal weight 的差值与区间\n\n**差值统一定义为 Candidate DQN - Equal weight。** 当前只有 1 个 seed，所有差异均为诊断性点估计，不能代表跨场景稳定性。 比例型指标以百分点表示；成本和任务数优先显示相对变化。"
+      },
+      {
+        "id": "dqn_delta_table_block",
+        "type": "table",
+        "tableId": "dqn_delta_table",
+        "layout": "full"
+      },
+      {
+        "id": "best_policy",
+        "type": "markdown",
+        "sourceId": "metrics_long",
+        "layout": "full",
+        "body": "## 每项指标的最佳策略标记\n\n**只对定义上存在明确优劣方向的指标判优。** 到达规模、SLA 子组任务数、最终状态快照和主动等待行为等诊断指标标记为“不判优”，避免制造没有业务含义的综合冠军。"
+      },
+      {
+        "id": "best_policy_table_block",
+        "type": "table",
+        "tableId": "best_policy_table",
+        "layout": "full"
+      },
+      {
+        "id": "next_steps",
+        "type": "markdown",
+        "layout": "full",
+        "body": "## 建议的下一步\n\n1. 固定至少 10 个未参与训练的 seed，继续运行五策略配对评估。\n2. 以 Equal weight 为主要基线，检查 DQN 的成本、绿电、完成率和 Flexible SLA 配对区间。\n3. 仅在完成率非劣、物理违规为零且成本或绿电达到门禁后，再判断是否进入部署候选。"
+      },
+      {
+        "id": "further_questions",
+        "type": "markdown",
+        "layout": "full",
+        "body": "## 仍需回答的问题\n\n- DQN 的 Flexible SLA 退化是否在更多 seed 上持续存在？\n- 成本和绿电收益是否由少数负载场景或任务类型主导？\n- 主动等待减少后，等待收益率和长尾延迟是否仍保持可接受？"
+      },
+      {
+        "id": "caveats",
+        "type": "markdown",
+        "sourceId": "source_manifest",
+        "layout": "full",
+        "body": "## 限制与假设\n\n当前只有 1 个 seed，所有差异均为诊断性点估计，不能代表跨场景稳定性。 本报告比较的是冻结策略在相同仿真输入上的表现，不构成因果证明。Hard 任务没有首选开始窗口，因此其首选窗口准时率为不适用；主动等待指标只描述行为。"
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-08-19T16:23:12.725083+00:00",
+    "status": "ready",
+    "datasets": {
+      "headline": [
+        {
+          "dqn_cost": 12.47803148927941,
+          "dqn_cost_delta": -0.01290649348619411,
+          "dqn_green": 0.704673788349581,
+          "dqn_green_delta": 0.02037119773336904,
+          "completion": 0.9937913907284768,
+          "soft_delta": 0.0020993701889433503,
+          "flexible_delta": -0.019830028328611915
+        }
+      ],
+      "policy_summary": [
+        {
+          "policy": "earliest_feasible",
+          "policy_label": "Earliest feasible",
+          "seed_count": 1,
+          "total_economic_cost_yuan": 42226466.19676595,
+          "cost_per_cpu_hour": 13.384585523482793,
+          "green_coverage": 0.5717365723661999,
+          "system_green_absorption": 0.05313988997842703,
+          "completion_rate": 0.9937913907284768,
+          "reservation_reliability": 1.0,
+          "soft_ontime": 1.0,
+          "flexible_ontime": 1.0,
+          "hard_delay_p95": 0.056998787016803484,
+          "active_wait_count": 0.0,
+          "active_wait_p95": null,
+          "wait_positive_benefit": null
+        },
+        {
+          "policy": "lowest_cost",
+          "policy_label": "Lowest cost",
+          "seed_count": 1,
+          "total_economic_cost_yuan": 36984463.71081995,
+          "cost_per_cpu_hour": 11.723020232640927,
+          "green_coverage": 0.42958208554232885,
+          "system_green_absorption": 0.026670419038499704,
+          "completion_rate": 0.9937913907284768,
+          "reservation_reliability": 1.0,
+          "soft_ontime": 0.7697690692792163,
+          "flexible_ontime": 0.9263456090651558,
+          "hard_delay_p95": 0.8520390802617728,
+          "active_wait_count": 1063.0,
+          "active_wait_p95": 793.723,
+          "wait_positive_benefit": 0.9068673565380997
+        },
+        {
+          "policy": "highest_green",
+          "policy_label": "Highest green",
+          "seed_count": 1,
+          "total_economic_cost_yuan": 41708269.82492666,
+          "cost_per_cpu_hour": 13.220332052104865,
+          "green_coverage": 0.8888863715666995,
+          "system_green_absorption": 0.05834119011966385,
+          "completion_rate": 0.9937913907284768,
+          "reservation_reliability": 1.0,
+          "soft_ontime": 0.5892232330300909,
+          "flexible_ontime": 0.9206798866855525,
+          "hard_delay_p95": 0.7660268022077332,
+          "active_wait_count": 1580.0,
+          "active_wait_p95": 545.0847499999998,
+          "wait_positive_benefit": 0.9626582278481013
+        },
+        {
+          "policy": "equal_weight",
+          "policy_label": "Equal weight",
+          "seed_count": 1,
+          "total_economic_cost_yuan": 39881142.69304761,
+          "cost_per_cpu_hour": 12.641184859324051,
+          "green_coverage": 0.684302590616212,
+          "system_green_absorption": 0.04193945065241484,
+          "completion_rate": 0.9937913907284768,
+          "reservation_reliability": 1.0,
+          "soft_ontime": 0.9944016794961511,
+          "flexible_ontime": 0.9631728045325779,
+          "hard_delay_p95": 0.7748709157882304,
+          "active_wait_count": 1947.0,
+          "active_wait_p95": 779.0495000000001,
+          "wait_positive_benefit": 0.997431946584489
+        },
+        {
+          "policy": "candidate_dqn",
+          "policy_label": "Candidate DQN",
+          "seed_count": 1,
+          "total_economic_cost_yuan": 39366416.98465782,
+          "cost_per_cpu_hour": 12.47803148927941,
+          "green_coverage": 0.704673788349581,
+          "system_green_absorption": 0.043187661712295475,
+          "completion_rate": 0.9937913907284768,
+          "reservation_reliability": 1.0,
+          "soft_ontime": 0.9965010496850945,
+          "flexible_ontime": 0.943342776203966,
+          "hard_delay_p95": 0.6715531008655263,
+          "active_wait_count": 1134.0,
+          "active_wait_p95": 680.4692499999976,
+          "wait_positive_benefit": 0.9770723104056437
+        }
+      ],
+      "cost_comparison": [
+        {
+          "policy": "earliest_feasible",
+          "policy_label": "Earliest feasible",
+          "value": 13.384585523482793,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "lowest_cost",
+          "policy_label": "Lowest cost",
+          "value": 11.723020232640927,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "highest_green",
+          "policy_label": "Highest green",
+          "value": 13.220332052104865,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "equal_weight",
+          "policy_label": "Equal weight",
+          "value": 12.641184859324051,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "candidate_dqn",
+          "policy_label": "Candidate DQN",
+          "value": 12.47803148927941,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        }
+      ],
+      "green_comparison": [
+        {
+          "policy": "earliest_feasible",
+          "policy_label": "Earliest feasible",
+          "value": 0.5717365723661999,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "lowest_cost",
+          "policy_label": "Lowest cost",
+          "value": 0.42958208554232885,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "highest_green",
+          "policy_label": "Highest green",
+          "value": 0.8888863715666995,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "equal_weight",
+          "policy_label": "Equal weight",
+          "value": 0.684302590616212,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "candidate_dqn",
+          "policy_label": "Candidate DQN",
+          "value": 0.704673788349581,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        }
+      ],
+      "reliability_comparison": [
+        {
+          "policy": "earliest_feasible",
+          "policy_label": "Earliest feasible",
+          "value": 0.9937913907284768,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "lowest_cost",
+          "policy_label": "Lowest cost",
+          "value": 0.9937913907284768,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "highest_green",
+          "policy_label": "Highest green",
+          "value": 0.9937913907284768,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "equal_weight",
+          "policy_label": "Equal weight",
+          "value": 0.9937913907284768,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "candidate_dqn",
+          "policy_label": "Candidate DQN",
+          "value": 0.9937913907284768,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        }
+      ],
+      "sla_ontime": [
+        {
+          "policy": "earliest_feasible",
+          "policy_label": "Earliest feasible",
+          "sla_type": "Soft",
+          "value": 1.0,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "earliest_feasible",
+          "policy_label": "Earliest feasible",
+          "sla_type": "Flexible",
+          "value": 1.0,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "lowest_cost",
+          "policy_label": "Lowest cost",
+          "sla_type": "Soft",
+          "value": 0.7697690692792163,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "lowest_cost",
+          "policy_label": "Lowest cost",
+          "sla_type": "Flexible",
+          "value": 0.9263456090651558,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "highest_green",
+          "policy_label": "Highest green",
+          "sla_type": "Soft",
+          "value": 0.5892232330300909,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "highest_green",
+          "policy_label": "Highest green",
+          "sla_type": "Flexible",
+          "value": 0.9206798866855525,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "equal_weight",
+          "policy_label": "Equal weight",
+          "sla_type": "Soft",
+          "value": 0.9944016794961511,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "equal_weight",
+          "policy_label": "Equal weight",
+          "sla_type": "Flexible",
+          "value": 0.9631728045325779,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "candidate_dqn",
+          "policy_label": "Candidate DQN",
+          "sla_type": "Soft",
+          "value": 0.9965010496850945,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "candidate_dqn",
+          "policy_label": "Candidate DQN",
+          "sla_type": "Flexible",
+          "value": 0.943342776203966,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        }
+      ],
+      "waiting_comparison": [
+        {
+          "policy": "earliest_feasible",
+          "policy_label": "Earliest feasible",
+          "value": 0.0,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "lowest_cost",
+          "policy_label": "Lowest cost",
+          "value": 1063.0,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "highest_green",
+          "policy_label": "Highest green",
+          "value": 1580.0,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "equal_weight",
+          "policy_label": "Equal weight",
+          "value": 1947.0,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "candidate_dqn",
+          "policy_label": "Candidate DQN",
+          "value": 1134.0,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        }
+      ],
+      "dqn_deltas": [
+        {
+          "group": "成本",
+          "metric": "总经济成本",
+          "direction": "越低越好",
+          "equal_weight": "¥39.88M",
+          "candidate_dqn": "¥39.37M",
+          "delta": "-1.29%",
+          "paired_95_ci": "不可估计（单 seed）",
+          "seed_count": 1
+        },
+        {
+          "group": "成本",
+          "metric": "每完成 CPU 小时成本",
+          "direction": "越低越好",
+          "equal_weight": "¥12.641",
+          "candidate_dqn": "¥12.478",
+          "delta": "-1.29%",
+          "paired_95_ci": "不可估计（单 seed）",
+          "seed_count": 1
+        },
+        {
+          "group": "绿电",
+          "metric": "完成任务绿电覆盖率",
+          "direction": "越高越好",
+          "equal_weight": "68.43%",
+          "candidate_dqn": "70.47%",
+          "delta": "+2.04 pp",
+          "paired_95_ci": "不可估计（单 seed）",
+          "seed_count": 1
+        },
+        {
+          "group": "绿电",
+          "metric": "系统绿电吸收率",
+          "direction": "越高越好",
+          "equal_weight": "4.19%",
+          "candidate_dqn": "4.32%",
+          "delta": "+0.12 pp",
+          "paired_95_ci": "不可估计（单 seed）",
+          "seed_count": 1
+        },
+        {
+          "group": "可靠性",
+          "metric": "任务完成率",
+          "direction": "越高越好",
+          "equal_weight": "99.38%",
+          "candidate_dqn": "99.38%",
+          "delta": "+0.00 pp",
+          "paired_95_ci": "不可估计（单 seed）",
+          "seed_count": 1
+        },
+        {
+          "group": "可靠性",
+          "metric": "预留可靠性",
+          "direction": "越高越好",
+          "equal_weight": "100.00%",
+          "candidate_dqn": "100.00%",
+          "delta": "+0.00 pp",
+          "paired_95_ci": "不可估计（单 seed）",
+          "seed_count": 1
+        },
+        {
+          "group": "SLA",
+          "metric": "Soft 首选窗口准时率",
+          "direction": "越高越好",
+          "equal_weight": "99.44%",
+          "candidate_dqn": "99.65%",
+          "delta": "+0.21 pp",
+          "paired_95_ci": "不可估计（单 seed）",
+          "seed_count": 1
+        },
+        {
+          "group": "SLA",
+          "metric": "Flexible 首选窗口准时率",
+          "direction": "越高越好",
+          "equal_weight": "96.32%",
+          "candidate_dqn": "94.33%",
+          "delta": "-1.98 pp",
+          "paired_95_ci": "不可估计（单 seed）",
+          "seed_count": 1
+        },
+        {
+          "group": "SLA",
+          "metric": "Hard 开始延迟 P95",
+          "direction": "越低越好",
+          "equal_weight": "0.775",
+          "candidate_dqn": "0.672",
+          "delta": "-0.103",
+          "paired_95_ci": "不可估计（单 seed）",
+          "seed_count": 1
+        },
+        {
+          "group": "等待行为",
+          "metric": "主动等待任务数",
+          "direction": "诊断指标",
+          "equal_weight": "1,947",
+          "candidate_dqn": "1,134",
+          "delta": "-41.76%",
+          "paired_95_ci": "不可估计（单 seed）",
+          "seed_count": 1
+        },
+        {
+          "group": "等待行为",
+          "metric": "P95 主动等待时间",
+          "direction": "诊断指标",
+          "equal_weight": "779.050",
+          "candidate_dqn": "680.469",
+          "delta": "-98.580",
+          "paired_95_ci": "不可估计（单 seed）",
+          "seed_count": 1
+        },
+        {
+          "group": "等待行为",
+          "metric": "主动等待正收益率",
+          "direction": "越高越好",
+          "equal_weight": "99.74%",
+          "candidate_dqn": "97.71%",
+          "delta": "-2.04 pp",
+          "paired_95_ci": "不可估计（单 seed）",
+          "seed_count": 1
+        }
+      ],
+      "best_by_metric": [
+        {
+          "group": "可靠性",
+          "metric_path": "acceptance_rate",
+          "metric": "任务接受率",
+          "direction": "越高越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "99.38%",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "等待行为",
+          "metric_path": "active_wait_metrics.count",
+          "metric": "主动等待任务数",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "等待行为",
+          "metric_path": "active_wait_metrics.mean_active_wait_sim",
+          "metric": "平均主动等待时间",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "等待行为",
+          "metric_path": "active_wait_metrics.p95_active_wait_sim",
+          "metric": "P95 主动等待时间",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "等待行为",
+          "metric_path": "active_wait_metrics.positive_benefit_rate",
+          "metric": "主动等待正收益率",
+          "direction": "越高越好",
+          "best_policy": "Equal weight",
+          "best_value": "99.74%",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "规模与状态",
+          "metric_path": "arrival_count",
+          "metric": "到达任务数",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "规模与状态",
+          "metric_path": "arrived_requested_cpu_hours",
+          "metric": "到达任务请求 CPU 小时",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "可靠性",
+          "metric_path": "completed_count",
+          "metric": "完成任务数",
+          "direction": "越高越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "2,401",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "规模与状态",
+          "metric_path": "completed_cpu_hours",
+          "metric": "完成 CPU 小时",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "绿电",
+          "metric_path": "completed_task_green_coverage",
+          "metric": "完成任务绿电覆盖率",
+          "direction": "越高越好",
+          "best_policy": "Highest green",
+          "best_value": "88.89%",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "可靠性",
+          "metric_path": "completion_rate",
+          "metric": "任务完成率",
+          "direction": "越高越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "99.38%",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "成本",
+          "metric_path": "cost_yuan_per_arrived_cpu_hour",
+          "metric": "每到达 CPU 小时成本",
+          "direction": "越低越好",
+          "best_policy": "Lowest cost",
+          "best_value": "¥11.723",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "成本",
+          "metric_path": "cost_yuan_per_completed_cpu_hour",
+          "metric": "每完成 CPU 小时成本",
+          "direction": "越低越好",
+          "best_policy": "Lowest cost",
+          "best_value": "¥11.723",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.network_summary.remote_reservation_count",
+          "metric": "diagnostics.network_summary.remote_reservation_count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "网络",
+          "metric_path": "diagnostics.network_summary.remote_task_rate",
+          "metric": "远程调度任务比例",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.network_summary.reservation_count",
+          "metric": "diagnostics.network_summary.reservation_count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.network_summary.transmission_duration_sim.count",
+          "metric": "diagnostics.network_summary.transmission_duration_sim.count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.network_summary.transmission_duration_sim.maximum",
+          "metric": "diagnostics.network_summary.transmission_duration_sim.maximum",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.network_summary.transmission_duration_sim.mean",
+          "metric": "diagnostics.network_summary.transmission_duration_sim.mean",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.network_summary.transmission_duration_sim.p50",
+          "metric": "diagnostics.network_summary.transmission_duration_sim.p50",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.network_summary.transmission_duration_sim.p95",
+          "metric": "diagnostics.network_summary.transmission_duration_sim.p95",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "负载均衡",
+          "metric_path": "diagnostics.node_summary.allocated_cpu_hours_cv",
+          "metric": "节点 CPU 工作量变异系数",
+          "direction": "越低越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "69.98%",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.node_summary.used_node_count",
+          "metric": "diagnostics.node_summary.used_node_count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.candidate_count_per_decision.count",
+          "metric": "diagnostics.task_summary.candidate_count_per_decision.count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.candidate_count_per_decision.maximum",
+          "metric": "diagnostics.task_summary.candidate_count_per_decision.maximum",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.candidate_count_per_decision.mean",
+          "metric": "diagnostics.task_summary.candidate_count_per_decision.mean",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.candidate_count_per_decision.p50",
+          "metric": "diagnostics.task_summary.candidate_count_per_decision.p50",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.candidate_count_per_decision.p95",
+          "metric": "diagnostics.task_summary.candidate_count_per_decision.p95",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.completion_delay_sim.count",
+          "metric": "diagnostics.task_summary.completion_delay_sim.count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.completion_delay_sim.maximum",
+          "metric": "diagnostics.task_summary.completion_delay_sim.maximum",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.completion_delay_sim.mean",
+          "metric": "diagnostics.task_summary.completion_delay_sim.mean",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.completion_delay_sim.p50",
+          "metric": "diagnostics.task_summary.completion_delay_sim.p50",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "任务时延",
+          "metric_path": "diagnostics.task_summary.completion_delay_sim.p95",
+          "metric": "任务完成时延 P95",
+          "direction": "越低越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "95.647",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.decision_count_per_arrived_task",
+          "metric": "diagnostics.task_summary.decision_count_per_arrived_task",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.decision_wall_seconds.count",
+          "metric": "diagnostics.task_summary.decision_wall_seconds.count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.decision_wall_seconds.maximum",
+          "metric": "diagnostics.task_summary.decision_wall_seconds.maximum",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.decision_wall_seconds.mean",
+          "metric": "diagnostics.task_summary.decision_wall_seconds.mean",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.decision_wall_seconds.p50",
+          "metric": "diagnostics.task_summary.decision_wall_seconds.p50",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.decision_wall_seconds.p95",
+          "metric": "diagnostics.task_summary.decision_wall_seconds.p95",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.reservation_lead_sim.count",
+          "metric": "diagnostics.task_summary.reservation_lead_sim.count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.reservation_lead_sim.maximum",
+          "metric": "diagnostics.task_summary.reservation_lead_sim.maximum",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.reservation_lead_sim.mean",
+          "metric": "diagnostics.task_summary.reservation_lead_sim.mean",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.reservation_lead_sim.p50",
+          "metric": "diagnostics.task_summary.reservation_lead_sim.p50",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.reservation_lead_sim.p95",
+          "metric": "diagnostics.task_summary.reservation_lead_sim.p95",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.scheduler_queue_delay_sim.count",
+          "metric": "diagnostics.task_summary.scheduler_queue_delay_sim.count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.scheduler_queue_delay_sim.maximum",
+          "metric": "diagnostics.task_summary.scheduler_queue_delay_sim.maximum",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.scheduler_queue_delay_sim.mean",
+          "metric": "diagnostics.task_summary.scheduler_queue_delay_sim.mean",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.scheduler_queue_delay_sim.p50",
+          "metric": "diagnostics.task_summary.scheduler_queue_delay_sim.p50",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "任务时延",
+          "metric_path": "diagnostics.task_summary.scheduler_queue_delay_sim.p95",
+          "metric": "调度排队时延 P95",
+          "direction": "越低越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "0.000",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.start_delay_sim.count",
+          "metric": "diagnostics.task_summary.start_delay_sim.count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.start_delay_sim.maximum",
+          "metric": "diagnostics.task_summary.start_delay_sim.maximum",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.start_delay_sim.mean",
+          "metric": "diagnostics.task_summary.start_delay_sim.mean",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.start_delay_sim.p50",
+          "metric": "diagnostics.task_summary.start_delay_sim.p50",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "任务时延",
+          "metric_path": "diagnostics.task_summary.start_delay_sim.p95",
+          "metric": "任务开始时延 P95",
+          "direction": "越低越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "0.197",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "可靠性",
+          "metric_path": "expired_count",
+          "metric": "过期任务数",
+          "direction": "越低越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "15",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "可靠性",
+          "metric_path": "failed_count",
+          "metric": "失败任务数",
+          "direction": "越低越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "0",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "规模与状态",
+          "metric_path": "final_state_counts.Arrived",
+          "metric": "最终状态：Arrived",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "规模与状态",
+          "metric_path": "final_state_counts.Completed",
+          "metric": "最终状态：Completed",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "规模与状态",
+          "metric_path": "final_state_counts.Expired",
+          "metric": "最终状态：Expired",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "规模与状态",
+          "metric_path": "final_state_counts.Failed",
+          "metric": "最终状态：Failed",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "规模与状态",
+          "metric_path": "final_state_counts.PendingUncommitted",
+          "metric": "最终状态：PendingUncommitted",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "规模与状态",
+          "metric_path": "final_state_counts.Queued",
+          "metric": "最终状态：Queued",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "规模与状态",
+          "metric_path": "final_state_counts.Rejected",
+          "metric": "最终状态：Rejected",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "规模与状态",
+          "metric_path": "final_state_counts.Reserved",
+          "metric": "最终状态：Reserved",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "规模与状态",
+          "metric_path": "final_state_counts.Running",
+          "metric": "最终状态：Running",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "规模与状态",
+          "metric_path": "final_state_counts.Transmitting",
+          "metric": "最终状态：Transmitting",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "可靠性",
+          "metric_path": "rejected_count",
+          "metric": "拒绝任务数",
+          "direction": "越低越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "0",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "可靠性",
+          "metric_path": "reservation_reliability",
+          "metric": "预留可靠性",
+          "direction": "越高越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "100.00%",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "可靠性",
+          "metric_path": "reserved_ever_count",
+          "metric": "曾获预留任务数",
+          "direction": "越高越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "2,401",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Flexible.acceptable_tardy_rate",
+          "metric": "Flexible 可接受迟到率",
+          "direction": "越低越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "0.00%",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Flexible.count",
+          "metric": "Flexible 任务数",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Flexible.expired_rate",
+          "metric": "Flexible 过期率",
+          "direction": "越低越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "0.00%",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Flexible.preferred_on_time_rate",
+          "metric": "Flexible 首选窗口准时率",
+          "direction": "越高越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "100.00%",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Flexible.preferred_start_tardiness_p50",
+          "metric": "Flexible 首选窗口迟到程度 P50",
+          "direction": "越低越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "0.00%",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Flexible.preferred_start_tardiness_p95",
+          "metric": "Flexible 首选窗口迟到程度 P95",
+          "direction": "越低越好",
+          "best_policy": "并列：Earliest feasible / Equal weight",
+          "best_value": "0.00%",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Flexible.start_delay_p50_sim",
+          "metric": "Flexible 开始延迟 P50",
+          "direction": "越低越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "0.182",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Flexible.start_delay_p95_sim",
+          "metric": "Flexible 开始延迟 P95",
+          "direction": "越低越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "0.196",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Hard.acceptable_tardy_rate",
+          "metric": "Hard 可接受迟到率",
+          "direction": "越低越好",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Hard.count",
+          "metric": "Hard 任务数",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Hard.expired_rate",
+          "metric": "Hard 过期率",
+          "direction": "越低越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "2.37%",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Hard.preferred_on_time_rate",
+          "metric": "Hard 首选窗口准时率",
+          "direction": "越高越好",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Hard.preferred_start_tardiness_p50",
+          "metric": "Hard 首选窗口迟到程度 P50",
+          "direction": "越低越好",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Hard.preferred_start_tardiness_p95",
+          "metric": "Hard 首选窗口迟到程度 P95",
+          "direction": "越低越好",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Hard.start_delay_p50_sim",
+          "metric": "Hard 开始延迟 P50",
+          "direction": "越低越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "0.026",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Hard.start_delay_p95_sim",
+          "metric": "Hard 开始延迟 P95",
+          "direction": "越低越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "0.057",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Soft.acceptable_tardy_rate",
+          "metric": "Soft 可接受迟到率",
+          "direction": "越低越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "0.00%",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Soft.count",
+          "metric": "Soft 任务数",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Soft.expired_rate",
+          "metric": "Soft 过期率",
+          "direction": "越低越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "0.00%",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Soft.preferred_on_time_rate",
+          "metric": "Soft 首选窗口准时率",
+          "direction": "越高越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "100.00%",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Soft.preferred_start_tardiness_p50",
+          "metric": "Soft 首选窗口迟到程度 P50",
+          "direction": "越低越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "0.00%",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Soft.preferred_start_tardiness_p95",
+          "metric": "Soft 首选窗口迟到程度 P95",
+          "direction": "越低越好",
+          "best_policy": "并列：Earliest feasible / Equal weight / Candidate DQN",
+          "best_value": "0.00%",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Soft.start_delay_p50_sim",
+          "metric": "Soft 开始延迟 P50",
+          "direction": "越低越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "0.185",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Soft.start_delay_p95_sim",
+          "metric": "Soft 开始延迟 P95",
+          "direction": "越低越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "0.200",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "绿电",
+          "metric_path": "system_green_absorption_rate",
+          "metric": "系统绿电吸收率",
+          "direction": "越高越好",
+          "best_policy": "Highest green",
+          "best_value": "5.83%",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        },
+        {
+          "group": "成本",
+          "metric_path": "total_economic_cost_yuan",
+          "metric": "总经济成本",
+          "direction": "越低越好",
+          "best_policy": "Lowest cost",
+          "best_value": "¥36.98M",
+          "seed_count": 1,
+          "uncertainty": "点估计；单 seed 无法估计区间"
+        }
+      ],
+      "source_reports": [
+        {
+          "seed": "42",
+          "policy": "earliest_feasible",
+          "source_file": "artifacts/v2/evaluation/five_policy/seed_42/earliest_feasible_seed42.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "f2c0efdfe3e4d49cc81d14f2ee0fd78ecc352767afcb7f2a3e085060d3105812",
+          "code_hash": "e964ec3fab755b614822c38734330805ebc608243caa8b104a2d27e9a55e532a",
+          "config_hash": "b6774b52399f9334d1f629713122113492a10badd7d23a48b0feb60c4edd1a9f",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "db427715e1c4463a813d0fe3639fdecc1cd9107500b45a011f00dac41460bb84",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2416",
+          "completed_count": "2401",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "42",
+          "policy": "lowest_cost",
+          "source_file": "artifacts/v2/evaluation/five_policy/seed_42/lowest_cost_seed42.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "832fcbbff3f7175cd7166e9b9b008156e13336108654283a34d4835e716fdb75",
+          "code_hash": "e964ec3fab755b614822c38734330805ebc608243caa8b104a2d27e9a55e532a",
+          "config_hash": "b6774b52399f9334d1f629713122113492a10badd7d23a48b0feb60c4edd1a9f",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "db427715e1c4463a813d0fe3639fdecc1cd9107500b45a011f00dac41460bb84",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2416",
+          "completed_count": "2401",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "42",
+          "policy": "highest_green",
+          "source_file": "artifacts/v2/evaluation/five_policy/seed_42/highest_green_seed42.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "32adf3226da3ac8f3d6dc5fd114f37c732aa71b2978be6a41519c805a61a4921",
+          "code_hash": "e964ec3fab755b614822c38734330805ebc608243caa8b104a2d27e9a55e532a",
+          "config_hash": "b6774b52399f9334d1f629713122113492a10badd7d23a48b0feb60c4edd1a9f",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "db427715e1c4463a813d0fe3639fdecc1cd9107500b45a011f00dac41460bb84",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2416",
+          "completed_count": "2401",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "42",
+          "policy": "equal_weight",
+          "source_file": "artifacts/v2/evaluation/five_policy/seed_42/equal_weight_seed42.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "66dca07c62e6583c53d63c423ee778975c359c1d5825b7c33a20d922e831363e",
+          "code_hash": "e964ec3fab755b614822c38734330805ebc608243caa8b104a2d27e9a55e532a",
+          "config_hash": "b6774b52399f9334d1f629713122113492a10badd7d23a48b0feb60c4edd1a9f",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "db427715e1c4463a813d0fe3639fdecc1cd9107500b45a011f00dac41460bb84",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2416",
+          "completed_count": "2401",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "42",
+          "policy": "candidate_dqn",
+          "source_file": "artifacts/v2/evaluation/five_policy/seed_42/candidate_dqn_seed42.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "1670b960fad8ab5b6850192713a1f2764eff054e6faf5a0d396b74c74691353e",
+          "code_hash": "e964ec3fab755b614822c38734330805ebc608243caa8b104a2d27e9a55e532a",
+          "config_hash": "b6774b52399f9334d1f629713122113492a10badd7d23a48b0feb60c4edd1a9f",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "db427715e1c4463a813d0fe3639fdecc1cd9107500b45a011f00dac41460bb84",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2416",
+          "completed_count": "2401",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        }
+      ],
+      "task_latency_chart_data": [
+        {
+          "policy": "earliest_feasible",
+          "policy_label": "Earliest feasible",
+          "value": 95.64659697761653,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "lowest_cost",
+          "policy_label": "Lowest cost",
+          "value": 612.2796302149511,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "highest_green",
+          "policy_label": "Highest green",
+          "value": 499.8578758477075,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "equal_weight",
+          "policy_label": "Equal weight",
+          "value": 797.5423565193834,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "candidate_dqn",
+          "policy_label": "Candidate DQN",
+          "value": 519.8049700153998,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        }
+      ],
+      "load_balance_chart_data": [
+        {
+          "policy": "earliest_feasible",
+          "policy_label": "Earliest feasible",
+          "value": 0.6997515011356344,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "lowest_cost",
+          "policy_label": "Lowest cost",
+          "value": 1.166128888364824,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "highest_green",
+          "policy_label": "Highest green",
+          "value": 0.9357333432015013,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "equal_weight",
+          "policy_label": "Equal weight",
+          "value": 0.8665209310730764,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "candidate_dqn",
+          "policy_label": "Candidate DQN",
+          "value": 0.7422666188944541,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        }
+      ],
+      "network_chart_data": [
+        {
+          "policy": "earliest_feasible",
+          "policy_label": "Earliest feasible",
+          "value": 1.0,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "lowest_cost",
+          "policy_label": "Lowest cost",
+          "value": 1.0,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "highest_green",
+          "policy_label": "Highest green",
+          "value": 1.0,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "equal_weight",
+          "policy_label": "Equal weight",
+          "value": 1.0,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "candidate_dqn",
+          "policy_label": "Candidate DQN",
+          "value": 1.0,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        }
+      ]
+    },
+    "accessIssues": []
+  },
+  "sources": [
+    {
+      "id": "metrics_long",
+      "label": "V2 five-policy validated metric source rows",
+      "path": "artifacts/v2/evaluation/five_policy/source_data/metrics_long.csv",
+      "query": {
+        "engine": "Python csv",
+        "language": "Python",
+        "sql": "SELECT * FROM read_csv_auto('artifacts/v2/evaluation/five_policy/source_data/metrics_long.csv')",
+        "description": "读取已校验的 V2 五策略评估源数据并进行配对聚合。",
+        "executed_at": "2026-08-19T16:23:12.725083+00:00",
+        "filters": [
+          "evaluation status=VALID",
+          "zero unsettled tasks",
+          "identical paired metadata within each seed",
+          "candidate_dqn epsilon=0 during evaluation"
+        ],
+        "metric_definitions": [
+          "成本为任务归因经济成本；每完成 CPU 小时成本=总经济成本/完成 CPU 小时。",
+          "完成任务绿电覆盖率=完成任务绿电能量/完成任务总能量。",
+          "完成率=完成任务数/到达任务数；预留可靠性=完成任务数/曾获预留任务数。",
+          "Soft 和 Flexible 准时率为首选开始窗口内启动的任务占比。",
+          "所有 DQN 差值均为 candidate_dqn - equal_weight。"
+        ],
+        "tables_used": [
+          "artifacts/v2/evaluation/five_policy/source_data/metrics_long.csv"
+        ]
+      }
+    },
+    {
+      "id": "source_manifest",
+      "label": "V2 five-policy report provenance manifest",
+      "path": "artifacts/v2/evaluation/five_policy/source_data/source_manifest.csv",
+      "query": {
+        "engine": "Python csv",
+        "language": "Python",
+        "sql": "SELECT * FROM read_csv_auto('artifacts/v2/evaluation/five_policy/source_data/source_manifest.csv')",
+        "description": "读取已校验的 V2 五策略评估源数据并进行配对聚合。",
+        "executed_at": "2026-08-19T16:23:12.725083+00:00",
+        "filters": [
+          "evaluation status=VALID",
+          "zero unsettled tasks",
+          "identical paired metadata within each seed",
+          "candidate_dqn epsilon=0 during evaluation"
+        ],
+        "metric_definitions": [
+          "同一 seed 内报告必须有效、无未结算任务且配对元数据完全一致。"
+        ],
+        "tables_used": [
+          "artifacts/v2/evaluation/five_policy/source_data/source_manifest.csv"
+        ]
+      }
+    }
+  ]
+}

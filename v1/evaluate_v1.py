@@ -1,12 +1,13 @@
 """Executable formal v1.0 frozen-policy evaluation entry point."""
 
 import argparse
-from dataclasses import asdict, is_dataclass
+from dataclasses import asdict, is_dataclass, replace
 from enum import Enum
 import hashlib
 import json
 from pathlib import Path
 import random
+import time
 
 import networkx as nx
 import numpy as np
@@ -15,7 +16,9 @@ import torch
 from shared import config
 from v1.ablation_settings import apply_ablation_variant, variant_names
 from v1.evaluation_v1 import EvaluationRunner
+from v1.evaluation_v1.diagnostics import build_evaluation_diagnostics
 from v1.learning import validate_checkpoint_metadata
+from v1.profiling import TrainingPerformanceProfiler
 from v1.scheduler import ObjectiveConfig
 from v1.v1_runtime import (
     create_v1_runtime,
@@ -201,6 +204,8 @@ def run_evaluation(
         package_root / "scheduler" / "resource_calendar.py",
         package_root / "accounting" / "energy.py",
         package_root / "evaluation_v1" / "runner.py",
+        package_root / "evaluation_v1" / "diagnostics.py",
+        package_root / "profiling.py",
         package_root / "learning" / "candidate_dqn.py",
         package_root / "simulation" / "state_machine.py",
     )
@@ -237,11 +242,37 @@ def run_evaluation(
         audit_mode=audit_mode,
         audit_interval=audit_interval,
     )
-    return runner.run_frozen_policy(
+    profiler = TrainingPerformanceProfiler()
+    runtime.scheduler.profiler = profiler
+    runtime.scheduler.candidate_generator.profiler = profiler
+    if hasattr(runtime.scheduler.policy, "profiler"):
+        runtime.scheduler.policy.profiler = profiler
+    evaluation_started = time.perf_counter()
+    report = runner.run_frozen_policy(
         trace,
         arrival_cutoff_sim=cutoff,
         seed=seed,
     )
+    evaluation_wall_seconds = time.perf_counter() - evaluation_started
+    node_capacities = {
+        node: runtime.calendar.node_capacity(node)
+        for node in runtime.infrastructure.compute_nodes
+    }
+    graph = runtime.infrastructure.topo_manager.graph
+    link_capacities = {
+        tuple(edge): runtime.calendar.link_capacity(tuple(edge))
+        for edge in graph.edges
+        if runtime.calendar.link_capacity(tuple(edge)) is not None
+    }
+    diagnostics = build_evaluation_diagnostics(
+        report,
+        reservations=runtime.calendar.reservations(),
+        node_capacities=node_capacities,
+        link_capacities=link_capacities,
+        time_converter=runtime.time_converter,
+        profiler_summary=profiler.summary(evaluation_wall_seconds),
+    )
+    return replace(report, diagnostics=diagnostics)
 
 
 def main(

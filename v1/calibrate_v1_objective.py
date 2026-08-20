@@ -102,6 +102,7 @@ def run_multi_seed_calibration(
     safety_cap,
     *,
     reservoir_seed=20260722,
+    candidate_mode="complete",
 ):
     seed_values = tuple(int(seed) for seed in seeds)
     if not seed_values:
@@ -113,7 +114,12 @@ def run_multi_seed_calibration(
     per_seed = []
     total_tasks = 0
     for seed in seed_values:
-        runtime = create_v1_runtime(forecast_end_sim=horizon, random_seed=seed)
+        configured_candidate_mode = config.V1_CANDIDATE_MODE
+        try:
+            config.V1_CANDIDATE_MODE = candidate_mode
+            runtime = create_v1_runtime(forecast_end_sim=horizon, random_seed=seed)
+        finally:
+            config.V1_CANDIDATE_MODE = configured_candidate_mode
         runtime.scheduler.policy = collector
         trace = _generate_trace(runtime, cutoff, seed)
         seen_before = collector.seen
@@ -175,7 +181,7 @@ def run_multi_seed_calibration(
         "candidate_count_seen": collector.seen,
         "reservoir_size": len(collector.samples),
         "per_seed": per_seed,
-        "candidate_mode": "complete",
+        "candidate_mode": candidate_mode,
         "distributions": {
             "cost_yuan": cost,
             "green_absorption_delta": absorption,
@@ -219,6 +225,11 @@ def main():
     parser.add_argument("--reservoir-seed", type=int, default=20260722)
     parser.add_argument("--reservoir-size", type=int, default=100000)
     parser.add_argument("--safety-cap", type=int, default=1000000)
+    parser.add_argument(
+        "--candidate-mode",
+        choices=("complete", "layered_pool"),
+        default="complete",
+    )
     parser.add_argument("--output", default="artifacts/v1/logs/objective_calibration.json")
     args = parser.parse_args()
     seeds = args.seed or [42]
@@ -228,6 +239,7 @@ def main():
         args.reservoir_size,
         args.safety_cap,
         reservoir_seed=args.reservoir_seed,
+        candidate_mode=args.candidate_mode,
     )
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)

@@ -213,6 +213,7 @@ def main() -> None:
         result["source_data_dir"] = str(source_dir)
         result["long_metric_row_count"] = validation["long_metric_row_count"]
         result["wide_metric_row_count"] = validation["wide_metric_row_count"]
+        result["granularity_coverage"] = validation["granularity_coverage"]
     print(json.dumps(result, ensure_ascii=False))
 
 

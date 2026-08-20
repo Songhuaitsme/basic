@@ -43,10 +43,11 @@ V1_DETERMINISTIC_POLICY = "earliest_feasible"
 V1_OBJECTIVE_COST_WEIGHT = 0.5
 V1_OBJECTIVE_GREEN_WEIGHT = 0.5
 V1_OBJECTIVE_BALANCE_WEIGHT = 0.1
-# Frozen from the complete-candidate, candidate-weighted calibration reservoir
-# over seeds 1,2,4,7,9 (13,000,920 candidates; 2026-07-22).
-V1_COST_REFERENCE_YUAN = 12682.284175062196
-V1_COST_SCALE_YUAN = 287513.2364706354
+# Frozen from the tou_region complete-candidate, candidate-weighted calibration
+# reservoir over seeds 1,2,4,7,9 (13,000,920 candidates; 100,000 samples;
+# 2026-08-18). Cost reference=P50; cost scale=P90-P10; absorption scale=|P90|.
+V1_COST_REFERENCE_YUAN = 7150.149072849012
+V1_COST_SCALE_YUAN = 157838.37775818055
 V1_GREEN_ABSORPTION_DELTA_SCALE = 1.0
 # Frozen paired-seed ablation (seeds 2 and 4, complete candidates, 2026-07-22):
 # (0.5, 0.25) raised mean Soft/Flexible preferred-on-time rate from 0.75
@@ -62,7 +63,7 @@ V1_REWARD_TERMINAL_PENALTIES_ENABLED = True
 V1_DISABLED_CANDIDATE_FEATURE_GROUPS = ()
 V1_DQN_USE_GLOBAL_STATE = True
 V1_DQN_DOUBLE_DQN = True
-V1_TARIFF_MODE = "tou_uniform"
+V1_TARIFF_MODE = "tou_region"
 V1_CANDIDATE_DQN_HIDDEN_DIM = 128
 V1_FORECAST_STEP_SIM = 2.0
 V1_FORECAST_HORIZON_SIM = 5000.0

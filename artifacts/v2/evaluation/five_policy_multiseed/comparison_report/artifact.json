@@ -1,0 +1,4848 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "V2 五种调度策略指标对比",
+    "description": "冻结策略在配对仿真任务上的成本、绿电、可靠性、SLA 与等待行为比较。",
+    "generatedAt": "2026-08-20T05:12:00.042140+00:00",
+    "cards": [
+      {
+        "id": "dqn_cost_card",
+        "description": "DQN 单位成本及相对基线变化。",
+        "dataset": "headline",
+        "sourceId": "metrics_long",
+        "metrics": [
+          {
+            "label": "DQN 单位成本",
+            "field": "dqn_cost",
+            "format": "number"
+          },
+          {
+            "label": "相对 Equal weight",
+            "field": "dqn_cost_delta",
+            "format": "percent",
+            "signed": true
+          }
+        ]
+      },
+      {
+        "id": "dqn_green_card",
+        "description": "DQN 任务绿电覆盖率及百分点变化。",
+        "dataset": "headline",
+        "sourceId": "metrics_long",
+        "metrics": [
+          {
+            "label": "DQN 绿电覆盖率",
+            "field": "dqn_green",
+            "format": "percent"
+          },
+          {
+            "label": "相对 Equal weight",
+            "field": "dqn_green_delta",
+            "format": "percent",
+            "signed": true
+          }
+        ]
+      },
+      {
+        "id": "completion_card",
+        "description": "DQN 完成任务数占到达任务数的比例。",
+        "dataset": "headline",
+        "sourceId": "metrics_long",
+        "metrics": [
+          {
+            "label": "DQN 完成率",
+            "field": "completion",
+            "format": "percent"
+          }
+        ]
+      },
+      {
+        "id": "soft_card",
+        "description": "DQN Soft 准时率相对基线变化。",
+        "dataset": "headline",
+        "sourceId": "metrics_long",
+        "metrics": [
+          {
+            "label": "Soft 准时率变化",
+            "field": "soft_delta",
+            "format": "percent",
+            "signed": true
+          }
+        ]
+      },
+      {
+        "id": "flexible_card",
+        "description": "DQN Flexible 准时率相对基线变化。",
+        "dataset": "headline",
+        "sourceId": "metrics_long",
+        "metrics": [
+          {
+            "label": "Flexible 准时率变化",
+            "field": "flexible_delta",
+            "format": "percent",
+            "signed": true
+          }
+        ]
+      }
+    ],
+    "charts": [
+      {
+        "id": "cost_chart",
+        "title": "每完成 CPU 小时成本",
+        "subtitle": "Seeds: 101, 103, 107, 109, 113, 127, 131, 137, 139, 149；人民币/完成 CPU 小时，越低越好",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "五种策略的CNY/CPU-hour如何比较？",
+        "rationale": "五个离散策略的一项同单位指标适合使用横向条形图直接比较。",
+        "comparisonContext": {
+          "baseline": "equal_weight",
+          "grain": "policy",
+          "unit": "CNY/CPU-hour",
+          "semanticFamily": "policy comparison"
+        },
+        "type": "horizontalBar",
+        "dataset": "cost_comparison",
+        "sourceId": "metrics_long",
+        "encodings": {
+          "x": {
+            "field": "policy_label",
+            "type": "nominal",
+            "label": "策略"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "format": "number",
+            "label": "CNY/CPU-hour"
+          },
+          "tooltip": [
+            {
+              "field": "seed_count",
+              "type": "quantitative",
+              "label": "Seed 数"
+            },
+            {
+              "field": "ci_low",
+              "type": "quantitative",
+              "label": "95% CI 下界"
+            },
+            {
+              "field": "ci_high",
+              "type": "quantitative",
+              "label": "95% CI 上界"
+            }
+          ]
+        },
+        "xAxisTitle": "策略",
+        "yAxisTitle": "CNY/CPU-hour",
+        "valueFormat": "number",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "single",
+            "root": "blue"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      },
+      {
+        "id": "green_chart",
+        "title": "完成任务绿电覆盖率",
+        "subtitle": "Seeds: 101, 103, 107, 109, 113, 127, 131, 137, 139, 149；完成任务绿电能量占比，越高越好",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "五种策略的绿电覆盖率如何比较？",
+        "rationale": "五个离散策略的一项同单位指标适合使用横向条形图直接比较。",
+        "comparisonContext": {
+          "baseline": "equal_weight",
+          "grain": "policy",
+          "unit": "绿电覆盖率",
+          "semanticFamily": "policy comparison"
+        },
+        "type": "horizontalBar",
+        "dataset": "green_comparison",
+        "sourceId": "metrics_long",
+        "encodings": {
+          "x": {
+            "field": "policy_label",
+            "type": "nominal",
+            "label": "策略"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "format": "percent",
+            "label": "绿电覆盖率"
+          },
+          "tooltip": [
+            {
+              "field": "seed_count",
+              "type": "quantitative",
+              "label": "Seed 数"
+            },
+            {
+              "field": "ci_low",
+              "type": "quantitative",
+              "label": "95% CI 下界"
+            },
+            {
+              "field": "ci_high",
+              "type": "quantitative",
+              "label": "95% CI 上界"
+            }
+          ]
+        },
+        "xAxisTitle": "策略",
+        "yAxisTitle": "绿电覆盖率",
+        "valueFormat": "percent",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "single",
+            "root": "olive"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      },
+      {
+        "id": "reliability_chart",
+        "title": "任务完成率",
+        "subtitle": "Seeds: 101, 103, 107, 109, 113, 127, 131, 137, 139, 149；完成任务数/到达任务数，越高越好",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "五种策略的完成率如何比较？",
+        "rationale": "五个离散策略的一项同单位指标适合使用横向条形图直接比较。",
+        "comparisonContext": {
+          "baseline": "equal_weight",
+          "grain": "policy",
+          "unit": "完成率",
+          "semanticFamily": "policy comparison"
+        },
+        "type": "horizontalBar",
+        "dataset": "reliability_comparison",
+        "sourceId": "metrics_long",
+        "encodings": {
+          "x": {
+            "field": "policy_label",
+            "type": "nominal",
+            "label": "策略"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "format": "percent",
+            "label": "完成率"
+          },
+          "tooltip": [
+            {
+              "field": "seed_count",
+              "type": "quantitative",
+              "label": "Seed 数"
+            },
+            {
+              "field": "ci_low",
+              "type": "quantitative",
+              "label": "95% CI 下界"
+            },
+            {
+              "field": "ci_high",
+              "type": "quantitative",
+              "label": "95% CI 上界"
+            }
+          ]
+        },
+        "xAxisTitle": "策略",
+        "yAxisTitle": "完成率",
+        "valueFormat": "percent",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "single",
+            "root": "gold"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      },
+      {
+        "id": "sla_chart",
+        "title": "Soft 与 Flexible 首选窗口准时率",
+        "subtitle": "Seeds: 101, 103, 107, 109, 113, 127, 131, 137, 139, 149；同一策略内比较两类 SLA，越高越好",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "五种策略在 Soft 和 Flexible 任务上的首选窗口准时率如何？",
+        "rationale": "两个同单位 SLA 序列使用分组柱形图，保留策略和 SLA 类型两个维度。",
+        "comparisonContext": {
+          "baseline": "equal_weight",
+          "grain": "policy by SLA type",
+          "unit": "fraction",
+          "semanticFamily": "SLA comparison"
+        },
+        "type": "bar",
+        "dataset": "sla_ontime",
+        "sourceId": "metrics_long",
+        "encodings": {
+          "x": {
+            "field": "policy_label",
+            "type": "nominal",
+            "label": "策略"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "format": "percent",
+            "label": "准时率"
+          },
+          "color": {
+            "field": "sla_type",
+            "type": "nominal",
+            "label": "SLA 类型"
+          },
+          "tooltip": [
+            {
+              "field": "seed_count",
+              "type": "quantitative",
+              "label": "Seed 数"
+            }
+          ]
+        },
+        "xAxisTitle": "策略",
+        "yAxisTitle": "首选窗口准时率",
+        "valueFormat": "percent",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "categorical",
+            "roots": [
+              "gold",
+              "orange"
+            ]
+          },
+          "legend": {
+            "position": "top"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      },
+      {
+        "id": "waiting_chart",
+        "title": "主动等待任务数",
+        "subtitle": "Seeds: 101, 103, 107, 109, 113, 127, 131, 137, 139, 149；仅描述等待行为，不直接等同于服务质量",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "五种策略的任务数如何比较？",
+        "rationale": "五个离散策略的一项同单位指标适合使用横向条形图直接比较。",
+        "comparisonContext": {
+          "baseline": "equal_weight",
+          "grain": "policy",
+          "unit": "任务数",
+          "semanticFamily": "policy comparison"
+        },
+        "type": "horizontalBar",
+        "dataset": "waiting_comparison",
+        "sourceId": "metrics_long",
+        "encodings": {
+          "x": {
+            "field": "policy_label",
+            "type": "nominal",
+            "label": "策略"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "format": "number",
+            "label": "任务数"
+          },
+          "tooltip": [
+            {
+              "field": "seed_count",
+              "type": "quantitative",
+              "label": "Seed 数"
+            },
+            {
+              "field": "ci_low",
+              "type": "quantitative",
+              "label": "95% CI 下界"
+            },
+            {
+              "field": "ci_high",
+              "type": "quantitative",
+              "label": "95% CI 上界"
+            }
+          ]
+        },
+        "xAxisTitle": "策略",
+        "yAxisTitle": "任务数",
+        "valueFormat": "number",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "single",
+            "root": "pink"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      },
+      {
+        "id": "task_latency_chart",
+        "title": "任务完成时延 P95",
+        "subtitle": "Seeds: 101, 103, 107, 109, 113, 127, 131, 137, 139, 149；同一任务与实验条件下的策略比较",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "五种策略的sim-time如何比较？",
+        "rationale": "五个离散策略的一项同单位指标适合使用横向条形图直接比较。",
+        "comparisonContext": {
+          "baseline": "equal_weight",
+          "grain": "policy",
+          "unit": "sim-time",
+          "semanticFamily": "policy comparison"
+        },
+        "type": "horizontalBar",
+        "dataset": "task_latency_chart_data",
+        "sourceId": "metrics_long",
+        "encodings": {
+          "x": {
+            "field": "policy_label",
+            "type": "nominal",
+            "label": "策略"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "format": "number",
+            "label": "sim-time"
+          },
+          "tooltip": [
+            {
+              "field": "seed_count",
+              "type": "quantitative",
+              "label": "Seed 数"
+            },
+            {
+              "field": "ci_low",
+              "type": "quantitative",
+              "label": "95% CI 下界"
+            },
+            {
+              "field": "ci_high",
+              "type": "quantitative",
+              "label": "95% CI 上界"
+            }
+          ]
+        },
+        "xAxisTitle": "策略",
+        "yAxisTitle": "sim-time",
+        "valueFormat": "number",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "single",
+            "root": "orange"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      },
+      {
+        "id": "load_balance_chart",
+        "title": "节点 CPU 工作量变异系数",
+        "subtitle": "Seeds: 101, 103, 107, 109, 113, 127, 131, 137, 139, 149；同一任务与实验条件下的策略比较",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "五种策略的fraction如何比较？",
+        "rationale": "五个离散策略的一项同单位指标适合使用横向条形图直接比较。",
+        "comparisonContext": {
+          "baseline": "equal_weight",
+          "grain": "policy",
+          "unit": "fraction",
+          "semanticFamily": "policy comparison"
+        },
+        "type": "horizontalBar",
+        "dataset": "load_balance_chart_data",
+        "sourceId": "metrics_long",
+        "encodings": {
+          "x": {
+            "field": "policy_label",
+            "type": "nominal",
+            "label": "策略"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "format": "percent",
+            "label": "fraction"
+          },
+          "tooltip": [
+            {
+              "field": "seed_count",
+              "type": "quantitative",
+              "label": "Seed 数"
+            },
+            {
+              "field": "ci_low",
+              "type": "quantitative",
+              "label": "95% CI 下界"
+            },
+            {
+              "field": "ci_high",
+              "type": "quantitative",
+              "label": "95% CI 上界"
+            }
+          ]
+        },
+        "xAxisTitle": "策略",
+        "yAxisTitle": "fraction",
+        "valueFormat": "percent",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "single",
+            "root": "gold"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      },
+      {
+        "id": "network_chart",
+        "title": "远程调度任务比例",
+        "subtitle": "Seeds: 101, 103, 107, 109, 113, 127, 131, 137, 139, 149；同一任务与实验条件下的策略比较",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "五种策略的fraction如何比较？",
+        "rationale": "五个离散策略的一项同单位指标适合使用横向条形图直接比较。",
+        "comparisonContext": {
+          "baseline": "equal_weight",
+          "grain": "policy",
+          "unit": "fraction",
+          "semanticFamily": "policy comparison"
+        },
+        "type": "horizontalBar",
+        "dataset": "network_chart_data",
+        "sourceId": "metrics_long",
+        "encodings": {
+          "x": {
+            "field": "policy_label",
+            "type": "nominal",
+            "label": "策略"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "format": "percent",
+            "label": "fraction"
+          },
+          "tooltip": [
+            {
+              "field": "seed_count",
+              "type": "quantitative",
+              "label": "Seed 数"
+            },
+            {
+              "field": "ci_low",
+              "type": "quantitative",
+              "label": "95% CI 下界"
+            },
+            {
+              "field": "ci_high",
+              "type": "quantitative",
+              "label": "95% CI 上界"
+            }
+          ]
+        },
+        "xAxisTitle": "策略",
+        "yAxisTitle": "fraction",
+        "valueFormat": "percent",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "single",
+            "root": "olive"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      },
+      {
+        "id": "runtime_chart",
+        "title": "单次调度决策耗时 P95",
+        "subtitle": "Seeds: 101, 103, 107, 109, 113, 127, 131, 137, 139, 149；同一任务与实验条件下的策略比较",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "五种策略的seconds如何比较？",
+        "rationale": "五个离散策略的一项同单位指标适合使用横向条形图直接比较。",
+        "comparisonContext": {
+          "baseline": "equal_weight",
+          "grain": "policy",
+          "unit": "seconds",
+          "semanticFamily": "policy comparison"
+        },
+        "type": "horizontalBar",
+        "dataset": "runtime_chart_data",
+        "sourceId": "metrics_long",
+        "encodings": {
+          "x": {
+            "field": "policy_label",
+            "type": "nominal",
+            "label": "策略"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "format": "number",
+            "label": "seconds"
+          },
+          "tooltip": [
+            {
+              "field": "seed_count",
+              "type": "quantitative",
+              "label": "Seed 数"
+            },
+            {
+              "field": "ci_low",
+              "type": "quantitative",
+              "label": "95% CI 下界"
+            },
+            {
+              "field": "ci_high",
+              "type": "quantitative",
+              "label": "95% CI 上界"
+            }
+          ]
+        },
+        "xAxisTitle": "策略",
+        "yAxisTitle": "seconds",
+        "valueFormat": "number",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "single",
+            "root": "blue"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      }
+    ],
+    "tables": [
+      {
+        "id": "core_metrics_table",
+        "title": "五策略关键指标",
+        "subtitle": "Seeds: 101, 103, 107, 109, 113, 127, 131, 137, 139, 149；跨 seed 时显示均值",
+        "showDescription": true,
+        "dataset": "policy_summary",
+        "sourceId": "metrics_long",
+        "defaultSort": {
+          "field": "cost_per_cpu_hour",
+          "direction": "asc"
+        },
+        "density": "spacious",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "policy_label",
+            "label": "策略",
+            "type": "text"
+          },
+          {
+            "field": "cost_per_cpu_hour",
+            "label": "元/完成 CPU 小时",
+            "format": "number"
+          },
+          {
+            "field": "green_coverage",
+            "label": "任务绿电覆盖率",
+            "format": "percent"
+          },
+          {
+            "field": "completion_rate",
+            "label": "完成率",
+            "format": "percent"
+          },
+          {
+            "field": "soft_ontime",
+            "label": "Soft 准时率",
+            "format": "percent"
+          },
+          {
+            "field": "flexible_ontime",
+            "label": "Flexible 准时率",
+            "format": "percent"
+          },
+          {
+            "field": "active_wait_count",
+            "label": "主动等待任务",
+            "format": "number"
+          }
+        ]
+      },
+      {
+        "id": "dqn_delta_table",
+        "title": "Candidate DQN 相对 Equal weight",
+        "subtitle": "差值定义为 DQN - Equal weight；比例指标以百分点表示",
+        "showDescription": true,
+        "dataset": "dqn_deltas",
+        "sourceId": "metrics_long",
+        "defaultSort": {
+          "field": "group",
+          "direction": "asc"
+        },
+        "density": "spacious",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "group",
+            "label": "方面",
+            "type": "text"
+          },
+          {
+            "field": "metric",
+            "label": "指标",
+            "type": "text"
+          },
+          {
+            "field": "direction",
+            "label": "方向",
+            "type": "text"
+          },
+          {
+            "field": "equal_weight",
+            "label": "Equal weight",
+            "type": "text"
+          },
+          {
+            "field": "candidate_dqn",
+            "label": "Candidate DQN",
+            "type": "text"
+          },
+          {
+            "field": "delta",
+            "label": "DQN 差值",
+            "type": "text"
+          },
+          {
+            "field": "paired_95_ci",
+            "label": "配对 95% CI",
+            "type": "text"
+          }
+        ]
+      },
+      {
+        "id": "best_policy_table",
+        "title": "全部指标的最佳策略标记",
+        "subtitle": "只对存在明确优劣方向的指标判优；规模和等待行为等诊断指标不强行排名",
+        "showDescription": true,
+        "dataset": "best_by_metric",
+        "sourceId": "metrics_long",
+        "defaultSort": {
+          "field": "group",
+          "direction": "asc"
+        },
+        "density": "dense",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "group",
+            "label": "方面",
+            "type": "text"
+          },
+          {
+            "field": "metric",
+            "label": "指标",
+            "type": "text"
+          },
+          {
+            "field": "direction",
+            "label": "方向",
+            "type": "text"
+          },
+          {
+            "field": "best_policy",
+            "label": "最佳策略",
+            "type": "text"
+          },
+          {
+            "field": "best_value",
+            "label": "最佳值",
+            "type": "text"
+          },
+          {
+            "field": "uncertainty",
+            "label": "不确定性",
+            "type": "text"
+          }
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "id": "metrics_long",
+        "label": "V2 five-policy validated metric source rows",
+        "path": "artifacts/v2/evaluation/five_policy/source_data/metrics_long.csv",
+        "query": {
+          "engine": "Python csv",
+          "language": "Python",
+          "sql": "SELECT * FROM read_csv_auto('artifacts/v2/evaluation/five_policy/source_data/metrics_long.csv')",
+          "description": "读取已校验的 V2 五策略评估源数据并进行配对聚合。",
+          "executed_at": "2026-08-20T05:12:00.042140+00:00",
+          "filters": [
+            "evaluation status=VALID",
+            "zero unsettled tasks",
+            "identical paired metadata within each seed",
+            "candidate_dqn epsilon=0 during evaluation"
+          ],
+          "metric_definitions": [
+            "成本为任务归因经济成本；每完成 CPU 小时成本=总经济成本/完成 CPU 小时。",
+            "完成任务绿电覆盖率=完成任务绿电能量/完成任务总能量。",
+            "完成率=完成任务数/到达任务数；预留可靠性=完成任务数/曾获预留任务数。",
+            "Soft 和 Flexible 准时率为首选开始窗口内启动的任务占比。",
+            "所有 DQN 差值均为 candidate_dqn - equal_weight。"
+          ],
+          "tables_used": [
+            "artifacts/v2/evaluation/five_policy/source_data/metrics_long.csv"
+          ]
+        }
+      },
+      {
+        "id": "source_manifest",
+        "label": "V2 five-policy report provenance manifest",
+        "path": "artifacts/v2/evaluation/five_policy/source_data/source_manifest.csv",
+        "query": {
+          "engine": "Python csv",
+          "language": "Python",
+          "sql": "SELECT * FROM read_csv_auto('artifacts/v2/evaluation/five_policy/source_data/source_manifest.csv')",
+          "description": "读取已校验的 V2 五策略评估源数据并进行配对聚合。",
+          "executed_at": "2026-08-20T05:12:00.042140+00:00",
+          "filters": [
+            "evaluation status=VALID",
+            "zero unsettled tasks",
+            "identical paired metadata within each seed",
+            "candidate_dqn epsilon=0 during evaluation"
+          ],
+          "metric_definitions": [
+            "同一 seed 内报告必须有效、无未结算任务且配对元数据完全一致。"
+          ],
+          "tables_used": [
+            "artifacts/v2/evaluation/five_policy/source_data/source_manifest.csv"
+          ]
+        }
+      }
+    ],
+    "blocks": [
+      {
+        "id": "title",
+        "type": "markdown",
+        "body": "# V2 五种调度策略指标对比",
+        "layout": "full"
+      },
+      {
+        "id": "executive_summary",
+        "type": "markdown",
+        "sourceId": "metrics_long",
+        "layout": "full",
+        "body": "## Executive Summary\n\n- **DQN 在当前样本中改善了成本与任务绿电覆盖。** 相对 Equal weight，每完成 CPU 小时成本变化 **-13.80%**，任务绿电覆盖率变化 **+14.86 个百分点**。\n- **可靠性没有被牺牲。** DQN 完成率为 **99.41%**；五种策略在相同任务轨迹上的完成率一致。\n- **SLA 存在局部权衡。** DQN 的 Soft 准时率相对基线变化 **-0.58 个百分点**，Flexible 准时率变化 **+0.34 个百分点**。\n- **证据强度仍受 seed 数限制。** 当前包含 10 个配对 seed；表中报告配对 t 的 95% 置信区间。"
+      },
+      {
+        "id": "definitions",
+        "type": "markdown",
+        "sourceId": "metrics_long",
+        "layout": "full",
+        "body": "## 比较口径\n\n报告覆盖 seeds **101, 103, 107, 109, 113, 127, 131, 137, 139, 149**，每个 seed 的五种策略共享相同任务轨迹、外生轨迹、配置和拓扑。成本越低越好；绿电覆盖率、完成率、预留可靠性和准时率越高越好。主动等待数量和等待时长用于描述策略行为，不直接作为越低越好的服务质量指标。"
+      },
+      {
+        "id": "headline_metrics",
+        "type": "metric-strip",
+        "cardIds": [
+          "dqn_cost_card",
+          "dqn_green_card",
+          "completion_card",
+          "soft_card",
+          "flexible_card"
+        ],
+        "layout": "full"
+      },
+      {
+        "id": "cost_finding",
+        "type": "markdown",
+        "sourceId": "metrics_long",
+        "layout": "full",
+        "body": "## 成本：Lowest cost 最低，DQN 优于 Equal weight\n\n**DQN 的每完成 CPU 小时成本为 ¥6.080，相对 Equal weight 变化 -13.80%。** Lowest cost 是成本下界型基准，但需要结合绿电与 SLA 一起判断，不宜单独作为部署结论。"
+      },
+      {
+        "id": "cost_chart_block",
+        "type": "chart",
+        "chartId": "cost_chart",
+        "layout": "full"
+      },
+      {
+        "id": "green_finding",
+        "type": "markdown",
+        "sourceId": "metrics_long",
+        "layout": "full",
+        "body": "## 绿电：Highest green 最高，DQN 同时超过 Equal weight\n\n**DQN 的完成任务绿电覆盖率为 87.40%，比 Equal weight 高 14.86 个百分点。** Highest green 展示可达到的绿电上界，但其成本与部分 SLA 指标需要同时检查。"
+      },
+      {
+        "id": "green_chart_block",
+        "type": "chart",
+        "chartId": "green_chart",
+        "layout": "full"
+      },
+      {
+        "id": "reliability_finding",
+        "type": "markdown",
+        "sourceId": "metrics_long",
+        "layout": "full",
+        "body": "## 可靠性：五种策略完成率一致\n\n**五种策略在当前配对任务轨迹上的完成率均为 99.41%。** 这说明当前成本和绿电差异不是通过减少完成任务取得的；仍需在更多 seed 上复核非劣性。"
+      },
+      {
+        "id": "reliability_chart_block",
+        "type": "chart",
+        "chartId": "reliability_chart",
+        "layout": "full"
+      },
+      {
+        "id": "sla_finding",
+        "type": "markdown",
+        "sourceId": "metrics_long",
+        "layout": "full",
+        "body": "## SLA：DQN 改善 Soft，但 Flexible 准时率低于基线\n\n**相对 Equal weight，DQN 的 Soft 准时率变化 -0.58 个百分点，Flexible 准时率变化 +0.34 个百分点。** 因此，Flexible SLA 是后续正式评估必须保留的独立护栏。"
+      },
+      {
+        "id": "sla_chart_block",
+        "type": "chart",
+        "chartId": "sla_chart",
+        "layout": "full"
+      },
+      {
+        "id": "waiting_finding",
+        "type": "markdown",
+        "sourceId": "metrics_long",
+        "layout": "full",
+        "body": "## 等待行为：策略通过不同程度的主动等待换取目标收益\n\n**主动等待反映策略是否把任务推迟到未来时隙，而不是失败数量。** 应把等待数量、P95 等待时间和正收益率与成本、绿电及 SLA 联合解释，避免把等待更少直接当作更优。"
+      },
+      {
+        "id": "waiting_chart_block",
+        "type": "chart",
+        "chartId": "waiting_chart",
+        "layout": "full"
+      },
+      {
+        "id": "fine_grained_evaluation",
+        "type": "markdown",
+        "sourceId": "metrics_long",
+        "layout": "full",
+        "body": "## 细粒度评估：任务、节点、网络与算法效率\n\n以下指标由任务执行记录、资源预留区间和决策墙钟计时逐层汇总。单 seed 只表示当前工作负载的诊断结果；运行效率应在相同设备、进程并发和审计配置下比较。"
+      },
+      {
+        "id": "task_latency_chart_block",
+        "type": "chart",
+        "chartId": "task_latency_chart",
+        "layout": "full"
+      },
+      {
+        "id": "load_balance_chart_block",
+        "type": "chart",
+        "chartId": "load_balance_chart",
+        "layout": "full"
+      },
+      {
+        "id": "network_chart_block",
+        "type": "chart",
+        "chartId": "network_chart",
+        "layout": "full"
+      },
+      {
+        "id": "runtime_chart_block",
+        "type": "chart",
+        "chartId": "runtime_chart",
+        "layout": "full"
+      },
+      {
+        "id": "exact_values",
+        "type": "markdown",
+        "layout": "full",
+        "body": "## 关键指标精确值\n\n下表提供五种策略的核心指标精确值，便于复核图表和后续引用。"
+      },
+      {
+        "id": "core_metrics_table_block",
+        "type": "table",
+        "tableId": "core_metrics_table",
+        "layout": "full"
+      },
+      {
+        "id": "dqn_delta",
+        "type": "markdown",
+        "sourceId": "metrics_long",
+        "layout": "full",
+        "body": "## DQN 相对 Equal weight 的差值与区间\n\n**差值统一定义为 Candidate DQN - Equal weight。** 当前包含 10 个配对 seed；表中报告配对 t 的 95% 置信区间。 比例型指标以百分点表示；成本和任务数优先显示相对变化。"
+      },
+      {
+        "id": "dqn_delta_table_block",
+        "type": "table",
+        "tableId": "dqn_delta_table",
+        "layout": "full"
+      },
+      {
+        "id": "best_policy",
+        "type": "markdown",
+        "sourceId": "metrics_long",
+        "layout": "full",
+        "body": "## 每项指标的最佳策略标记\n\n**只对定义上存在明确优劣方向的指标判优。** 到达规模、SLA 子组任务数、最终状态快照和主动等待行为等诊断指标标记为“不判优”，避免制造没有业务含义的综合冠军。"
+      },
+      {
+        "id": "best_policy_table_block",
+        "type": "table",
+        "tableId": "best_policy_table",
+        "layout": "full"
+      },
+      {
+        "id": "next_steps",
+        "type": "markdown",
+        "layout": "full",
+        "body": "## 建议的下一步\n\n1. 固定至少 10 个未参与训练的 seed，继续运行五策略配对评估。\n2. 以 Equal weight 为主要基线，检查 DQN 的成本、绿电、完成率和 Flexible SLA 配对区间。\n3. 仅在完成率非劣、物理违规为零且成本或绿电达到门禁后，再判断是否进入部署候选。"
+      },
+      {
+        "id": "further_questions",
+        "type": "markdown",
+        "layout": "full",
+        "body": "## 仍需回答的问题\n\n- DQN 的 Flexible SLA 退化是否在更多 seed 上持续存在？\n- 成本和绿电收益是否由少数负载场景或任务类型主导？\n- 主动等待减少后，等待收益率和长尾延迟是否仍保持可接受？"
+      },
+      {
+        "id": "caveats",
+        "type": "markdown",
+        "sourceId": "source_manifest",
+        "layout": "full",
+        "body": "## 限制与假设\n\n当前包含 10 个配对 seed；表中报告配对 t 的 95% 置信区间。 本报告比较的是冻结策略在相同仿真输入上的表现，不构成因果证明。Hard 任务没有首选开始窗口，因此其首选窗口准时率为不适用；主动等待指标只描述行为。"
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-08-20T05:12:00.042140+00:00",
+    "status": "ready",
+    "datasets": {
+      "headline": [
+        {
+          "dqn_cost": 6.080099934440419,
+          "dqn_cost_delta": -0.13798863318059962,
+          "dqn_green": 0.8740433533482722,
+          "dqn_green_delta": 0.14859203515840602,
+          "completion": 0.9941180844767095,
+          "soft_delta": -0.0058212160710219285,
+          "flexible_delta": 0.0034318746604544703
+        }
+      ],
+      "policy_summary": [
+        {
+          "policy": "earliest_feasible",
+          "policy_label": "Earliest feasible",
+          "seed_count": 10,
+          "total_economic_cost_yuan": 22988674.037790734,
+          "cost_per_cpu_hour": 6.8414878340873155,
+          "green_coverage": 0.6739736570326889,
+          "system_green_absorption": 0.054495977068676815,
+          "completion_rate": 0.9941180844767095,
+          "reservation_reliability": 1.0,
+          "soft_ontime": 1.0,
+          "flexible_ontime": 1.0,
+          "hard_delay_p95": 0.05906580821788917,
+          "active_wait_count": 0.0,
+          "active_wait_p95": null,
+          "wait_positive_benefit": null
+        },
+        {
+          "policy": "lowest_cost",
+          "policy_label": "Lowest cost",
+          "seed_count": 10,
+          "total_economic_cost_yuan": 16205585.447048688,
+          "cost_per_cpu_hour": 4.81400059536823,
+          "green_coverage": 0.9450770828803694,
+          "system_green_absorption": 0.0539175966237256,
+          "completion_rate": 0.9941180844767095,
+          "reservation_reliability": 1.0,
+          "soft_ontime": 0.7606888222705807,
+          "flexible_ontime": 0.911221925526949,
+          "hard_delay_p95": 0.8337317685382146,
+          "active_wait_count": 1135.5,
+          "active_wait_p95": 865.1110000000001,
+          "wait_positive_benefit": 0.9996459217539547
+        },
+        {
+          "policy": "highest_green",
+          "policy_label": "Highest green",
+          "seed_count": 10,
+          "total_economic_cost_yuan": 18982609.816315524,
+          "cost_per_cpu_hour": 5.6520729802707645,
+          "green_coverage": 0.9999998782252415,
+          "system_green_absorption": 0.05338775734798934,
+          "completion_rate": 0.9941180844767095,
+          "reservation_reliability": 1.0,
+          "soft_ontime": 0.5808265470139495,
+          "flexible_ontime": 0.9231153933167707,
+          "hard_delay_p95": 0.7267330242091702,
+          "active_wait_count": 1556.3,
+          "active_wait_p95": 655.3421750000001,
+          "wait_positive_benefit": 0.9685622797080036
+        },
+        {
+          "policy": "equal_weight",
+          "policy_label": "Equal weight",
+          "seed_count": 10,
+          "total_economic_cost_yuan": 23668601.916457545,
+          "cost_per_cpu_hour": 7.053387192415362,
+          "green_coverage": 0.7254513181898662,
+          "system_green_absorption": 0.03935122455643786,
+          "completion_rate": 0.9941180844767095,
+          "reservation_reliability": 1.0,
+          "soft_ontime": 0.9973537954045149,
+          "flexible_ontime": 0.9637740626821429,
+          "hard_delay_p95": 0.7676693098166848,
+          "active_wait_count": 1898.8,
+          "active_wait_p95": 762.732525,
+          "wait_positive_benefit": 0.9961586020768349
+        },
+        {
+          "policy": "candidate_dqn",
+          "policy_label": "Candidate DQN",
+          "seed_count": 10,
+          "total_economic_cost_yuan": 20402626.628069364,
+          "cost_per_cpu_hour": 6.080099934440419,
+          "green_coverage": 0.8740433533482722,
+          "system_green_absorption": 0.06354445089323205,
+          "completion_rate": 0.9941180844767095,
+          "reservation_reliability": 1.0,
+          "soft_ontime": 0.9915325793334929,
+          "flexible_ontime": 0.9672059373425974,
+          "hard_delay_p95": 0.8822797249886412,
+          "active_wait_count": 1757.4,
+          "active_wait_p95": 600.2875249999998,
+          "wait_positive_benefit": 0.9955406340688457
+        }
+      ],
+      "cost_comparison": [
+        {
+          "policy": "earliest_feasible",
+          "policy_label": "Earliest feasible",
+          "value": 6.8414878340873155,
+          "ci_low": 6.731890455010949,
+          "ci_high": 6.951085213163682,
+          "seed_count": 10
+        },
+        {
+          "policy": "lowest_cost",
+          "policy_label": "Lowest cost",
+          "value": 4.81400059536823,
+          "ci_low": 4.739928125208647,
+          "ci_high": 4.888073065527814,
+          "seed_count": 10
+        },
+        {
+          "policy": "highest_green",
+          "policy_label": "Highest green",
+          "value": 5.6520729802707645,
+          "ci_low": 5.638057412563798,
+          "ci_high": 5.666088547977731,
+          "seed_count": 10
+        },
+        {
+          "policy": "equal_weight",
+          "policy_label": "Equal weight",
+          "value": 7.053387192415362,
+          "ci_low": 6.967575632839636,
+          "ci_high": 7.1391987519910876,
+          "seed_count": 10
+        },
+        {
+          "policy": "candidate_dqn",
+          "policy_label": "Candidate DQN",
+          "value": 6.080099934440419,
+          "ci_low": 6.008423716262983,
+          "ci_high": 6.151776152617855,
+          "seed_count": 10
+        }
+      ],
+      "green_comparison": [
+        {
+          "policy": "earliest_feasible",
+          "policy_label": "Earliest feasible",
+          "value": 0.6739736570326889,
+          "ci_low": 0.6530776880338351,
+          "ci_high": 0.6948696260315426,
+          "seed_count": 10
+        },
+        {
+          "policy": "lowest_cost",
+          "policy_label": "Lowest cost",
+          "value": 0.9450770828803694,
+          "ci_low": 0.921347720868437,
+          "ci_high": 0.9688064448923018,
+          "seed_count": 10
+        },
+        {
+          "policy": "highest_green",
+          "policy_label": "Highest green",
+          "value": 0.9999998782252415,
+          "ci_low": 0.9999996027515982,
+          "ci_high": 1.000000153698885,
+          "seed_count": 10
+        },
+        {
+          "policy": "equal_weight",
+          "policy_label": "Equal weight",
+          "value": 0.7254513181898662,
+          "ci_low": 0.7148989783309637,
+          "ci_high": 0.7360036580487687,
+          "seed_count": 10
+        },
+        {
+          "policy": "candidate_dqn",
+          "policy_label": "Candidate DQN",
+          "value": 0.8740433533482722,
+          "ci_low": 0.8637018986991558,
+          "ci_high": 0.8843848079973886,
+          "seed_count": 10
+        }
+      ],
+      "reliability_comparison": [
+        {
+          "policy": "earliest_feasible",
+          "policy_label": "Earliest feasible",
+          "value": 0.9941180844767095,
+          "ci_low": 0.9933084365024464,
+          "ci_high": 0.9949277324509725,
+          "seed_count": 10
+        },
+        {
+          "policy": "lowest_cost",
+          "policy_label": "Lowest cost",
+          "value": 0.9941180844767095,
+          "ci_low": 0.9933084365024464,
+          "ci_high": 0.9949277324509725,
+          "seed_count": 10
+        },
+        {
+          "policy": "highest_green",
+          "policy_label": "Highest green",
+          "value": 0.9941180844767095,
+          "ci_low": 0.9933084365024464,
+          "ci_high": 0.9949277324509725,
+          "seed_count": 10
+        },
+        {
+          "policy": "equal_weight",
+          "policy_label": "Equal weight",
+          "value": 0.9941180844767095,
+          "ci_low": 0.9933084365024464,
+          "ci_high": 0.9949277324509725,
+          "seed_count": 10
+        },
+        {
+          "policy": "candidate_dqn",
+          "policy_label": "Candidate DQN",
+          "value": 0.9941180844767095,
+          "ci_low": 0.9933084365024464,
+          "ci_high": 0.9949277324509725,
+          "seed_count": 10
+        }
+      ],
+      "sla_ontime": [
+        {
+          "policy": "earliest_feasible",
+          "policy_label": "Earliest feasible",
+          "sla_type": "Soft",
+          "value": 1.0,
+          "ci_low": 1.0,
+          "ci_high": 1.0,
+          "seed_count": 10
+        },
+        {
+          "policy": "earliest_feasible",
+          "policy_label": "Earliest feasible",
+          "sla_type": "Flexible",
+          "value": 1.0,
+          "ci_low": 1.0,
+          "ci_high": 1.0,
+          "seed_count": 10
+        },
+        {
+          "policy": "lowest_cost",
+          "policy_label": "Lowest cost",
+          "sla_type": "Soft",
+          "value": 0.7606888222705807,
+          "ci_low": 0.7551557212137086,
+          "ci_high": 0.7662219233274528,
+          "seed_count": 10
+        },
+        {
+          "policy": "lowest_cost",
+          "policy_label": "Lowest cost",
+          "sla_type": "Flexible",
+          "value": 0.911221925526949,
+          "ci_low": 0.8945132644252435,
+          "ci_high": 0.9279305866286546,
+          "seed_count": 10
+        },
+        {
+          "policy": "highest_green",
+          "policy_label": "Highest green",
+          "sla_type": "Soft",
+          "value": 0.5808265470139495,
+          "ci_low": 0.577964182239408,
+          "ci_high": 0.583688911788491,
+          "seed_count": 10
+        },
+        {
+          "policy": "highest_green",
+          "policy_label": "Highest green",
+          "sla_type": "Flexible",
+          "value": 0.9231153933167707,
+          "ci_low": 0.9080344900094388,
+          "ci_high": 0.9381962966241026,
+          "seed_count": 10
+        },
+        {
+          "policy": "equal_weight",
+          "policy_label": "Equal weight",
+          "sla_type": "Soft",
+          "value": 0.9973537954045149,
+          "ci_low": 0.9966282365849224,
+          "ci_high": 0.9980793542241073,
+          "seed_count": 10
+        },
+        {
+          "policy": "equal_weight",
+          "policy_label": "Equal weight",
+          "sla_type": "Flexible",
+          "value": 0.9637740626821429,
+          "ci_low": 0.9597840654376333,
+          "ci_high": 0.9677640599266526,
+          "seed_count": 10
+        },
+        {
+          "policy": "candidate_dqn",
+          "policy_label": "Candidate DQN",
+          "sla_type": "Soft",
+          "value": 0.9915325793334929,
+          "ci_low": 0.9896418680772435,
+          "ci_high": 0.9934232905897423,
+          "seed_count": 10
+        },
+        {
+          "policy": "candidate_dqn",
+          "policy_label": "Candidate DQN",
+          "sla_type": "Flexible",
+          "value": 0.9672059373425974,
+          "ci_low": 0.9612540338277641,
+          "ci_high": 0.9731578408574307,
+          "seed_count": 10
+        }
+      ],
+      "waiting_comparison": [
+        {
+          "policy": "earliest_feasible",
+          "policy_label": "Earliest feasible",
+          "value": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.0,
+          "seed_count": 10
+        },
+        {
+          "policy": "lowest_cost",
+          "policy_label": "Lowest cost",
+          "value": 1135.5,
+          "ci_low": 1113.577296550926,
+          "ci_high": 1157.422703449074,
+          "seed_count": 10
+        },
+        {
+          "policy": "highest_green",
+          "policy_label": "Highest green",
+          "value": 1556.3,
+          "ci_low": 1520.5718392819235,
+          "ci_high": 1592.0281607180764,
+          "seed_count": 10
+        },
+        {
+          "policy": "equal_weight",
+          "policy_label": "Equal weight",
+          "value": 1898.8,
+          "ci_low": 1871.3359255109312,
+          "ci_high": 1926.2640744890687,
+          "seed_count": 10
+        },
+        {
+          "policy": "candidate_dqn",
+          "policy_label": "Candidate DQN",
+          "value": 1757.4,
+          "ci_low": 1721.7799826768392,
+          "ci_high": 1793.020017323161,
+          "seed_count": 10
+        }
+      ],
+      "dqn_deltas": [
+        {
+          "group": "成本",
+          "metric": "总经济成本",
+          "direction": "越低越好",
+          "equal_weight": "¥23.67M",
+          "candidate_dqn": "¥20.40M",
+          "delta": "-13.80%",
+          "paired_95_ci": "[-15.65%, -11.94%]",
+          "seed_count": 10
+        },
+        {
+          "group": "成本",
+          "metric": "每完成 CPU 小时成本",
+          "direction": "越低越好",
+          "equal_weight": "¥7.053",
+          "candidate_dqn": "¥6.080",
+          "delta": "-13.80%",
+          "paired_95_ci": "[-15.19%, -12.40%]",
+          "seed_count": 10
+        },
+        {
+          "group": "绿电",
+          "metric": "完成任务绿电覆盖率",
+          "direction": "越高越好",
+          "equal_weight": "72.55%",
+          "candidate_dqn": "87.40%",
+          "delta": "+14.86 pp",
+          "paired_95_ci": "[+13.32 pp, +16.40 pp]",
+          "seed_count": 10
+        },
+        {
+          "group": "绿电",
+          "metric": "系统绿电吸收率",
+          "direction": "越高越好",
+          "equal_weight": "3.94%",
+          "candidate_dqn": "6.35%",
+          "delta": "+2.42 pp",
+          "paired_95_ci": "[+1.71 pp, +3.13 pp]",
+          "seed_count": 10
+        },
+        {
+          "group": "可靠性",
+          "metric": "任务完成率",
+          "direction": "越高越好",
+          "equal_weight": "99.41%",
+          "candidate_dqn": "99.41%",
+          "delta": "+0.00 pp",
+          "paired_95_ci": "[+0.00 pp, +0.00 pp]",
+          "seed_count": 10
+        },
+        {
+          "group": "可靠性",
+          "metric": "预留可靠性",
+          "direction": "越高越好",
+          "equal_weight": "100.00%",
+          "candidate_dqn": "100.00%",
+          "delta": "+0.00 pp",
+          "paired_95_ci": "[+0.00 pp, +0.00 pp]",
+          "seed_count": 10
+        },
+        {
+          "group": "SLA",
+          "metric": "Soft 首选窗口准时率",
+          "direction": "越高越好",
+          "equal_weight": "99.74%",
+          "candidate_dqn": "99.15%",
+          "delta": "-0.58 pp",
+          "paired_95_ci": "[-0.77 pp, -0.39 pp]",
+          "seed_count": 10
+        },
+        {
+          "group": "SLA",
+          "metric": "Flexible 首选窗口准时率",
+          "direction": "越高越好",
+          "equal_weight": "96.38%",
+          "candidate_dqn": "96.72%",
+          "delta": "+0.34 pp",
+          "paired_95_ci": "[-0.40 pp, +1.09 pp]",
+          "seed_count": 10
+        },
+        {
+          "group": "SLA",
+          "metric": "Hard 开始延迟 P95",
+          "direction": "越低越好",
+          "equal_weight": "0.768",
+          "candidate_dqn": "0.882",
+          "delta": "+0.115",
+          "paired_95_ci": "[+0.088, +0.141]",
+          "seed_count": 10
+        },
+        {
+          "group": "等待行为",
+          "metric": "主动等待任务数",
+          "direction": "诊断指标",
+          "equal_weight": "1,899",
+          "candidate_dqn": "1,757",
+          "delta": "-7.45%",
+          "paired_95_ci": "[-8.97%, -5.93%]",
+          "seed_count": 10
+        },
+        {
+          "group": "等待行为",
+          "metric": "P95 主动等待时间",
+          "direction": "诊断指标",
+          "equal_weight": "762.733",
+          "candidate_dqn": "600.288",
+          "delta": "-162.445",
+          "paired_95_ci": "[-192.552, -132.338]",
+          "seed_count": 10
+        },
+        {
+          "group": "等待行为",
+          "metric": "主动等待正收益率",
+          "direction": "越高越好",
+          "equal_weight": "99.62%",
+          "candidate_dqn": "99.55%",
+          "delta": "-0.06 pp",
+          "paired_95_ci": "[-0.19 pp, +0.07 pp]",
+          "seed_count": 10
+        }
+      ],
+      "best_by_metric": [
+        {
+          "group": "可靠性",
+          "metric_path": "acceptance_rate",
+          "metric": "任务接受率",
+          "direction": "越高越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "99.41%",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "等待行为",
+          "metric_path": "active_wait_metrics.count",
+          "metric": "主动等待任务数",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "等待行为",
+          "metric_path": "active_wait_metrics.mean_active_wait_sim",
+          "metric": "平均主动等待时间",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "等待行为",
+          "metric_path": "active_wait_metrics.p95_active_wait_sim",
+          "metric": "P95 主动等待时间",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "等待行为",
+          "metric_path": "active_wait_metrics.positive_benefit_rate",
+          "metric": "主动等待正收益率",
+          "direction": "越高越好",
+          "best_policy": "Lowest cost",
+          "best_value": "99.96%",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "规模与状态",
+          "metric_path": "arrival_count",
+          "metric": "到达任务数",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "规模与状态",
+          "metric_path": "arrived_requested_cpu_hours",
+          "metric": "到达任务请求 CPU 小时",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "可靠性",
+          "metric_path": "completed_count",
+          "metric": "完成任务数",
+          "direction": "越高越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "2,436",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "规模与状态",
+          "metric_path": "completed_cpu_hours",
+          "metric": "完成 CPU 小时",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "绿电",
+          "metric_path": "completed_task_green_coverage",
+          "metric": "完成任务绿电覆盖率",
+          "direction": "越高越好",
+          "best_policy": "Highest green",
+          "best_value": "100.00%",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "可靠性",
+          "metric_path": "completion_rate",
+          "metric": "任务完成率",
+          "direction": "越高越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "99.41%",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "成本",
+          "metric_path": "cost_yuan_per_arrived_cpu_hour",
+          "metric": "每到达 CPU 小时成本",
+          "direction": "越低越好",
+          "best_policy": "Lowest cost",
+          "best_value": "¥4.814",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "成本",
+          "metric_path": "cost_yuan_per_completed_cpu_hour",
+          "metric": "每完成 CPU 小时成本",
+          "direction": "越低越好",
+          "best_policy": "Lowest cost",
+          "best_value": "¥4.814",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.network_summary.maximum_link_utilization",
+          "metric": "diagnostics.network_summary.maximum_link_utilization",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.network_summary.mean_path_distance_km",
+          "metric": "diagnostics.network_summary.mean_path_distance_km",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.network_summary.mean_path_hops",
+          "metric": "diagnostics.network_summary.mean_path_hops",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.network_summary.remote_reservation_count",
+          "metric": "diagnostics.network_summary.remote_reservation_count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "网络",
+          "metric_path": "diagnostics.network_summary.remote_task_rate",
+          "metric": "远程调度任务比例",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.network_summary.reservation_count",
+          "metric": "diagnostics.network_summary.reservation_count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.network_summary.time_link_mean_utilization",
+          "metric": "diagnostics.network_summary.time_link_mean_utilization",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.network_summary.total_data_distance_mb_km",
+          "metric": "diagnostics.network_summary.total_data_distance_mb_km",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.network_summary.total_transmitted_data_mb",
+          "metric": "diagnostics.network_summary.total_transmitted_data_mb",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.network_summary.transmission_duration_seconds.count",
+          "metric": "diagnostics.network_summary.transmission_duration_seconds.count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.network_summary.transmission_duration_seconds.maximum",
+          "metric": "diagnostics.network_summary.transmission_duration_seconds.maximum",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.network_summary.transmission_duration_seconds.mean",
+          "metric": "diagnostics.network_summary.transmission_duration_seconds.mean",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.network_summary.transmission_duration_seconds.p50",
+          "metric": "diagnostics.network_summary.transmission_duration_seconds.p50",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.network_summary.transmission_duration_seconds.p95",
+          "metric": "diagnostics.network_summary.transmission_duration_seconds.p95",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "网络",
+          "metric_path": "diagnostics.network_summary.weighted_p95_link_utilization",
+          "metric": "链路利用率 P95",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "负载均衡",
+          "metric_path": "diagnostics.node_summary.allocated_cpu_hours_cv",
+          "metric": "节点 CPU 工作量变异系数",
+          "direction": "越低越好",
+          "best_policy": "Equal weight",
+          "best_value": "85.89%",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "资源利用",
+          "metric_path": "diagnostics.node_summary.cpu_hotspot_time_ratio",
+          "metric": "CPU 热点时间占比",
+          "direction": "越低越好",
+          "best_policy": "Equal weight",
+          "best_value": "0.00%",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "资源利用",
+          "metric_path": "diagnostics.node_summary.cpu_overcapacity_time_ratio",
+          "metric": "CPU 超容量时间占比",
+          "direction": "越低越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "0.00%",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.node_summary.maximum_node_cpu_utilization",
+          "metric": "diagnostics.node_summary.maximum_node_cpu_utilization",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.node_summary.node_count",
+          "metric": "diagnostics.node_summary.node_count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "资源利用",
+          "metric_path": "diagnostics.node_summary.time_node_mean_cpu_utilization",
+          "metric": "时间-节点平均 CPU 利用率",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.node_summary.time_weighted_node_load_cv",
+          "metric": "diagnostics.node_summary.time_weighted_node_load_cv",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.node_summary.used_node_count",
+          "metric": "diagnostics.node_summary.used_node_count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.node_summary.weighted_p95_node_cpu_utilization",
+          "metric": "diagnostics.node_summary.weighted_p95_node_cpu_utilization",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.candidate_feasibility_internal_percent.cpu_interval_feasibility",
+          "metric": "diagnostics.runtime_summary.candidate_feasibility_internal_percent.cpu_interval_feasibility",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.candidate_feasibility_internal_percent.feasibility_other",
+          "metric": "diagnostics.runtime_summary.candidate_feasibility_internal_percent.feasibility_other",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.candidate_feasibility_internal_percent.path_interval_feasibility",
+          "metric": "diagnostics.runtime_summary.candidate_feasibility_internal_percent.path_interval_feasibility",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.candidate_feasibility_internal_percent.sla_and_item_assembly",
+          "metric": "diagnostics.runtime_summary.candidate_feasibility_internal_percent.sla_and_item_assembly",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.candidate_feasibility_internal_percent.transmission_schedule",
+          "metric": "diagnostics.runtime_summary.candidate_feasibility_internal_percent.transmission_schedule",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.candidate_feasibility_internal_seconds.cpu_interval_feasibility",
+          "metric": "diagnostics.runtime_summary.candidate_feasibility_internal_seconds.cpu_interval_feasibility",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.candidate_feasibility_internal_seconds.feasibility_other",
+          "metric": "diagnostics.runtime_summary.candidate_feasibility_internal_seconds.feasibility_other",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.candidate_feasibility_internal_seconds.path_interval_feasibility",
+          "metric": "diagnostics.runtime_summary.candidate_feasibility_internal_seconds.path_interval_feasibility",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.candidate_feasibility_internal_seconds.sla_and_item_assembly",
+          "metric": "diagnostics.runtime_summary.candidate_feasibility_internal_seconds.sla_and_item_assembly",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.candidate_feasibility_internal_seconds.transmission_schedule",
+          "metric": "diagnostics.runtime_summary.candidate_feasibility_internal_seconds.transmission_schedule",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.candidate_internal_percent_of_candidate_pipeline.candidate_id_hash",
+          "metric": "diagnostics.runtime_summary.candidate_internal_percent_of_candidate_pipeline.candidate_id_hash",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.candidate_internal_percent_of_candidate_pipeline.candidate_object_construction",
+          "metric": "diagnostics.runtime_summary.candidate_internal_percent_of_candidate_pipeline.candidate_object_construction",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.candidate_internal_percent_of_candidate_pipeline.candidate_pipeline_other",
+          "metric": "diagnostics.runtime_summary.candidate_internal_percent_of_candidate_pipeline.candidate_pipeline_other",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.candidate_internal_percent_of_candidate_pipeline.physical_metric_evaluation",
+          "metric": "diagnostics.runtime_summary.candidate_internal_percent_of_candidate_pipeline.physical_metric_evaluation",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.candidate_internal_percent_of_candidate_pipeline.prepare_feasibility",
+          "metric": "diagnostics.runtime_summary.candidate_internal_percent_of_candidate_pipeline.prepare_feasibility",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.candidate_internal_percent_of_candidate_pipeline.stream_and_replay_feasibility",
+          "metric": "diagnostics.runtime_summary.candidate_internal_percent_of_candidate_pipeline.stream_and_replay_feasibility",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.candidate_internal_seconds.candidate_id_hash",
+          "metric": "diagnostics.runtime_summary.candidate_internal_seconds.candidate_id_hash",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.candidate_internal_seconds.candidate_object_construction",
+          "metric": "diagnostics.runtime_summary.candidate_internal_seconds.candidate_object_construction",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.candidate_internal_seconds.candidate_pipeline_other",
+          "metric": "diagnostics.runtime_summary.candidate_internal_seconds.candidate_pipeline_other",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.candidate_internal_seconds.physical_metric_evaluation",
+          "metric": "diagnostics.runtime_summary.candidate_internal_seconds.physical_metric_evaluation",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.candidate_internal_seconds.prepare_feasibility",
+          "metric": "diagnostics.runtime_summary.candidate_internal_seconds.prepare_feasibility",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.candidate_internal_seconds.stream_and_replay_feasibility",
+          "metric": "diagnostics.runtime_summary.candidate_internal_seconds.stream_and_replay_feasibility",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.counters.candidate_metric_evaluation_count",
+          "metric": "diagnostics.runtime_summary.counters.candidate_metric_evaluation_count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.counters.candidate_object_count",
+          "metric": "diagnostics.runtime_summary.counters.candidate_object_count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.counters.idle_cycle_skip_count",
+          "metric": "diagnostics.runtime_summary.counters.idle_cycle_skip_count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.counters.policy_selection_count",
+          "metric": "diagnostics.runtime_summary.counters.policy_selection_count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.counters.prepare_feasibility_check_count",
+          "metric": "diagnostics.runtime_summary.counters.prepare_feasibility_check_count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.counters.prepare_theoretical_slot_count",
+          "metric": "diagnostics.runtime_summary.counters.prepare_theoretical_slot_count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.counters.replay_candidate_feature_count",
+          "metric": "diagnostics.runtime_summary.counters.replay_candidate_feature_count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.counters.reservation_commit_attempt_count",
+          "metric": "diagnostics.runtime_summary.counters.reservation_commit_attempt_count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.counters.scheduler_cycle_count",
+          "metric": "diagnostics.runtime_summary.counters.scheduler_cycle_count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.counters.scheduler_decision_count",
+          "metric": "diagnostics.runtime_summary.counters.scheduler_decision_count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.counters.selection_candidate_count",
+          "metric": "diagnostics.runtime_summary.counters.selection_candidate_count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.counters.stream_feasibility_check_count",
+          "metric": "diagnostics.runtime_summary.counters.stream_feasibility_check_count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.counters.training_process_cycle_count",
+          "metric": "diagnostics.runtime_summary.counters.training_process_cycle_count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.counters.virtual_cycle_count",
+          "metric": "diagnostics.runtime_summary.counters.virtual_cycle_count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.decision_seconds_per_arrived_task",
+          "metric": "diagnostics.runtime_summary.decision_seconds_per_arrived_task",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.decision_stage_seconds.policy_selection_total",
+          "metric": "diagnostics.runtime_summary.decision_stage_seconds.policy_selection_total",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.decision_stage_seconds.reservation_commit_total",
+          "metric": "diagnostics.runtime_summary.decision_stage_seconds.reservation_commit_total",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.decision_stage_seconds.scheduler_decision_total",
+          "metric": "diagnostics.runtime_summary.decision_stage_seconds.scheduler_decision_total",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.decision_wall_seconds.count",
+          "metric": "diagnostics.runtime_summary.decision_wall_seconds.count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.decision_wall_seconds.maximum",
+          "metric": "diagnostics.runtime_summary.decision_wall_seconds.maximum",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "运行效率",
+          "metric_path": "diagnostics.runtime_summary.decision_wall_seconds.mean",
+          "metric": "平均单次调度决策耗时",
+          "direction": "越低越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "0.248",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.decision_wall_seconds.p50",
+          "metric": "diagnostics.runtime_summary.decision_wall_seconds.p50",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "运行效率",
+          "metric_path": "diagnostics.runtime_summary.decision_wall_seconds.p95",
+          "metric": "单次调度决策耗时 P95",
+          "direction": "越低越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "1.020",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.detail_seconds.artifact_save_seconds",
+          "metric": "diagnostics.runtime_summary.detail_seconds.artifact_save_seconds",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.detail_seconds.backpropagation_seconds",
+          "metric": "diagnostics.runtime_summary.detail_seconds.backpropagation_seconds",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.detail_seconds.bootstrap_inference_seconds",
+          "metric": "diagnostics.runtime_summary.detail_seconds.bootstrap_inference_seconds",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.detail_seconds.candidate_cpu_feasibility_seconds",
+          "metric": "diagnostics.runtime_summary.detail_seconds.candidate_cpu_feasibility_seconds",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.detail_seconds.candidate_feasibility_prepare_seconds",
+          "metric": "diagnostics.runtime_summary.detail_seconds.candidate_feasibility_prepare_seconds",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.detail_seconds.candidate_feasibility_stream_seconds",
+          "metric": "diagnostics.runtime_summary.detail_seconds.candidate_feasibility_stream_seconds",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.detail_seconds.candidate_feature_encoding_seconds",
+          "metric": "diagnostics.runtime_summary.detail_seconds.candidate_feature_encoding_seconds",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.detail_seconds.candidate_id_hash_seconds",
+          "metric": "diagnostics.runtime_summary.detail_seconds.candidate_id_hash_seconds",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.detail_seconds.candidate_metric_evaluation_seconds",
+          "metric": "diagnostics.runtime_summary.detail_seconds.candidate_metric_evaluation_seconds",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.detail_seconds.candidate_object_construction_seconds",
+          "metric": "diagnostics.runtime_summary.detail_seconds.candidate_object_construction_seconds",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.detail_seconds.candidate_path_feasibility_seconds",
+          "metric": "diagnostics.runtime_summary.detail_seconds.candidate_path_feasibility_seconds",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.detail_seconds.candidate_prepare_seconds",
+          "metric": "diagnostics.runtime_summary.detail_seconds.candidate_prepare_seconds",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.detail_seconds.candidate_sla_and_item_seconds",
+          "metric": "diagnostics.runtime_summary.detail_seconds.candidate_sla_and_item_seconds",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.detail_seconds.candidate_stream_seconds",
+          "metric": "diagnostics.runtime_summary.detail_seconds.candidate_stream_seconds",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.detail_seconds.candidate_transmission_schedule_seconds",
+          "metric": "diagnostics.runtime_summary.detail_seconds.candidate_transmission_schedule_seconds",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.detail_seconds.checkpoint_seconds",
+          "metric": "diagnostics.runtime_summary.detail_seconds.checkpoint_seconds",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.detail_seconds.environment_update_seconds",
+          "metric": "diagnostics.runtime_summary.detail_seconds.environment_update_seconds",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.detail_seconds.logging_seconds",
+          "metric": "diagnostics.runtime_summary.detail_seconds.logging_seconds",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.detail_seconds.policy_selection_seconds",
+          "metric": "diagnostics.runtime_summary.detail_seconds.policy_selection_seconds",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.detail_seconds.replay_candidate_generation_seconds",
+          "metric": "diagnostics.runtime_summary.detail_seconds.replay_candidate_generation_seconds",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.detail_seconds.reservation_commit_seconds",
+          "metric": "diagnostics.runtime_summary.detail_seconds.reservation_commit_seconds",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.detail_seconds.scheduler_decision_seconds",
+          "metric": "diagnostics.runtime_summary.detail_seconds.scheduler_decision_seconds",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.detail_seconds.selection_inference_seconds",
+          "metric": "diagnostics.runtime_summary.detail_seconds.selection_inference_seconds",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.detail_seconds.training_forward_seconds",
+          "metric": "diagnostics.runtime_summary.detail_seconds.training_forward_seconds",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.detail_seconds.transition_feature_cache_seconds",
+          "metric": "diagnostics.runtime_summary.detail_seconds.transition_feature_cache_seconds",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.sections_percent.backpropagation_and_optimizer",
+          "metric": "diagnostics.runtime_summary.sections_percent.backpropagation_and_optimizer",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.sections_percent.candidate_feature_encoding",
+          "metric": "diagnostics.runtime_summary.sections_percent.candidate_feature_encoding",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.sections_percent.candidate_slot_generation",
+          "metric": "diagnostics.runtime_summary.sections_percent.candidate_slot_generation",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.sections_percent.environment_and_accounting",
+          "metric": "diagnostics.runtime_summary.sections_percent.environment_and_accounting",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.sections_percent.logging_and_saving",
+          "metric": "diagnostics.runtime_summary.sections_percent.logging_and_saving",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.sections_percent.neural_network_inference",
+          "metric": "diagnostics.runtime_summary.sections_percent.neural_network_inference",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.sections_percent.other_or_profiler_overhead",
+          "metric": "diagnostics.runtime_summary.sections_percent.other_or_profiler_overhead",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.sections_seconds.backpropagation_and_optimizer",
+          "metric": "diagnostics.runtime_summary.sections_seconds.backpropagation_and_optimizer",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.sections_seconds.candidate_feature_encoding",
+          "metric": "diagnostics.runtime_summary.sections_seconds.candidate_feature_encoding",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.sections_seconds.candidate_slot_generation",
+          "metric": "diagnostics.runtime_summary.sections_seconds.candidate_slot_generation",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.sections_seconds.environment_and_accounting",
+          "metric": "diagnostics.runtime_summary.sections_seconds.environment_and_accounting",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.sections_seconds.logging_and_saving",
+          "metric": "diagnostics.runtime_summary.sections_seconds.logging_and_saving",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.sections_seconds.neural_network_inference",
+          "metric": "diagnostics.runtime_summary.sections_seconds.neural_network_inference",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.sections_seconds.other_or_profiler_overhead",
+          "metric": "diagnostics.runtime_summary.sections_seconds.other_or_profiler_overhead",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.runtime_summary.selection_candidates_per_second",
+          "metric": "diagnostics.runtime_summary.selection_candidates_per_second",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "运行效率",
+          "metric_path": "diagnostics.runtime_summary.total_wall_seconds",
+          "metric": "整体评估墙钟时间",
+          "direction": "越低越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "619.985",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "系统效率",
+          "metric_path": "diagnostics.system_summary.completed_tasks_per_physical_hour",
+          "metric": "每物理小时完成任务数",
+          "direction": "越高越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "14.416",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.system_summary.evaluation_span_physical_hours",
+          "metric": "diagnostics.system_summary.evaluation_span_physical_hours",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.system_summary.evaluation_span_sim",
+          "metric": "diagnostics.system_summary.evaluation_span_sim",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.system_summary.reservation_count",
+          "metric": "diagnostics.system_summary.reservation_count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.system_summary.time_interval_count",
+          "metric": "diagnostics.system_summary.time_interval_count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.candidate_count_per_decision.count",
+          "metric": "diagnostics.task_summary.candidate_count_per_decision.count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.candidate_count_per_decision.maximum",
+          "metric": "diagnostics.task_summary.candidate_count_per_decision.maximum",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.candidate_count_per_decision.mean",
+          "metric": "diagnostics.task_summary.candidate_count_per_decision.mean",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.candidate_count_per_decision.p50",
+          "metric": "diagnostics.task_summary.candidate_count_per_decision.p50",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.candidate_count_per_decision.p95",
+          "metric": "diagnostics.task_summary.candidate_count_per_decision.p95",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.completion_delay_sim.count",
+          "metric": "diagnostics.task_summary.completion_delay_sim.count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.completion_delay_sim.maximum",
+          "metric": "diagnostics.task_summary.completion_delay_sim.maximum",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.completion_delay_sim.mean",
+          "metric": "diagnostics.task_summary.completion_delay_sim.mean",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.completion_delay_sim.p50",
+          "metric": "diagnostics.task_summary.completion_delay_sim.p50",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "任务时延",
+          "metric_path": "diagnostics.task_summary.completion_delay_sim.p95",
+          "metric": "任务完成时延 P95",
+          "direction": "越低越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "95.284",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.decision_count_per_arrived_task",
+          "metric": "diagnostics.task_summary.decision_count_per_arrived_task",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.decision_wall_seconds.count",
+          "metric": "diagnostics.task_summary.decision_wall_seconds.count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.decision_wall_seconds.maximum",
+          "metric": "diagnostics.task_summary.decision_wall_seconds.maximum",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.decision_wall_seconds.mean",
+          "metric": "diagnostics.task_summary.decision_wall_seconds.mean",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.decision_wall_seconds.p50",
+          "metric": "diagnostics.task_summary.decision_wall_seconds.p50",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.decision_wall_seconds.p95",
+          "metric": "diagnostics.task_summary.decision_wall_seconds.p95",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.reservation_lead_sim.count",
+          "metric": "diagnostics.task_summary.reservation_lead_sim.count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.reservation_lead_sim.maximum",
+          "metric": "diagnostics.task_summary.reservation_lead_sim.maximum",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.reservation_lead_sim.mean",
+          "metric": "diagnostics.task_summary.reservation_lead_sim.mean",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.reservation_lead_sim.p50",
+          "metric": "diagnostics.task_summary.reservation_lead_sim.p50",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.reservation_lead_sim.p95",
+          "metric": "diagnostics.task_summary.reservation_lead_sim.p95",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.scheduler_queue_delay_sim.count",
+          "metric": "diagnostics.task_summary.scheduler_queue_delay_sim.count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.scheduler_queue_delay_sim.maximum",
+          "metric": "diagnostics.task_summary.scheduler_queue_delay_sim.maximum",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.scheduler_queue_delay_sim.mean",
+          "metric": "diagnostics.task_summary.scheduler_queue_delay_sim.mean",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.scheduler_queue_delay_sim.p50",
+          "metric": "diagnostics.task_summary.scheduler_queue_delay_sim.p50",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "任务时延",
+          "metric_path": "diagnostics.task_summary.scheduler_queue_delay_sim.p95",
+          "metric": "调度排队时延 P95",
+          "direction": "越低越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "0.000",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.start_delay_sim.count",
+          "metric": "diagnostics.task_summary.start_delay_sim.count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.start_delay_sim.maximum",
+          "metric": "diagnostics.task_summary.start_delay_sim.maximum",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.start_delay_sim.mean",
+          "metric": "diagnostics.task_summary.start_delay_sim.mean",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.task_summary.start_delay_sim.p50",
+          "metric": "diagnostics.task_summary.start_delay_sim.p50",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "任务时延",
+          "metric_path": "diagnostics.task_summary.start_delay_sim.p95",
+          "metric": "任务开始时延 P95",
+          "direction": "越低越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "0.198",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.time_summary.cpu_hotspot_time_ratio",
+          "metric": "diagnostics.time_summary.cpu_hotspot_time_ratio",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.time_summary.cpu_overcapacity_time_ratio",
+          "metric": "diagnostics.time_summary.cpu_overcapacity_time_ratio",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.time_summary.interval_count",
+          "metric": "diagnostics.time_summary.interval_count",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.time_summary.maximum_link_utilization",
+          "metric": "diagnostics.time_summary.maximum_link_utilization",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.time_summary.maximum_node_cpu_utilization",
+          "metric": "diagnostics.time_summary.maximum_node_cpu_utilization",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.time_summary.time_link_mean_utilization",
+          "metric": "diagnostics.time_summary.time_link_mean_utilization",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.time_summary.time_node_mean_cpu_utilization",
+          "metric": "diagnostics.time_summary.time_node_mean_cpu_utilization",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.time_summary.time_weighted_node_load_cv",
+          "metric": "diagnostics.time_summary.time_weighted_node_load_cv",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.time_summary.weighted_p95_link_utilization",
+          "metric": "diagnostics.time_summary.weighted_p95_link_utilization",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "其他",
+          "metric_path": "diagnostics.time_summary.weighted_p95_node_cpu_utilization",
+          "metric": "diagnostics.time_summary.weighted_p95_node_cpu_utilization",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "可靠性",
+          "metric_path": "expired_count",
+          "metric": "过期任务数",
+          "direction": "越低越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "14",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "可靠性",
+          "metric_path": "failed_count",
+          "metric": "失败任务数",
+          "direction": "越低越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "0",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "规模与状态",
+          "metric_path": "final_state_counts.Arrived",
+          "metric": "最终状态：Arrived",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "规模与状态",
+          "metric_path": "final_state_counts.Completed",
+          "metric": "最终状态：Completed",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "规模与状态",
+          "metric_path": "final_state_counts.Expired",
+          "metric": "最终状态：Expired",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "规模与状态",
+          "metric_path": "final_state_counts.Failed",
+          "metric": "最终状态：Failed",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "规模与状态",
+          "metric_path": "final_state_counts.PendingUncommitted",
+          "metric": "最终状态：PendingUncommitted",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "规模与状态",
+          "metric_path": "final_state_counts.Queued",
+          "metric": "最终状态：Queued",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "规模与状态",
+          "metric_path": "final_state_counts.Rejected",
+          "metric": "最终状态：Rejected",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "规模与状态",
+          "metric_path": "final_state_counts.Reserved",
+          "metric": "最终状态：Reserved",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "规模与状态",
+          "metric_path": "final_state_counts.Running",
+          "metric": "最终状态：Running",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "规模与状态",
+          "metric_path": "final_state_counts.Transmitting",
+          "metric": "最终状态：Transmitting",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "可靠性",
+          "metric_path": "rejected_count",
+          "metric": "拒绝任务数",
+          "direction": "越低越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "0",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "可靠性",
+          "metric_path": "reservation_reliability",
+          "metric": "预留可靠性",
+          "direction": "越高越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "100.00%",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "可靠性",
+          "metric_path": "reserved_ever_count",
+          "metric": "曾获预留任务数",
+          "direction": "越高越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "2,436",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Flexible.acceptable_tardy_rate",
+          "metric": "Flexible 可接受迟到率",
+          "direction": "越低越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "0.00%",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Flexible.count",
+          "metric": "Flexible 任务数",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Flexible.expired_rate",
+          "metric": "Flexible 过期率",
+          "direction": "越低越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "0.00%",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Flexible.preferred_on_time_rate",
+          "metric": "Flexible 首选窗口准时率",
+          "direction": "越高越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "100.00%",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Flexible.preferred_start_tardiness_p50",
+          "metric": "Flexible 首选窗口迟到程度 P50",
+          "direction": "越低越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "0.00%",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Flexible.preferred_start_tardiness_p95",
+          "metric": "Flexible 首选窗口迟到程度 P95",
+          "direction": "越低越好",
+          "best_policy": "并列：Earliest feasible / Equal weight / Candidate DQN",
+          "best_value": "0.00%",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Flexible.start_delay_p50_sim",
+          "metric": "Flexible 开始延迟 P50",
+          "direction": "越低越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "0.182",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Flexible.start_delay_p95_sim",
+          "metric": "Flexible 开始延迟 P95",
+          "direction": "越低越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "0.195",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Hard.acceptable_tardy_rate",
+          "metric": "Hard 可接受迟到率",
+          "direction": "越低越好",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Hard.count",
+          "metric": "Hard 任务数",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Hard.expired_rate",
+          "metric": "Hard 过期率",
+          "direction": "越低越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "2.20%",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Hard.preferred_on_time_rate",
+          "metric": "Hard 首选窗口准时率",
+          "direction": "越高越好",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Hard.preferred_start_tardiness_p50",
+          "metric": "Hard 首选窗口迟到程度 P50",
+          "direction": "越低越好",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Hard.preferred_start_tardiness_p95",
+          "metric": "Hard 首选窗口迟到程度 P95",
+          "direction": "越低越好",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Hard.start_delay_p50_sim",
+          "metric": "Hard 开始延迟 P50",
+          "direction": "越低越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "0.026",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Hard.start_delay_p95_sim",
+          "metric": "Hard 开始延迟 P95",
+          "direction": "越低越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "0.059",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Soft.acceptable_tardy_rate",
+          "metric": "Soft 可接受迟到率",
+          "direction": "越低越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "0.00%",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Soft.count",
+          "metric": "Soft 任务数",
+          "direction": "不判优",
+          "best_policy": "不判优",
+          "best_value": "N/A",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Soft.expired_rate",
+          "metric": "Soft 过期率",
+          "direction": "越低越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "0.00%",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Soft.preferred_on_time_rate",
+          "metric": "Soft 首选窗口准时率",
+          "direction": "越高越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "100.00%",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Soft.preferred_start_tardiness_p50",
+          "metric": "Soft 首选窗口迟到程度 P50",
+          "direction": "越低越好",
+          "best_policy": "并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN",
+          "best_value": "0.00%",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Soft.preferred_start_tardiness_p95",
+          "metric": "Soft 首选窗口迟到程度 P95",
+          "direction": "越低越好",
+          "best_policy": "并列：Earliest feasible / Equal weight / Candidate DQN",
+          "best_value": "0.00%",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Soft.start_delay_p50_sim",
+          "metric": "Soft 开始延迟 P50",
+          "direction": "越低越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "0.184",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "SLA",
+          "metric_path": "sla_metrics.Soft.start_delay_p95_sim",
+          "metric": "Soft 开始延迟 P95",
+          "direction": "越低越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "0.200",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "绿电",
+          "metric_path": "system_green_absorption_rate",
+          "metric": "系统绿电吸收率",
+          "direction": "越高越好",
+          "best_policy": "Candidate DQN",
+          "best_value": "6.35%",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        },
+        {
+          "group": "成本",
+          "metric_path": "total_economic_cost_yuan",
+          "metric": "总经济成本",
+          "direction": "越低越好",
+          "best_policy": "Lowest cost",
+          "best_value": "¥16.21M",
+          "seed_count": 10,
+          "uncertainty": "跨 seed 均值"
+        }
+      ],
+      "source_reports": [
+        {
+          "seed": "101",
+          "policy": "earliest_feasible",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_101/earliest_feasible_seed101.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "f2c0efdfe3e4d49cc81d14f2ee0fd78ecc352767afcb7f2a3e085060d3105812",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "3b3a6115420e887b6394192e46daf8a1eced8763af7253a878557d8cf1fa5801",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2398",
+          "completed_count": "2386",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "101",
+          "policy": "lowest_cost",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_101/lowest_cost_seed101.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "832fcbbff3f7175cd7166e9b9b008156e13336108654283a34d4835e716fdb75",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "3b3a6115420e887b6394192e46daf8a1eced8763af7253a878557d8cf1fa5801",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2398",
+          "completed_count": "2386",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "101",
+          "policy": "highest_green",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_101/highest_green_seed101.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "32adf3226da3ac8f3d6dc5fd114f37c732aa71b2978be6a41519c805a61a4921",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "3b3a6115420e887b6394192e46daf8a1eced8763af7253a878557d8cf1fa5801",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2398",
+          "completed_count": "2386",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "101",
+          "policy": "equal_weight",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_101/equal_weight_seed101.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "66dca07c62e6583c53d63c423ee778975c359c1d5825b7c33a20d922e831363e",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "3b3a6115420e887b6394192e46daf8a1eced8763af7253a878557d8cf1fa5801",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2398",
+          "completed_count": "2386",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "101",
+          "policy": "candidate_dqn",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_101/candidate_dqn_seed101.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "a934da538e084241e10e1fd8292f6c94d1ea36da8dc0907cae3935c2659642dd",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "3b3a6115420e887b6394192e46daf8a1eced8763af7253a878557d8cf1fa5801",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2398",
+          "completed_count": "2386",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "103",
+          "policy": "earliest_feasible",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_103/earliest_feasible_seed103.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "f2c0efdfe3e4d49cc81d14f2ee0fd78ecc352767afcb7f2a3e085060d3105812",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "558d9c835a6e22143af66f09ce21d7d49360b8a5541998228d0622bad6e8d5cc",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2481",
+          "completed_count": "2466",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "103",
+          "policy": "lowest_cost",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_103/lowest_cost_seed103.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "832fcbbff3f7175cd7166e9b9b008156e13336108654283a34d4835e716fdb75",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "558d9c835a6e22143af66f09ce21d7d49360b8a5541998228d0622bad6e8d5cc",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2481",
+          "completed_count": "2466",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "103",
+          "policy": "highest_green",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_103/highest_green_seed103.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "32adf3226da3ac8f3d6dc5fd114f37c732aa71b2978be6a41519c805a61a4921",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "558d9c835a6e22143af66f09ce21d7d49360b8a5541998228d0622bad6e8d5cc",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2481",
+          "completed_count": "2466",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "103",
+          "policy": "equal_weight",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_103/equal_weight_seed103.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "66dca07c62e6583c53d63c423ee778975c359c1d5825b7c33a20d922e831363e",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "558d9c835a6e22143af66f09ce21d7d49360b8a5541998228d0622bad6e8d5cc",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2481",
+          "completed_count": "2466",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "103",
+          "policy": "candidate_dqn",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_103/candidate_dqn_seed103.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "a934da538e084241e10e1fd8292f6c94d1ea36da8dc0907cae3935c2659642dd",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "558d9c835a6e22143af66f09ce21d7d49360b8a5541998228d0622bad6e8d5cc",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2481",
+          "completed_count": "2466",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "107",
+          "policy": "earliest_feasible",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_107/earliest_feasible_seed107.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "f2c0efdfe3e4d49cc81d14f2ee0fd78ecc352767afcb7f2a3e085060d3105812",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "2cca2db3837d5aee0886898ccad18baa2b99a194f19e88f01963d0cf78c05695",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2425",
+          "completed_count": "2409",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "107",
+          "policy": "lowest_cost",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_107/lowest_cost_seed107.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "832fcbbff3f7175cd7166e9b9b008156e13336108654283a34d4835e716fdb75",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "2cca2db3837d5aee0886898ccad18baa2b99a194f19e88f01963d0cf78c05695",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2425",
+          "completed_count": "2409",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "107",
+          "policy": "highest_green",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_107/highest_green_seed107.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "32adf3226da3ac8f3d6dc5fd114f37c732aa71b2978be6a41519c805a61a4921",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "2cca2db3837d5aee0886898ccad18baa2b99a194f19e88f01963d0cf78c05695",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2425",
+          "completed_count": "2409",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "107",
+          "policy": "equal_weight",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_107/equal_weight_seed107.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "66dca07c62e6583c53d63c423ee778975c359c1d5825b7c33a20d922e831363e",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "2cca2db3837d5aee0886898ccad18baa2b99a194f19e88f01963d0cf78c05695",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2425",
+          "completed_count": "2409",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "107",
+          "policy": "candidate_dqn",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_107/candidate_dqn_seed107.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "a934da538e084241e10e1fd8292f6c94d1ea36da8dc0907cae3935c2659642dd",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "2cca2db3837d5aee0886898ccad18baa2b99a194f19e88f01963d0cf78c05695",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2425",
+          "completed_count": "2409",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "109",
+          "policy": "earliest_feasible",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_109/earliest_feasible_seed109.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "f2c0efdfe3e4d49cc81d14f2ee0fd78ecc352767afcb7f2a3e085060d3105812",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "af35ba4f66675c56d147e5ad4f9af2064b9ae403ad7553b1e6d75e60ea5b236b",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2493",
+          "completed_count": "2477",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "109",
+          "policy": "lowest_cost",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_109/lowest_cost_seed109.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "832fcbbff3f7175cd7166e9b9b008156e13336108654283a34d4835e716fdb75",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "af35ba4f66675c56d147e5ad4f9af2064b9ae403ad7553b1e6d75e60ea5b236b",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2493",
+          "completed_count": "2477",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "109",
+          "policy": "highest_green",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_109/highest_green_seed109.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "32adf3226da3ac8f3d6dc5fd114f37c732aa71b2978be6a41519c805a61a4921",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "af35ba4f66675c56d147e5ad4f9af2064b9ae403ad7553b1e6d75e60ea5b236b",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2493",
+          "completed_count": "2477",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "109",
+          "policy": "equal_weight",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_109/equal_weight_seed109.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "66dca07c62e6583c53d63c423ee778975c359c1d5825b7c33a20d922e831363e",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "af35ba4f66675c56d147e5ad4f9af2064b9ae403ad7553b1e6d75e60ea5b236b",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2493",
+          "completed_count": "2477",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "109",
+          "policy": "candidate_dqn",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_109/candidate_dqn_seed109.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "a934da538e084241e10e1fd8292f6c94d1ea36da8dc0907cae3935c2659642dd",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "af35ba4f66675c56d147e5ad4f9af2064b9ae403ad7553b1e6d75e60ea5b236b",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2493",
+          "completed_count": "2477",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "113",
+          "policy": "earliest_feasible",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_113/earliest_feasible_seed113.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "f2c0efdfe3e4d49cc81d14f2ee0fd78ecc352767afcb7f2a3e085060d3105812",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "f2d35a73ea9cdfb5c67bf203914911c1a6a7e506ea0cd4d5761a08ab211b63ab",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2487",
+          "completed_count": "2475",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "113",
+          "policy": "lowest_cost",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_113/lowest_cost_seed113.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "832fcbbff3f7175cd7166e9b9b008156e13336108654283a34d4835e716fdb75",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "f2d35a73ea9cdfb5c67bf203914911c1a6a7e506ea0cd4d5761a08ab211b63ab",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2487",
+          "completed_count": "2475",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "113",
+          "policy": "highest_green",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_113/highest_green_seed113.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "32adf3226da3ac8f3d6dc5fd114f37c732aa71b2978be6a41519c805a61a4921",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "f2d35a73ea9cdfb5c67bf203914911c1a6a7e506ea0cd4d5761a08ab211b63ab",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2487",
+          "completed_count": "2475",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "113",
+          "policy": "equal_weight",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_113/equal_weight_seed113.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "66dca07c62e6583c53d63c423ee778975c359c1d5825b7c33a20d922e831363e",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "f2d35a73ea9cdfb5c67bf203914911c1a6a7e506ea0cd4d5761a08ab211b63ab",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2487",
+          "completed_count": "2475",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "113",
+          "policy": "candidate_dqn",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_113/candidate_dqn_seed113.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "a934da538e084241e10e1fd8292f6c94d1ea36da8dc0907cae3935c2659642dd",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "f2d35a73ea9cdfb5c67bf203914911c1a6a7e506ea0cd4d5761a08ab211b63ab",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2487",
+          "completed_count": "2475",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "127",
+          "policy": "earliest_feasible",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_127/earliest_feasible_seed127.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "f2c0efdfe3e4d49cc81d14f2ee0fd78ecc352767afcb7f2a3e085060d3105812",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "1eb96b8d24453e9f6925973c930b86ea897ac77d0511e56dc79c441156f5e52e",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2427",
+          "completed_count": "2409",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "127",
+          "policy": "lowest_cost",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_127/lowest_cost_seed127.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "832fcbbff3f7175cd7166e9b9b008156e13336108654283a34d4835e716fdb75",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "1eb96b8d24453e9f6925973c930b86ea897ac77d0511e56dc79c441156f5e52e",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2427",
+          "completed_count": "2409",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "127",
+          "policy": "highest_green",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_127/highest_green_seed127.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "32adf3226da3ac8f3d6dc5fd114f37c732aa71b2978be6a41519c805a61a4921",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "1eb96b8d24453e9f6925973c930b86ea897ac77d0511e56dc79c441156f5e52e",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2427",
+          "completed_count": "2409",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "127",
+          "policy": "equal_weight",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_127/equal_weight_seed127.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "66dca07c62e6583c53d63c423ee778975c359c1d5825b7c33a20d922e831363e",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "1eb96b8d24453e9f6925973c930b86ea897ac77d0511e56dc79c441156f5e52e",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2427",
+          "completed_count": "2409",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "127",
+          "policy": "candidate_dqn",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_127/candidate_dqn_seed127.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "a934da538e084241e10e1fd8292f6c94d1ea36da8dc0907cae3935c2659642dd",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "1eb96b8d24453e9f6925973c930b86ea897ac77d0511e56dc79c441156f5e52e",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2427",
+          "completed_count": "2409",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "131",
+          "policy": "earliest_feasible",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_131/earliest_feasible_seed131.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "f2c0efdfe3e4d49cc81d14f2ee0fd78ecc352767afcb7f2a3e085060d3105812",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "61be7be21abdfd2798f2b7efde98925a380531b03a3ada155a3007c80fe42d4c",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2474",
+          "completed_count": "2465",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "131",
+          "policy": "lowest_cost",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_131/lowest_cost_seed131.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "832fcbbff3f7175cd7166e9b9b008156e13336108654283a34d4835e716fdb75",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "61be7be21abdfd2798f2b7efde98925a380531b03a3ada155a3007c80fe42d4c",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2474",
+          "completed_count": "2465",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "131",
+          "policy": "highest_green",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_131/highest_green_seed131.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "32adf3226da3ac8f3d6dc5fd114f37c732aa71b2978be6a41519c805a61a4921",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "61be7be21abdfd2798f2b7efde98925a380531b03a3ada155a3007c80fe42d4c",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2474",
+          "completed_count": "2465",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "131",
+          "policy": "equal_weight",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_131/equal_weight_seed131.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "66dca07c62e6583c53d63c423ee778975c359c1d5825b7c33a20d922e831363e",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "61be7be21abdfd2798f2b7efde98925a380531b03a3ada155a3007c80fe42d4c",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2474",
+          "completed_count": "2465",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "131",
+          "policy": "candidate_dqn",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_131/candidate_dqn_seed131.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "a934da538e084241e10e1fd8292f6c94d1ea36da8dc0907cae3935c2659642dd",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "61be7be21abdfd2798f2b7efde98925a380531b03a3ada155a3007c80fe42d4c",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2474",
+          "completed_count": "2465",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "137",
+          "policy": "earliest_feasible",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_137/earliest_feasible_seed137.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "f2c0efdfe3e4d49cc81d14f2ee0fd78ecc352767afcb7f2a3e085060d3105812",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "69f82ff72d63c038044374658abd6b9ef03f34084cdb9e49b0fb1475c09e8af5",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2455",
+          "completed_count": "2441",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "137",
+          "policy": "lowest_cost",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_137/lowest_cost_seed137.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "832fcbbff3f7175cd7166e9b9b008156e13336108654283a34d4835e716fdb75",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "69f82ff72d63c038044374658abd6b9ef03f34084cdb9e49b0fb1475c09e8af5",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2455",
+          "completed_count": "2441",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "137",
+          "policy": "highest_green",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_137/highest_green_seed137.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "32adf3226da3ac8f3d6dc5fd114f37c732aa71b2978be6a41519c805a61a4921",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "69f82ff72d63c038044374658abd6b9ef03f34084cdb9e49b0fb1475c09e8af5",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2455",
+          "completed_count": "2441",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "137",
+          "policy": "equal_weight",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_137/equal_weight_seed137.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "66dca07c62e6583c53d63c423ee778975c359c1d5825b7c33a20d922e831363e",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "69f82ff72d63c038044374658abd6b9ef03f34084cdb9e49b0fb1475c09e8af5",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2455",
+          "completed_count": "2441",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "137",
+          "policy": "candidate_dqn",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_137/candidate_dqn_seed137.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "a934da538e084241e10e1fd8292f6c94d1ea36da8dc0907cae3935c2659642dd",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "69f82ff72d63c038044374658abd6b9ef03f34084cdb9e49b0fb1475c09e8af5",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2455",
+          "completed_count": "2441",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "139",
+          "policy": "earliest_feasible",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_139/earliest_feasible_seed139.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "f2c0efdfe3e4d49cc81d14f2ee0fd78ecc352767afcb7f2a3e085060d3105812",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "f868455f169ffe962bf29764dbdf6c16ac92fea77a1adb314fbc2bba94f57a65",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2417",
+          "completed_count": "2400",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "139",
+          "policy": "lowest_cost",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_139/lowest_cost_seed139.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "832fcbbff3f7175cd7166e9b9b008156e13336108654283a34d4835e716fdb75",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "f868455f169ffe962bf29764dbdf6c16ac92fea77a1adb314fbc2bba94f57a65",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2417",
+          "completed_count": "2400",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "139",
+          "policy": "highest_green",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_139/highest_green_seed139.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "32adf3226da3ac8f3d6dc5fd114f37c732aa71b2978be6a41519c805a61a4921",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "f868455f169ffe962bf29764dbdf6c16ac92fea77a1adb314fbc2bba94f57a65",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2417",
+          "completed_count": "2400",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "139",
+          "policy": "equal_weight",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_139/equal_weight_seed139.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "66dca07c62e6583c53d63c423ee778975c359c1d5825b7c33a20d922e831363e",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "f868455f169ffe962bf29764dbdf6c16ac92fea77a1adb314fbc2bba94f57a65",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2417",
+          "completed_count": "2400",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "139",
+          "policy": "candidate_dqn",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_139/candidate_dqn_seed139.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "a934da538e084241e10e1fd8292f6c94d1ea36da8dc0907cae3935c2659642dd",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "f868455f169ffe962bf29764dbdf6c16ac92fea77a1adb314fbc2bba94f57a65",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2417",
+          "completed_count": "2400",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "149",
+          "policy": "earliest_feasible",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_149/earliest_feasible_seed149.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "f2c0efdfe3e4d49cc81d14f2ee0fd78ecc352767afcb7f2a3e085060d3105812",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "1ae757c288645934909f7395c47428faf5b2e33c855076467231d190b0e123b0",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2444",
+          "completed_count": "2429",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "149",
+          "policy": "lowest_cost",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_149/lowest_cost_seed149.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "832fcbbff3f7175cd7166e9b9b008156e13336108654283a34d4835e716fdb75",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "1ae757c288645934909f7395c47428faf5b2e33c855076467231d190b0e123b0",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2444",
+          "completed_count": "2429",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "149",
+          "policy": "highest_green",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_149/highest_green_seed149.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "32adf3226da3ac8f3d6dc5fd114f37c732aa71b2978be6a41519c805a61a4921",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "1ae757c288645934909f7395c47428faf5b2e33c855076467231d190b0e123b0",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2444",
+          "completed_count": "2429",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "149",
+          "policy": "equal_weight",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_149/equal_weight_seed149.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "66dca07c62e6583c53d63c423ee778975c359c1d5825b7c33a20d922e831363e",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "1ae757c288645934909f7395c47428faf5b2e33c855076467231d190b0e123b0",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2444",
+          "completed_count": "2429",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        },
+        {
+          "seed": "149",
+          "policy": "candidate_dqn",
+          "source_file": "artifacts/v2/evaluation/five_policy_multiseed/seed_149/candidate_dqn_seed149.json",
+          "status": "VALID",
+          "system_version": "2.0",
+          "diagnostic_schema_version": "1.0",
+          "arrival_cutoff_sim": "288.0",
+          "model_hash": "a934da538e084241e10e1fd8292f6c94d1ea36da8dc0907cae3935c2659642dd",
+          "code_hash": "c6e3795a8f4c16708fece78a9ff764ca9b9909914bd74b6591b8c6b956dd5ed6",
+          "config_hash": "9124b8d05d1f4abdcb03a98de3670d5ce335c3c551891aa2ef31d93dfa40b82d",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "task_trace_hash": "1ae757c288645934909f7395c47428faf5b2e33c855076467231d190b0e123b0",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "dependency_lock_hash": "d5f7a645ae56f7b2941afe856b61661a8b4e6d5e39393c417478ce434a0ded94",
+          "arrival_count": "2444",
+          "completed_count": "2429",
+          "unsettled_count": "0",
+          "paired_metadata_match": "True"
+        }
+      ],
+      "task_latency_chart_data": [
+        {
+          "policy": "earliest_feasible",
+          "policy_label": "Earliest feasible",
+          "value": 95.28361049145641,
+          "ci_low": 88.18965727279041,
+          "ci_high": 102.37756371012242,
+          "seed_count": 10
+        },
+        {
+          "policy": "lowest_cost",
+          "policy_label": "Lowest cost",
+          "value": 692.1537367497632,
+          "ci_low": 643.3976139354108,
+          "ci_high": 740.9098595641155,
+          "seed_count": 10
+        },
+        {
+          "policy": "highest_green",
+          "policy_label": "Highest green",
+          "value": 569.1019903635768,
+          "ci_low": 533.4062596381068,
+          "ci_high": 604.7977210890467,
+          "seed_count": 10
+        },
+        {
+          "policy": "equal_weight",
+          "policy_label": "Equal weight",
+          "value": 772.0858386767047,
+          "ci_low": 722.2617379955907,
+          "ci_high": 821.9099393578188,
+          "seed_count": 10
+        },
+        {
+          "policy": "candidate_dqn",
+          "policy_label": "Candidate DQN",
+          "value": 564.7100979289066,
+          "ci_low": 527.1792303211282,
+          "ci_high": 602.240965536685,
+          "seed_count": 10
+        }
+      ],
+      "load_balance_chart_data": [
+        {
+          "policy": "earliest_feasible",
+          "policy_label": "Earliest feasible",
+          "value": 0.9112220767080352,
+          "ci_low": 0.8375381852676737,
+          "ci_high": 0.9849059681483968,
+          "seed_count": 10
+        },
+        {
+          "policy": "lowest_cost",
+          "policy_label": "Lowest cost",
+          "value": 1.7691301246183477,
+          "ci_low": 1.6687874311280912,
+          "ci_high": 1.8694728181086042,
+          "seed_count": 10
+        },
+        {
+          "policy": "highest_green",
+          "policy_label": "Highest green",
+          "value": 1.7451230340517963,
+          "ci_low": 1.630358202344352,
+          "ci_high": 1.8598878657592406,
+          "seed_count": 10
+        },
+        {
+          "policy": "equal_weight",
+          "policy_label": "Equal weight",
+          "value": 0.858937764142599,
+          "ci_low": 0.7965592444460943,
+          "ci_high": 0.9213162838391038,
+          "seed_count": 10
+        },
+        {
+          "policy": "candidate_dqn",
+          "policy_label": "Candidate DQN",
+          "value": 1.1140513190839099,
+          "ci_low": 0.9810071536979053,
+          "ci_high": 1.2470954844699145,
+          "seed_count": 10
+        }
+      ],
+      "network_chart_data": [
+        {
+          "policy": "earliest_feasible",
+          "policy_label": "Earliest feasible",
+          "value": 1.0,
+          "ci_low": 1.0,
+          "ci_high": 1.0,
+          "seed_count": 10
+        },
+        {
+          "policy": "lowest_cost",
+          "policy_label": "Lowest cost",
+          "value": 1.0,
+          "ci_low": 1.0,
+          "ci_high": 1.0,
+          "seed_count": 10
+        },
+        {
+          "policy": "highest_green",
+          "policy_label": "Highest green",
+          "value": 1.0,
+          "ci_low": 1.0,
+          "ci_high": 1.0,
+          "seed_count": 10
+        },
+        {
+          "policy": "equal_weight",
+          "policy_label": "Equal weight",
+          "value": 1.0,
+          "ci_low": 1.0,
+          "ci_high": 1.0,
+          "seed_count": 10
+        },
+        {
+          "policy": "candidate_dqn",
+          "policy_label": "Candidate DQN",
+          "value": 1.0,
+          "ci_low": 1.0,
+          "ci_high": 1.0,
+          "seed_count": 10
+        }
+      ],
+      "runtime_chart_data": [
+        {
+          "policy": "earliest_feasible",
+          "policy_label": "Earliest feasible",
+          "value": 1.01970328900001,
+          "ci_low": 0.9810729154083477,
+          "ci_high": 1.0583336625916722,
+          "seed_count": 10
+        },
+        {
+          "policy": "lowest_cost",
+          "policy_label": "Lowest cost",
+          "value": 1.343926590000001,
+          "ci_low": 1.2646377367225514,
+          "ci_high": 1.4232154432774506,
+          "seed_count": 10
+        },
+        {
+          "policy": "highest_green",
+          "policy_label": "Highest green",
+          "value": 1.5575271454999997,
+          "ci_low": 1.465128429429563,
+          "ci_high": 1.6499258615704364,
+          "seed_count": 10
+        },
+        {
+          "policy": "equal_weight",
+          "policy_label": "Equal weight",
+          "value": 1.6249808555000052,
+          "ci_low": 1.5332420032935603,
+          "ci_high": 1.71671970770645,
+          "seed_count": 10
+        },
+        {
+          "policy": "candidate_dqn",
+          "policy_label": "Candidate DQN",
+          "value": 1.5450456780000006,
+          "ci_low": 1.4469490415999624,
+          "ci_high": 1.6431423144000388,
+          "seed_count": 10
+        }
+      ]
+    },
+    "accessIssues": []
+  },
+  "sources": [
+    {
+      "id": "metrics_long",
+      "label": "V2 five-policy validated metric source rows",
+      "path": "artifacts/v2/evaluation/five_policy/source_data/metrics_long.csv",
+      "query": {
+        "engine": "Python csv",
+        "language": "Python",
+        "sql": "SELECT * FROM read_csv_auto('artifacts/v2/evaluation/five_policy/source_data/metrics_long.csv')",
+        "description": "读取已校验的 V2 五策略评估源数据并进行配对聚合。",
+        "executed_at": "2026-08-20T05:12:00.042140+00:00",
+        "filters": [
+          "evaluation status=VALID",
+          "zero unsettled tasks",
+          "identical paired metadata within each seed",
+          "candidate_dqn epsilon=0 during evaluation"
+        ],
+        "metric_definitions": [
+          "成本为任务归因经济成本；每完成 CPU 小时成本=总经济成本/完成 CPU 小时。",
+          "完成任务绿电覆盖率=完成任务绿电能量/完成任务总能量。",
+          "完成率=完成任务数/到达任务数；预留可靠性=完成任务数/曾获预留任务数。",
+          "Soft 和 Flexible 准时率为首选开始窗口内启动的任务占比。",
+          "所有 DQN 差值均为 candidate_dqn - equal_weight。"
+        ],
+        "tables_used": [
+          "artifacts/v2/evaluation/five_policy/source_data/metrics_long.csv"
+        ]
+      }
+    },
+    {
+      "id": "source_manifest",
+      "label": "V2 five-policy report provenance manifest",
+      "path": "artifacts/v2/evaluation/five_policy/source_data/source_manifest.csv",
+      "query": {
+        "engine": "Python csv",
+        "language": "Python",
+        "sql": "SELECT * FROM read_csv_auto('artifacts/v2/evaluation/five_policy/source_data/source_manifest.csv')",
+        "description": "读取已校验的 V2 五策略评估源数据并进行配对聚合。",
+        "executed_at": "2026-08-20T05:12:00.042140+00:00",
+        "filters": [
+          "evaluation status=VALID",
+          "zero unsettled tasks",
+          "identical paired metadata within each seed",
+          "candidate_dqn epsilon=0 during evaluation"
+        ],
+        "metric_definitions": [
+          "同一 seed 内报告必须有效、无未结算任务且配对元数据完全一致。"
+        ],
+        "tables_used": [
+          "artifacts/v2/evaluation/five_policy/source_data/source_manifest.csv"
+        ]
+      }
+    }
+  ]
+}

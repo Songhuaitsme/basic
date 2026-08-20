@@ -14,6 +14,7 @@ from v1.domain.models import MetricStatus, SlaType, TaskSpec, TaskState
 from v1.domain.reservations import CommitStatus, ReservationRequest, TimeInterval
 from v1.domain.units import TimeConverter
 from v1.evaluation_v1 import (
+    build_evaluation_diagnostics,
     EvaluationRunner,
     EvaluationStatus,
     TaskOutcome,
@@ -294,6 +295,40 @@ class EvaluationV1Test(unittest.TestCase):
                 metadata.aggregation_schema_version,
             },
             {"1.0"},
+        )
+
+    def test_four_level_diagnostics_are_derived_from_exact_reservations(self):
+        _, calendar, _, runner = self._system(capacity=1.0)
+        report = runner.run_frozen_policy(
+            (self._task("diagnostic", duration=1.0),),
+            arrival_cutoff_sim=1.0,
+        )
+        diagnostics = build_evaluation_diagnostics(
+            report,
+            reservations=calendar.reservations(),
+            node_capacities={"N": 1.0},
+            link_capacities={},
+            time_converter=TimeConverter(3600.0),
+            profiler_summary={"total_wall_seconds": 0.25},
+        )
+
+        self.assertEqual(diagnostics["schema_version"], "1.0")
+        self.assertEqual(diagnostics["node_records"][0]["reservation_count"], 1)
+        self.assertEqual(
+            diagnostics["time_summary"]["maximum_node_cpu_utilization"],
+            1.0,
+        )
+        self.assertEqual(
+            diagnostics["time_summary"]["cpu_overcapacity_time_ratio"],
+            0.0,
+        )
+        self.assertEqual(diagnostics["network_summary"]["remote_task_rate"], 0.0)
+        self.assertEqual(
+            diagnostics["runtime_summary"]["total_wall_seconds"], 0.25
+        )
+        self.assertEqual(
+            diagnostics["task_summary"]["decision_wall_seconds"]["count"],
+            1,
         )
 
     # STAT-001 / STAT-002 / AGG-007

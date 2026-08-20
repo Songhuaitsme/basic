@@ -1,0 +1,124 @@
+{
+  "status": "MULTI_SEED_SCALE_ESTIMATE",
+  "seed": null,
+  "seeds": [
+    1,
+    2,
+    4,
+    7,
+    9
+  ],
+  "reservoir_seed": 20260722,
+  "arrival_cutoff_sim": 1.0,
+  "task_count": 21,
+  "candidate_count_seen": 13000920,
+  "reservoir_size": 100000,
+  "per_seed": [
+    {
+      "seed": 1,
+      "task_count": 5,
+      "sla_counts": {
+        "Soft": 3,
+        "Hard": 2
+      },
+      "candidate_count_seen": 1203702
+    },
+    {
+      "seed": 2,
+      "task_count": 4,
+      "sla_counts": {
+        "Flexible": 1,
+        "Soft": 3
+      },
+      "candidate_count_seen": 3994014
+    },
+    {
+      "seed": 4,
+      "task_count": 6,
+      "sla_counts": {
+        "Soft": 4,
+        "Hard": 1,
+        "Flexible": 1
+      },
+      "candidate_count_seen": 6530091
+    },
+    {
+      "seed": 7,
+      "task_count": 4,
+      "sla_counts": {
+        "Soft": 3,
+        "Hard": 1
+      },
+      "candidate_count_seen": 792489
+    },
+    {
+      "seed": 9,
+      "task_count": 2,
+      "sla_counts": {
+        "Soft": 2
+      },
+      "candidate_count_seen": 480624
+    }
+  ],
+  "candidate_mode": "complete",
+  "distributions": {
+    "cost_yuan": {
+      "count": 100000,
+      "min": 5.219936824912516,
+      "p10": 682.5381124747738,
+      "p25": 3519.54329594927,
+      "p50": 7150.149072849012,
+      "p75": 101772.7021673145,
+      "p90": 158520.91587065533,
+      "max": 216464.7113784474
+    },
+    "green_absorption_delta": {
+      "count": 100000,
+      "min": 0.0,
+      "p10": 0.015411825827516046,
+      "p25": 0.022579310494115525,
+      "p50": 0.13830007849293385,
+      "p75": 0.35351623656380676,
+      "p90": 1.0,
+      "max": 1.0
+    },
+    "preferred_start_tardiness_ratio": {
+      "count": 99859,
+      "min": 0.0,
+      "p10": 0.0,
+      "p25": 0.0,
+      "p50": 0.0,
+      "p75": 0.08290731636480747,
+      "p90": 0.6297010446483464,
+      "max": 0.9999675167195363
+    },
+    "soft_tardiness_ratio": {
+      "count": 35993,
+      "min": 0.0,
+      "p10": 0.0,
+      "p25": 0.0,
+      "p50": 0.0,
+      "p75": 0.0,
+      "p90": 0.4033182476875397,
+      "max": 0.9995055073344339
+    },
+    "flexible_tardiness_ratio": {
+      "count": 63866,
+      "min": 0.0,
+      "p10": 0.0,
+      "p25": 0.0,
+      "p50": 0.0,
+      "p75": 0.24260056776211414,
+      "p90": 0.6955289475065872,
+      "max": 0.9999675167195363
+    }
+  },
+  "suggested_config": {
+    "V1_COST_REFERENCE_YUAN": 7150.149072849012,
+    "V1_COST_SCALE_YUAN": 157838.37775818055,
+    "V1_GREEN_ABSORPTION_DELTA_SCALE": 1.0,
+    "V1_SOFT_TARDINESS_WEIGHT": "REQUIRES_PILOT_ABLATION_DECISION",
+    "V1_FLEXIBLE_TARDINESS_WEIGHT": "REQUIRES_PILOT_ABLATION_DECISION"
+  },
+  "note": "Scale estimates are descriptive, not business thresholds. Freeze tardiness weights through a documented pilot/ablation before full training."
+}

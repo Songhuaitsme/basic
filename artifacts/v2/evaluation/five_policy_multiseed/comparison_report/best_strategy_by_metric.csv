@@ -1,0 +1,211 @@
+﻿group,metric_path,metric,direction,best_policy,best_value,seed_count,uncertainty
+可靠性,acceptance_rate,任务接受率,越高越好,并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN,99.41%,10,跨 seed 均值
+等待行为,active_wait_metrics.count,主动等待任务数,不判优,不判优,N/A,10,跨 seed 均值
+等待行为,active_wait_metrics.mean_active_wait_sim,平均主动等待时间,不判优,不判优,N/A,10,跨 seed 均值
+等待行为,active_wait_metrics.p95_active_wait_sim,P95 主动等待时间,不判优,不判优,N/A,10,跨 seed 均值
+等待行为,active_wait_metrics.positive_benefit_rate,主动等待正收益率,越高越好,Lowest cost,99.96%,10,跨 seed 均值
+规模与状态,arrival_count,到达任务数,不判优,不判优,N/A,10,跨 seed 均值
+规模与状态,arrived_requested_cpu_hours,到达任务请求 CPU 小时,不判优,不判优,N/A,10,跨 seed 均值
+可靠性,completed_count,完成任务数,越高越好,并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN,"2,436",10,跨 seed 均值
+规模与状态,completed_cpu_hours,完成 CPU 小时,不判优,不判优,N/A,10,跨 seed 均值
+绿电,completed_task_green_coverage,完成任务绿电覆盖率,越高越好,Highest green,100.00%,10,跨 seed 均值
+可靠性,completion_rate,任务完成率,越高越好,并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN,99.41%,10,跨 seed 均值
+成本,cost_yuan_per_arrived_cpu_hour,每到达 CPU 小时成本,越低越好,Lowest cost,¥4.814,10,跨 seed 均值
+成本,cost_yuan_per_completed_cpu_hour,每完成 CPU 小时成本,越低越好,Lowest cost,¥4.814,10,跨 seed 均值
+其他,diagnostics.network_summary.maximum_link_utilization,diagnostics.network_summary.maximum_link_utilization,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.network_summary.mean_path_distance_km,diagnostics.network_summary.mean_path_distance_km,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.network_summary.mean_path_hops,diagnostics.network_summary.mean_path_hops,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.network_summary.remote_reservation_count,diagnostics.network_summary.remote_reservation_count,不判优,不判优,N/A,10,跨 seed 均值
+网络,diagnostics.network_summary.remote_task_rate,远程调度任务比例,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.network_summary.reservation_count,diagnostics.network_summary.reservation_count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.network_summary.time_link_mean_utilization,diagnostics.network_summary.time_link_mean_utilization,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.network_summary.total_data_distance_mb_km,diagnostics.network_summary.total_data_distance_mb_km,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.network_summary.total_transmitted_data_mb,diagnostics.network_summary.total_transmitted_data_mb,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.network_summary.transmission_duration_seconds.count,diagnostics.network_summary.transmission_duration_seconds.count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.network_summary.transmission_duration_seconds.maximum,diagnostics.network_summary.transmission_duration_seconds.maximum,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.network_summary.transmission_duration_seconds.mean,diagnostics.network_summary.transmission_duration_seconds.mean,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.network_summary.transmission_duration_seconds.p50,diagnostics.network_summary.transmission_duration_seconds.p50,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.network_summary.transmission_duration_seconds.p95,diagnostics.network_summary.transmission_duration_seconds.p95,不判优,不判优,N/A,10,跨 seed 均值
+网络,diagnostics.network_summary.weighted_p95_link_utilization,链路利用率 P95,不判优,不判优,N/A,10,跨 seed 均值
+负载均衡,diagnostics.node_summary.allocated_cpu_hours_cv,节点 CPU 工作量变异系数,越低越好,Equal weight,85.89%,10,跨 seed 均值
+资源利用,diagnostics.node_summary.cpu_hotspot_time_ratio,CPU 热点时间占比,越低越好,Equal weight,0.00%,10,跨 seed 均值
+资源利用,diagnostics.node_summary.cpu_overcapacity_time_ratio,CPU 超容量时间占比,越低越好,并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN,0.00%,10,跨 seed 均值
+其他,diagnostics.node_summary.maximum_node_cpu_utilization,diagnostics.node_summary.maximum_node_cpu_utilization,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.node_summary.node_count,diagnostics.node_summary.node_count,不判优,不判优,N/A,10,跨 seed 均值
+资源利用,diagnostics.node_summary.time_node_mean_cpu_utilization,时间-节点平均 CPU 利用率,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.node_summary.time_weighted_node_load_cv,diagnostics.node_summary.time_weighted_node_load_cv,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.node_summary.used_node_count,diagnostics.node_summary.used_node_count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.node_summary.weighted_p95_node_cpu_utilization,diagnostics.node_summary.weighted_p95_node_cpu_utilization,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.candidate_feasibility_internal_percent.cpu_interval_feasibility,diagnostics.runtime_summary.candidate_feasibility_internal_percent.cpu_interval_feasibility,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.candidate_feasibility_internal_percent.feasibility_other,diagnostics.runtime_summary.candidate_feasibility_internal_percent.feasibility_other,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.candidate_feasibility_internal_percent.path_interval_feasibility,diagnostics.runtime_summary.candidate_feasibility_internal_percent.path_interval_feasibility,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.candidate_feasibility_internal_percent.sla_and_item_assembly,diagnostics.runtime_summary.candidate_feasibility_internal_percent.sla_and_item_assembly,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.candidate_feasibility_internal_percent.transmission_schedule,diagnostics.runtime_summary.candidate_feasibility_internal_percent.transmission_schedule,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.candidate_feasibility_internal_seconds.cpu_interval_feasibility,diagnostics.runtime_summary.candidate_feasibility_internal_seconds.cpu_interval_feasibility,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.candidate_feasibility_internal_seconds.feasibility_other,diagnostics.runtime_summary.candidate_feasibility_internal_seconds.feasibility_other,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.candidate_feasibility_internal_seconds.path_interval_feasibility,diagnostics.runtime_summary.candidate_feasibility_internal_seconds.path_interval_feasibility,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.candidate_feasibility_internal_seconds.sla_and_item_assembly,diagnostics.runtime_summary.candidate_feasibility_internal_seconds.sla_and_item_assembly,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.candidate_feasibility_internal_seconds.transmission_schedule,diagnostics.runtime_summary.candidate_feasibility_internal_seconds.transmission_schedule,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.candidate_internal_percent_of_candidate_pipeline.candidate_id_hash,diagnostics.runtime_summary.candidate_internal_percent_of_candidate_pipeline.candidate_id_hash,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.candidate_internal_percent_of_candidate_pipeline.candidate_object_construction,diagnostics.runtime_summary.candidate_internal_percent_of_candidate_pipeline.candidate_object_construction,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.candidate_internal_percent_of_candidate_pipeline.candidate_pipeline_other,diagnostics.runtime_summary.candidate_internal_percent_of_candidate_pipeline.candidate_pipeline_other,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.candidate_internal_percent_of_candidate_pipeline.physical_metric_evaluation,diagnostics.runtime_summary.candidate_internal_percent_of_candidate_pipeline.physical_metric_evaluation,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.candidate_internal_percent_of_candidate_pipeline.prepare_feasibility,diagnostics.runtime_summary.candidate_internal_percent_of_candidate_pipeline.prepare_feasibility,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.candidate_internal_percent_of_candidate_pipeline.stream_and_replay_feasibility,diagnostics.runtime_summary.candidate_internal_percent_of_candidate_pipeline.stream_and_replay_feasibility,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.candidate_internal_seconds.candidate_id_hash,diagnostics.runtime_summary.candidate_internal_seconds.candidate_id_hash,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.candidate_internal_seconds.candidate_object_construction,diagnostics.runtime_summary.candidate_internal_seconds.candidate_object_construction,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.candidate_internal_seconds.candidate_pipeline_other,diagnostics.runtime_summary.candidate_internal_seconds.candidate_pipeline_other,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.candidate_internal_seconds.physical_metric_evaluation,diagnostics.runtime_summary.candidate_internal_seconds.physical_metric_evaluation,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.candidate_internal_seconds.prepare_feasibility,diagnostics.runtime_summary.candidate_internal_seconds.prepare_feasibility,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.candidate_internal_seconds.stream_and_replay_feasibility,diagnostics.runtime_summary.candidate_internal_seconds.stream_and_replay_feasibility,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.counters.candidate_metric_evaluation_count,diagnostics.runtime_summary.counters.candidate_metric_evaluation_count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.counters.candidate_object_count,diagnostics.runtime_summary.counters.candidate_object_count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.counters.idle_cycle_skip_count,diagnostics.runtime_summary.counters.idle_cycle_skip_count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.counters.policy_selection_count,diagnostics.runtime_summary.counters.policy_selection_count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.counters.prepare_feasibility_check_count,diagnostics.runtime_summary.counters.prepare_feasibility_check_count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.counters.prepare_theoretical_slot_count,diagnostics.runtime_summary.counters.prepare_theoretical_slot_count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.counters.replay_candidate_feature_count,diagnostics.runtime_summary.counters.replay_candidate_feature_count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.counters.reservation_commit_attempt_count,diagnostics.runtime_summary.counters.reservation_commit_attempt_count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.counters.scheduler_cycle_count,diagnostics.runtime_summary.counters.scheduler_cycle_count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.counters.scheduler_decision_count,diagnostics.runtime_summary.counters.scheduler_decision_count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.counters.selection_candidate_count,diagnostics.runtime_summary.counters.selection_candidate_count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.counters.stream_feasibility_check_count,diagnostics.runtime_summary.counters.stream_feasibility_check_count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.counters.training_process_cycle_count,diagnostics.runtime_summary.counters.training_process_cycle_count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.counters.virtual_cycle_count,diagnostics.runtime_summary.counters.virtual_cycle_count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.decision_seconds_per_arrived_task,diagnostics.runtime_summary.decision_seconds_per_arrived_task,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.decision_stage_seconds.policy_selection_total,diagnostics.runtime_summary.decision_stage_seconds.policy_selection_total,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.decision_stage_seconds.reservation_commit_total,diagnostics.runtime_summary.decision_stage_seconds.reservation_commit_total,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.decision_stage_seconds.scheduler_decision_total,diagnostics.runtime_summary.decision_stage_seconds.scheduler_decision_total,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.decision_wall_seconds.count,diagnostics.runtime_summary.decision_wall_seconds.count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.decision_wall_seconds.maximum,diagnostics.runtime_summary.decision_wall_seconds.maximum,不判优,不判优,N/A,10,跨 seed 均值
+运行效率,diagnostics.runtime_summary.decision_wall_seconds.mean,平均单次调度决策耗时,越低越好,Earliest feasible,0.248,10,跨 seed 均值
+其他,diagnostics.runtime_summary.decision_wall_seconds.p50,diagnostics.runtime_summary.decision_wall_seconds.p50,不判优,不判优,N/A,10,跨 seed 均值
+运行效率,diagnostics.runtime_summary.decision_wall_seconds.p95,单次调度决策耗时 P95,越低越好,Earliest feasible,1.020,10,跨 seed 均值
+其他,diagnostics.runtime_summary.detail_seconds.artifact_save_seconds,diagnostics.runtime_summary.detail_seconds.artifact_save_seconds,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.detail_seconds.backpropagation_seconds,diagnostics.runtime_summary.detail_seconds.backpropagation_seconds,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.detail_seconds.bootstrap_inference_seconds,diagnostics.runtime_summary.detail_seconds.bootstrap_inference_seconds,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.detail_seconds.candidate_cpu_feasibility_seconds,diagnostics.runtime_summary.detail_seconds.candidate_cpu_feasibility_seconds,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.detail_seconds.candidate_feasibility_prepare_seconds,diagnostics.runtime_summary.detail_seconds.candidate_feasibility_prepare_seconds,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.detail_seconds.candidate_feasibility_stream_seconds,diagnostics.runtime_summary.detail_seconds.candidate_feasibility_stream_seconds,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.detail_seconds.candidate_feature_encoding_seconds,diagnostics.runtime_summary.detail_seconds.candidate_feature_encoding_seconds,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.detail_seconds.candidate_id_hash_seconds,diagnostics.runtime_summary.detail_seconds.candidate_id_hash_seconds,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.detail_seconds.candidate_metric_evaluation_seconds,diagnostics.runtime_summary.detail_seconds.candidate_metric_evaluation_seconds,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.detail_seconds.candidate_object_construction_seconds,diagnostics.runtime_summary.detail_seconds.candidate_object_construction_seconds,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.detail_seconds.candidate_path_feasibility_seconds,diagnostics.runtime_summary.detail_seconds.candidate_path_feasibility_seconds,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.detail_seconds.candidate_prepare_seconds,diagnostics.runtime_summary.detail_seconds.candidate_prepare_seconds,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.detail_seconds.candidate_sla_and_item_seconds,diagnostics.runtime_summary.detail_seconds.candidate_sla_and_item_seconds,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.detail_seconds.candidate_stream_seconds,diagnostics.runtime_summary.detail_seconds.candidate_stream_seconds,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.detail_seconds.candidate_transmission_schedule_seconds,diagnostics.runtime_summary.detail_seconds.candidate_transmission_schedule_seconds,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.detail_seconds.checkpoint_seconds,diagnostics.runtime_summary.detail_seconds.checkpoint_seconds,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.detail_seconds.environment_update_seconds,diagnostics.runtime_summary.detail_seconds.environment_update_seconds,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.detail_seconds.logging_seconds,diagnostics.runtime_summary.detail_seconds.logging_seconds,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.detail_seconds.policy_selection_seconds,diagnostics.runtime_summary.detail_seconds.policy_selection_seconds,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.detail_seconds.replay_candidate_generation_seconds,diagnostics.runtime_summary.detail_seconds.replay_candidate_generation_seconds,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.detail_seconds.reservation_commit_seconds,diagnostics.runtime_summary.detail_seconds.reservation_commit_seconds,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.detail_seconds.scheduler_decision_seconds,diagnostics.runtime_summary.detail_seconds.scheduler_decision_seconds,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.detail_seconds.selection_inference_seconds,diagnostics.runtime_summary.detail_seconds.selection_inference_seconds,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.detail_seconds.training_forward_seconds,diagnostics.runtime_summary.detail_seconds.training_forward_seconds,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.detail_seconds.transition_feature_cache_seconds,diagnostics.runtime_summary.detail_seconds.transition_feature_cache_seconds,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.sections_percent.backpropagation_and_optimizer,diagnostics.runtime_summary.sections_percent.backpropagation_and_optimizer,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.sections_percent.candidate_feature_encoding,diagnostics.runtime_summary.sections_percent.candidate_feature_encoding,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.sections_percent.candidate_slot_generation,diagnostics.runtime_summary.sections_percent.candidate_slot_generation,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.sections_percent.environment_and_accounting,diagnostics.runtime_summary.sections_percent.environment_and_accounting,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.sections_percent.logging_and_saving,diagnostics.runtime_summary.sections_percent.logging_and_saving,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.sections_percent.neural_network_inference,diagnostics.runtime_summary.sections_percent.neural_network_inference,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.sections_percent.other_or_profiler_overhead,diagnostics.runtime_summary.sections_percent.other_or_profiler_overhead,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.sections_seconds.backpropagation_and_optimizer,diagnostics.runtime_summary.sections_seconds.backpropagation_and_optimizer,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.sections_seconds.candidate_feature_encoding,diagnostics.runtime_summary.sections_seconds.candidate_feature_encoding,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.sections_seconds.candidate_slot_generation,diagnostics.runtime_summary.sections_seconds.candidate_slot_generation,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.sections_seconds.environment_and_accounting,diagnostics.runtime_summary.sections_seconds.environment_and_accounting,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.sections_seconds.logging_and_saving,diagnostics.runtime_summary.sections_seconds.logging_and_saving,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.sections_seconds.neural_network_inference,diagnostics.runtime_summary.sections_seconds.neural_network_inference,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.sections_seconds.other_or_profiler_overhead,diagnostics.runtime_summary.sections_seconds.other_or_profiler_overhead,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.runtime_summary.selection_candidates_per_second,diagnostics.runtime_summary.selection_candidates_per_second,不判优,不判优,N/A,10,跨 seed 均值
+运行效率,diagnostics.runtime_summary.total_wall_seconds,整体评估墙钟时间,越低越好,Earliest feasible,619.985,10,跨 seed 均值
+系统效率,diagnostics.system_summary.completed_tasks_per_physical_hour,每物理小时完成任务数,越高越好,Earliest feasible,14.416,10,跨 seed 均值
+其他,diagnostics.system_summary.evaluation_span_physical_hours,diagnostics.system_summary.evaluation_span_physical_hours,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.system_summary.evaluation_span_sim,diagnostics.system_summary.evaluation_span_sim,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.system_summary.reservation_count,diagnostics.system_summary.reservation_count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.system_summary.time_interval_count,diagnostics.system_summary.time_interval_count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.task_summary.candidate_count_per_decision.count,diagnostics.task_summary.candidate_count_per_decision.count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.task_summary.candidate_count_per_decision.maximum,diagnostics.task_summary.candidate_count_per_decision.maximum,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.task_summary.candidate_count_per_decision.mean,diagnostics.task_summary.candidate_count_per_decision.mean,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.task_summary.candidate_count_per_decision.p50,diagnostics.task_summary.candidate_count_per_decision.p50,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.task_summary.candidate_count_per_decision.p95,diagnostics.task_summary.candidate_count_per_decision.p95,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.task_summary.completion_delay_sim.count,diagnostics.task_summary.completion_delay_sim.count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.task_summary.completion_delay_sim.maximum,diagnostics.task_summary.completion_delay_sim.maximum,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.task_summary.completion_delay_sim.mean,diagnostics.task_summary.completion_delay_sim.mean,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.task_summary.completion_delay_sim.p50,diagnostics.task_summary.completion_delay_sim.p50,不判优,不判优,N/A,10,跨 seed 均值
+任务时延,diagnostics.task_summary.completion_delay_sim.p95,任务完成时延 P95,越低越好,Earliest feasible,95.284,10,跨 seed 均值
+其他,diagnostics.task_summary.decision_count_per_arrived_task,diagnostics.task_summary.decision_count_per_arrived_task,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.task_summary.decision_wall_seconds.count,diagnostics.task_summary.decision_wall_seconds.count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.task_summary.decision_wall_seconds.maximum,diagnostics.task_summary.decision_wall_seconds.maximum,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.task_summary.decision_wall_seconds.mean,diagnostics.task_summary.decision_wall_seconds.mean,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.task_summary.decision_wall_seconds.p50,diagnostics.task_summary.decision_wall_seconds.p50,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.task_summary.decision_wall_seconds.p95,diagnostics.task_summary.decision_wall_seconds.p95,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.task_summary.reservation_lead_sim.count,diagnostics.task_summary.reservation_lead_sim.count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.task_summary.reservation_lead_sim.maximum,diagnostics.task_summary.reservation_lead_sim.maximum,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.task_summary.reservation_lead_sim.mean,diagnostics.task_summary.reservation_lead_sim.mean,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.task_summary.reservation_lead_sim.p50,diagnostics.task_summary.reservation_lead_sim.p50,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.task_summary.reservation_lead_sim.p95,diagnostics.task_summary.reservation_lead_sim.p95,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.task_summary.scheduler_queue_delay_sim.count,diagnostics.task_summary.scheduler_queue_delay_sim.count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.task_summary.scheduler_queue_delay_sim.maximum,diagnostics.task_summary.scheduler_queue_delay_sim.maximum,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.task_summary.scheduler_queue_delay_sim.mean,diagnostics.task_summary.scheduler_queue_delay_sim.mean,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.task_summary.scheduler_queue_delay_sim.p50,diagnostics.task_summary.scheduler_queue_delay_sim.p50,不判优,不判优,N/A,10,跨 seed 均值
+任务时延,diagnostics.task_summary.scheduler_queue_delay_sim.p95,调度排队时延 P95,越低越好,并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN,0.000,10,跨 seed 均值
+其他,diagnostics.task_summary.start_delay_sim.count,diagnostics.task_summary.start_delay_sim.count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.task_summary.start_delay_sim.maximum,diagnostics.task_summary.start_delay_sim.maximum,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.task_summary.start_delay_sim.mean,diagnostics.task_summary.start_delay_sim.mean,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.task_summary.start_delay_sim.p50,diagnostics.task_summary.start_delay_sim.p50,不判优,不判优,N/A,10,跨 seed 均值
+任务时延,diagnostics.task_summary.start_delay_sim.p95,任务开始时延 P95,越低越好,Earliest feasible,0.198,10,跨 seed 均值
+其他,diagnostics.time_summary.cpu_hotspot_time_ratio,diagnostics.time_summary.cpu_hotspot_time_ratio,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.time_summary.cpu_overcapacity_time_ratio,diagnostics.time_summary.cpu_overcapacity_time_ratio,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.time_summary.interval_count,diagnostics.time_summary.interval_count,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.time_summary.maximum_link_utilization,diagnostics.time_summary.maximum_link_utilization,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.time_summary.maximum_node_cpu_utilization,diagnostics.time_summary.maximum_node_cpu_utilization,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.time_summary.time_link_mean_utilization,diagnostics.time_summary.time_link_mean_utilization,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.time_summary.time_node_mean_cpu_utilization,diagnostics.time_summary.time_node_mean_cpu_utilization,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.time_summary.time_weighted_node_load_cv,diagnostics.time_summary.time_weighted_node_load_cv,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.time_summary.weighted_p95_link_utilization,diagnostics.time_summary.weighted_p95_link_utilization,不判优,不判优,N/A,10,跨 seed 均值
+其他,diagnostics.time_summary.weighted_p95_node_cpu_utilization,diagnostics.time_summary.weighted_p95_node_cpu_utilization,不判优,不判优,N/A,10,跨 seed 均值
+可靠性,expired_count,过期任务数,越低越好,并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN,14,10,跨 seed 均值
+可靠性,failed_count,失败任务数,越低越好,并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN,0,10,跨 seed 均值
+规模与状态,final_state_counts.Arrived,最终状态：Arrived,不判优,不判优,N/A,10,跨 seed 均值
+规模与状态,final_state_counts.Completed,最终状态：Completed,不判优,不判优,N/A,10,跨 seed 均值
+规模与状态,final_state_counts.Expired,最终状态：Expired,不判优,不判优,N/A,10,跨 seed 均值
+规模与状态,final_state_counts.Failed,最终状态：Failed,不判优,不判优,N/A,10,跨 seed 均值
+规模与状态,final_state_counts.PendingUncommitted,最终状态：PendingUncommitted,不判优,不判优,N/A,10,跨 seed 均值
+规模与状态,final_state_counts.Queued,最终状态：Queued,不判优,不判优,N/A,10,跨 seed 均值
+规模与状态,final_state_counts.Rejected,最终状态：Rejected,不判优,不判优,N/A,10,跨 seed 均值
+规模与状态,final_state_counts.Reserved,最终状态：Reserved,不判优,不判优,N/A,10,跨 seed 均值
+规模与状态,final_state_counts.Running,最终状态：Running,不判优,不判优,N/A,10,跨 seed 均值
+规模与状态,final_state_counts.Transmitting,最终状态：Transmitting,不判优,不判优,N/A,10,跨 seed 均值
+可靠性,rejected_count,拒绝任务数,越低越好,并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN,0,10,跨 seed 均值
+可靠性,reservation_reliability,预留可靠性,越高越好,并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN,100.00%,10,跨 seed 均值
+可靠性,reserved_ever_count,曾获预留任务数,越高越好,并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN,"2,436",10,跨 seed 均值
+SLA,sla_metrics.Flexible.acceptable_tardy_rate,Flexible 可接受迟到率,越低越好,Earliest feasible,0.00%,10,跨 seed 均值
+SLA,sla_metrics.Flexible.count,Flexible 任务数,不判优,不判优,N/A,10,跨 seed 均值
+SLA,sla_metrics.Flexible.expired_rate,Flexible 过期率,越低越好,并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN,0.00%,10,跨 seed 均值
+SLA,sla_metrics.Flexible.preferred_on_time_rate,Flexible 首选窗口准时率,越高越好,Earliest feasible,100.00%,10,跨 seed 均值
+SLA,sla_metrics.Flexible.preferred_start_tardiness_p50,Flexible 首选窗口迟到程度 P50,越低越好,并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN,0.00%,10,跨 seed 均值
+SLA,sla_metrics.Flexible.preferred_start_tardiness_p95,Flexible 首选窗口迟到程度 P95,越低越好,并列：Earliest feasible / Equal weight / Candidate DQN,0.00%,10,跨 seed 均值
+SLA,sla_metrics.Flexible.start_delay_p50_sim,Flexible 开始延迟 P50,越低越好,Earliest feasible,0.182,10,跨 seed 均值
+SLA,sla_metrics.Flexible.start_delay_p95_sim,Flexible 开始延迟 P95,越低越好,Earliest feasible,0.195,10,跨 seed 均值
+SLA,sla_metrics.Hard.acceptable_tardy_rate,Hard 可接受迟到率,越低越好,不判优,N/A,10,跨 seed 均值
+SLA,sla_metrics.Hard.count,Hard 任务数,不判优,不判优,N/A,10,跨 seed 均值
+SLA,sla_metrics.Hard.expired_rate,Hard 过期率,越低越好,并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN,2.20%,10,跨 seed 均值
+SLA,sla_metrics.Hard.preferred_on_time_rate,Hard 首选窗口准时率,越高越好,不判优,N/A,10,跨 seed 均值
+SLA,sla_metrics.Hard.preferred_start_tardiness_p50,Hard 首选窗口迟到程度 P50,越低越好,不判优,N/A,10,跨 seed 均值
+SLA,sla_metrics.Hard.preferred_start_tardiness_p95,Hard 首选窗口迟到程度 P95,越低越好,不判优,N/A,10,跨 seed 均值
+SLA,sla_metrics.Hard.start_delay_p50_sim,Hard 开始延迟 P50,越低越好,Earliest feasible,0.026,10,跨 seed 均值
+SLA,sla_metrics.Hard.start_delay_p95_sim,Hard 开始延迟 P95,越低越好,Earliest feasible,0.059,10,跨 seed 均值
+SLA,sla_metrics.Soft.acceptable_tardy_rate,Soft 可接受迟到率,越低越好,Earliest feasible,0.00%,10,跨 seed 均值
+SLA,sla_metrics.Soft.count,Soft 任务数,不判优,不判优,N/A,10,跨 seed 均值
+SLA,sla_metrics.Soft.expired_rate,Soft 过期率,越低越好,并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN,0.00%,10,跨 seed 均值
+SLA,sla_metrics.Soft.preferred_on_time_rate,Soft 首选窗口准时率,越高越好,Earliest feasible,100.00%,10,跨 seed 均值
+SLA,sla_metrics.Soft.preferred_start_tardiness_p50,Soft 首选窗口迟到程度 P50,越低越好,并列：Earliest feasible / Lowest cost / Highest green / Equal weight / Candidate DQN,0.00%,10,跨 seed 均值
+SLA,sla_metrics.Soft.preferred_start_tardiness_p95,Soft 首选窗口迟到程度 P95,越低越好,并列：Earliest feasible / Equal weight / Candidate DQN,0.00%,10,跨 seed 均值
+SLA,sla_metrics.Soft.start_delay_p50_sim,Soft 开始延迟 P50,越低越好,Earliest feasible,0.184,10,跨 seed 均值
+SLA,sla_metrics.Soft.start_delay_p95_sim,Soft 开始延迟 P95,越低越好,Earliest feasible,0.200,10,跨 seed 均值
+绿电,system_green_absorption_rate,系统绿电吸收率,越高越好,Candidate DQN,6.35%,10,跨 seed 均值
+成本,total_economic_cost_yuan,总经济成本,越低越好,Lowest cost,¥16.21M,10,跨 seed 均值

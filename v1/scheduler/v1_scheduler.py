@@ -1,6 +1,6 @@
 """Online per-task v1.0 scheduler orchestration."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 import hashlib
 import json
 import time
@@ -39,6 +39,12 @@ class SchedulingDecision:
     active_wait_sim: Optional[float] = None
     estimated_wait_benefit_vector: tuple = ()
     benefit_positive: Optional[bool] = None
+    # Wall time is observational and intentionally excluded from formal
+    # decision equality so deterministic-policy checks remain meaningful.
+    decision_wall_seconds: Optional[float] = field(
+        default=None,
+        compare=False,
+    )
 
 
 @dataclass(frozen=True)
@@ -148,6 +154,7 @@ class V1Scheduler:
                 )
             )
         for task in eligible_tasks:
+            decision_started = time.perf_counter()
             decision, commit_events = self._schedule_one(
                 task,
                 now_sim,
@@ -155,6 +162,16 @@ class V1Scheduler:
                 forecast_covered_until_sim,
                 metric_evaluator,
             )
+            decision_elapsed = time.perf_counter() - decision_started
+            decision = replace(
+                decision,
+                decision_wall_seconds=decision_elapsed,
+            )
+            if self.profiler is not None:
+                self.profiler.add(
+                    "scheduler_decision_seconds", decision_elapsed
+                )
+                self.profiler.increment("scheduler_decision_count")
             domain_events.extend(commit_events)
             decisions.append(decision)
             if decision.status == "PENDING":
@@ -235,44 +252,64 @@ class V1Scheduler:
                     forecast_version=forecast_version,
                     reason=result.status.value,
                 ), ()
-            if hasattr(self.policy, "select_complete_stream"):
-                selection = self.policy.select_complete_stream(
-                    result,
-                    task=task,
-                )
-            elif hasattr(self.policy, "select_stream"):
-                selection = self.policy.select_stream(
-                    result.iter_candidates(),
-                    task=task,
-                    context=result.context,
-                )
-            else:
-                # Compatibility for external policies. Built-in v1 policies all
-                # implement select_stream and therefore never materialize here.
-                candidates = tuple(result.iter_candidates())
-                selected = self.policy.select(candidates, task=task)
-                earliest = min(
-                    candidates,
-                    key=lambda item: (
-                        item.compute_start_sim,
-                        item.target_node,
-                        item.path.path_id,
-                        item.candidate_id,
-                    ),
-                )
-                digest = hashlib.sha256()
-                for candidate in candidates:
-                    digest.update(candidate.candidate_id.encode("utf-8"))
-                    digest.update(b"\0")
-                selection = CandidateStreamSelection(
-                    selected,
-                    earliest,
-                    len(candidates),
-                    digest.hexdigest(),
-                    result.context,
-                )
+            selection_started = time.perf_counter()
+            try:
+                if hasattr(self.policy, "select_complete_stream"):
+                    selection = self.policy.select_complete_stream(
+                        result,
+                        task=task,
+                    )
+                elif hasattr(self.policy, "select_stream"):
+                    selection = self.policy.select_stream(
+                        result.iter_candidates(),
+                        task=task,
+                        context=result.context,
+                    )
+                else:
+                    # Compatibility for external policies. Built-in v1 policies all
+                    # implement select_stream and therefore never materialize here.
+                    candidates = tuple(result.iter_candidates())
+                    selected = self.policy.select(candidates, task=task)
+                    earliest = min(
+                        candidates,
+                        key=lambda item: (
+                            item.compute_start_sim,
+                            item.target_node,
+                            item.path.path_id,
+                            item.candidate_id,
+                        ),
+                    )
+                    digest = hashlib.sha256()
+                    for candidate in candidates:
+                        digest.update(candidate.candidate_id.encode("utf-8"))
+                        digest.update(b"\0")
+                    selection = CandidateStreamSelection(
+                        selected,
+                        earliest,
+                        len(candidates),
+                        digest.hexdigest(),
+                        result.context,
+                    )
+            finally:
+                if self.profiler is not None:
+                    self.profiler.add(
+                        "policy_selection_seconds",
+                        time.perf_counter() - selection_started,
+                    )
+                    self.profiler.increment("policy_selection_count")
             selected = selection.selected_candidate
-            commit = self.reservation_manager.commit_selected(selected)
+            commit_started = time.perf_counter()
+            try:
+                commit = self.reservation_manager.commit_selected(selected)
+            finally:
+                if self.profiler is not None:
+                    self.profiler.add(
+                        "reservation_commit_seconds",
+                        time.perf_counter() - commit_started,
+                    )
+                    self.profiler.increment(
+                        "reservation_commit_attempt_count"
+                    )
             if commit.status is CommitDecisionStatus.COMMITTED:
                 reservation = commit.calendar_result.reservation
                 self._committed_candidates[task.task_id] = selected
