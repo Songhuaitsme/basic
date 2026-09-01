@@ -67,6 +67,12 @@
       "chart": "network_chart",
       "family": "Comparison & Ranking",
       "type": "horizontalBar"
+    },
+    {
+      "section": "单次调度决策耗时 P95",
+      "chart": "runtime_chart",
+      "family": "Comparison & Ranking",
+      "type": "horizontalBar"
     }
   ],
   "validation": {
@@ -84,22 +90,22 @@
     ],
     "reports_per_seed": 5,
     "source_report_count": 5,
-    "long_metric_row_count": 475,
-    "wide_metric_row_count": 95,
+    "long_metric_row_count": 1050,
+    "wide_metric_row_count": 210,
     "task_row_count": 12080,
-    "decision_row_count": 12134,
-    "time_row_count": 0,
-    "node_row_count": 247,
-    "network_row_count": 2574,
-    "runtime_row_count": 0,
+    "decision_row_count": 12116,
+    "time_row_count": 35725,
+    "node_row_count": 255,
+    "network_row_count": 645,
+    "runtime_row_count": 5,
     "granularity_coverage": {
       "task": true,
       "decision": true,
-      "time": false,
+      "time": true,
       "node": true,
       "network": true,
       "system": true,
-      "runtime": false
+      "runtime": true
     },
     "all_reports_valid": true,
     "all_unsettled_counts_zero": true,
@@ -127,7 +133,7 @@
     "paired_metadata_match": true
   },
   "seed_count": 1,
-  "tariff_mode": "tou_uniform",
-  "tariff_label": "不分区定价",
+  "tariff_mode": "tou_region",
+  "tariff_label": "分区定价",
   "confidence_method": "not estimable for one seed"
 }

@@ -1,0 +1,25 @@
+﻿seed,pricing_mode,pricing_label,group,metric,metric_label,value,unit,direction
+42,tou_uniform,不分区定价,成本,cost_yuan_per_completed_cpu_hour,每完成 CPU 小时成本,12.47803148927941,CNY/CPU-hour,lower
+42,tou_uniform,不分区定价,绿电,completed_task_green_coverage,完成任务绿电覆盖率,0.704673788349581,fraction,higher
+42,tou_uniform,不分区定价,绿电,system_green_absorption_rate,系统绿电吸收率,0.043187661712295475,fraction,higher
+42,tou_uniform,不分区定价,可靠性,completion_rate,任务完成率,0.9937913907284768,fraction,higher
+42,tou_uniform,不分区定价,可靠性,reservation_reliability,预留可靠性,1.0,fraction,higher
+42,tou_uniform,不分区定价,SLA,soft_preferred_on_time_rate,Soft 首选窗口准时率,0.9965010496850945,fraction,higher
+42,tou_uniform,不分区定价,SLA,flexible_preferred_on_time_rate,Flexible 首选窗口准时率,0.943342776203966,fraction,higher
+42,tou_uniform,不分区定价,SLA,hard_start_delay_p95_hours,Hard 开始时延 P95,0.05596275840546053,hours,lower
+42,tou_uniform,不分区定价,任务时延,mean_completion_delay_hours,平均任务完成时延,6.822416264695302,hours,lower
+42,tou_uniform,不分区定价,负载均衡,allocated_cpu_hours_cv,节点 CPU 工作量变异系数,0.7422666188944541,fraction,lower
+42,tou_uniform,不分区定价,等待行为,active_wait_count,主动等待任务数,1134.0,tasks,neutral
+42,tou_uniform,不分区定价,等待行为,mean_active_wait_hours,平均主动等待时间,10.207761243386258,hours,neutral
+42,tou_region,分区定价,成本,cost_yuan_per_completed_cpu_hour,每完成 CPU 小时成本,6.121265831828917,CNY/CPU-hour,lower
+42,tou_region,分区定价,绿电,completed_task_green_coverage,完成任务绿电覆盖率,0.8495865253214234,fraction,higher
+42,tou_region,分区定价,绿电,system_green_absorption_rate,系统绿电吸收率,0.07065459358498269,fraction,higher
+42,tou_region,分区定价,可靠性,completion_rate,任务完成率,0.9937913907284768,fraction,higher
+42,tou_region,分区定价,可靠性,reservation_reliability,预留可靠性,1.0,fraction,higher
+42,tou_region,分区定价,SLA,soft_preferred_on_time_rate,Soft 首选窗口准时率,0.9839048285514346,fraction,higher
+42,tou_region,分区定价,SLA,flexible_preferred_on_time_rate,Flexible 首选窗口准时率,0.9660056657223796,fraction,higher
+42,tou_region,分区定价,SLA,hard_start_delay_p95_hours,Hard 开始时延 P95,0.0738584543020501,hours,lower
+42,tou_region,分区定价,任务时延,mean_completion_delay_hours,平均任务完成时延,6.910157830709463,hours,lower
+42,tou_region,分区定价,负载均衡,allocated_cpu_hours_cv,节点 CPU 工作量变异系数,0.9662457082520693,fraction,lower
+42,tou_region,分区定价,等待行为,active_wait_count,主动等待任务数,1733.0,tasks,neutral
+42,tou_region,分区定价,等待行为,mean_active_wait_hours,平均主动等待时间,6.801078332371625,hours,neutral

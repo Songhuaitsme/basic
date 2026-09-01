@@ -1,0 +1,65 @@
+{
+  "seed": 42,
+  "arrival_cutoff_sim": 288.0,
+  "pricing_mode": "tou_uniform",
+  "models": {
+    "V1": {
+      "path": "artifacts\\v1\\formal\\candidate_dqn_seed7_layered_pool_600000_v2.pt",
+      "sha256": "345b189231944b3d292b8df4e822c4585bfbf2b519ae9848a6974c92c2611699",
+      "tariff_mode": "tou_uniform",
+      "training_steps": 600000,
+      "training_seed": 7,
+      "system_version": "1.0"
+    },
+    "V2": {
+      "path": "artifacts\\v2\\formal\\candidate_dqn_seed7_layered_pool_600000_from_scratch.pt",
+      "sha256": "1670b960fad8ab5b6850192713a1f2764eff054e6faf5a0d396b74c74691353e",
+      "tariff_mode": "tou_uniform",
+      "training_steps": 600000,
+      "training_seed": 7,
+      "system_version": "2.0"
+    }
+  },
+  "model_parameters_identical": true,
+  "maximum_parameter_absolute_delta": 0.0,
+  "paired_trace_hashes": {
+    "task_trace_hash": "db427715e1c4463a813d0fe3639fdecc1cd9107500b45a011f00dac41460bb84",
+    "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+    "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc"
+  },
+  "reports": {
+    "V1": "artifacts\\v1\\evaluation\\candidate_dqn_seed42.json",
+    "V2": "artifacts\\v2\\evaluation\\five_policy\\seed_42\\candidate_dqn_seed42.json"
+  },
+  "quality_metrics": {
+    "V1": {
+      "cost_yuan_per_completed_cpu_hour": 12.47803148927941,
+      "completed_task_green_coverage": 0.704673788349581,
+      "allocated_cpu_hours_cv": 0.7422666188944541,
+      "mean_completion_delay_hours": 6.822416264695302
+    },
+    "V2": {
+      "cost_yuan_per_completed_cpu_hour": 12.47803148927941,
+      "completed_task_green_coverage": 0.704673788349581,
+      "allocated_cpu_hours_cv": 0.7422666188944541,
+      "mean_completion_delay_hours": 6.822416264695302
+    }
+  },
+  "training_speed": {
+    "v1_seconds_per_1000_virtual_cycles": 375.09046824999996,
+    "v2_seconds_per_1000_virtual_cycles": 45.55159424483333,
+    "v2_speedup": 8.23440923349339,
+    "v1_profile": "artifacts\\v1\\formal\\candidate_dqn_seed7_layered_pool_50000_v1.profile.json",
+    "v2_profile": "artifacts\\v2\\formal\\candidate_dqn_seed7_layered_pool_600000_from_scratch.profile.json",
+    "v1_profile_steps": 50000,
+    "v2_profile_steps": 600000
+  },
+  "evaluation_speed": null,
+  "commands": [],
+  "notes": [
+    "Quality bars use zero baselines and exact labels.",
+    "Training speed is normalized by virtual training cycles from the supplied profiles.",
+    "The bundled V1 profile covers 50,000 cycles; the V2 profile covers 600,000 cycles.",
+    "Fresh evaluation speed compares the entry points' intended defaults: V1 full audit and V2 periodic audit."
+  ]
+}

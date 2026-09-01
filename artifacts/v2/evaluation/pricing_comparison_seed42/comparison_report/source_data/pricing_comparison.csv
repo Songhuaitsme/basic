@@ -1,0 +1,13 @@
+﻿group,metric,metric_label,unit,direction,uniform_value,regional_value,absolute_delta,relative_delta
+成本,cost_yuan_per_completed_cpu_hour,每完成 CPU 小时成本,CNY/CPU-hour,lower,12.47803148927941,6.121265831828917,-6.3567656574504925,-0.5094365776294084
+绿电,completed_task_green_coverage,完成任务绿电覆盖率,fraction,higher,0.704673788349581,0.8495865253214234,0.14491273697184237,0.20564513590216404
+绿电,system_green_absorption_rate,系统绿电吸收率,fraction,higher,0.043187661712295475,0.07065459358498269,0.027466931872687214,0.6359902523934843
+可靠性,completion_rate,任务完成率,fraction,higher,0.9937913907284768,0.9937913907284768,0.0,0.0
+可靠性,reservation_reliability,预留可靠性,fraction,higher,1.0,1.0,0.0,0.0
+SLA,soft_preferred_on_time_rate,Soft 首选窗口准时率,fraction,higher,0.9965010496850945,0.9839048285514346,-0.01259622113365988,-0.012640449438202224
+SLA,flexible_preferred_on_time_rate,Flexible 首选窗口准时率,fraction,higher,0.943342776203966,0.9660056657223796,0.022662889518413554,0.02402402402402398
+SLA,hard_start_delay_p95_hours,Hard 开始时延 P95,hours,lower,0.05596275840546053,0.0738584543020501,0.01789569589658957,0.3197786600676819
+任务时延,mean_completion_delay_hours,平均任务完成时延,hours,lower,6.822416264695302,6.910157830709463,0.08774156601416117,0.012860775802878956
+负载均衡,allocated_cpu_hours_cv,节点 CPU 工作量变异系数,fraction,lower,0.7422666188944541,0.9662457082520693,0.22397908935761524,0.30175018471289183
+等待行为,active_wait_count,主动等待任务数,tasks,neutral,1134.0,1733.0,599.0,0.5282186948853616
+等待行为,mean_active_wait_hours,平均主动等待时间,hours,neutral,10.207761243386258,6.801078332371625,-3.4066829110146335,-0.33373457997186873

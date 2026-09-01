@@ -500,6 +500,7 @@ def export_reports(report_paths: Iterable[Path], output_dir: Path) -> dict:
                 "source_file": source_text,
                 "status": report["status"],
                 "system_version": metadata.get("system_version"),
+                "tariff_mode": metadata.get("tariff_mode"),
                 "diagnostic_schema_version": (
                     (report.get("diagnostics") or {}).get("schema_version")
                 ),
@@ -541,6 +542,7 @@ def export_reports(report_paths: Iterable[Path], output_dir: Path) -> dict:
     )
     manifest_fields = (
         "seed", "policy", "source_file", "status", "system_version",
+        "tariff_mode",
         "diagnostic_schema_version",
         "arrival_cutoff_sim", "model_hash", "code_hash", "config_hash",
         "topology_hash", "task_trace_hash", "exogenous_trace_hash",

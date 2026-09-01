@@ -84,6 +84,9 @@ for _state in (
     )
 
 METRIC_SPECS.update({
+    "diagnostics.task_summary.completion_delay_sim.mean": (
+        "任务时延", "任务平均完成时延", "sim-time", "lower"
+    ),
     "diagnostics.task_summary.scheduler_queue_delay_sim.p95": (
         "任务时延", "调度排队时延 P95", "sim-time", "lower"
     ),
@@ -142,6 +145,13 @@ CORE_METRICS = (
 
 DIAGNOSTIC_CHART_SPECS = (
     (
+        "average_task_latency_chart",
+        "diagnostics.task_summary.completion_delay_sim.mean",
+        "任务平均完成时延",
+        "sim-time",
+        "pink",
+    ),
+    (
         "task_latency_chart",
         "diagnostics.task_summary.completion_delay_sim.p95",
         "任务完成时延 P95",
@@ -190,6 +200,38 @@ def _read_csv(path: Path) -> list[dict]:
         raise ComparisonReportError(f"missing source file: {path}")
     with path.open(newline="", encoding="utf-8-sig") as handle:
         return list(csv.DictReader(handle))
+
+
+def _tariff_context(manifest_rows: list[dict]) -> tuple[str, str]:
+    """Return the single paired tariff mode and its Chinese display label."""
+    modes = {
+        row.get("tariff_mode", "").strip()
+        for row in manifest_rows
+        if row.get("tariff_mode", "").strip()
+    }
+    if not modes:
+        for row in manifest_rows:
+            source_path = Path(row.get("source_file", ""))
+            try:
+                report = json.loads(source_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                raise ComparisonReportError(
+                    "source manifest has no tariff_mode and its report cannot be read: "
+                    f"{source_path}: {exc}"
+                ) from exc
+            mode = str((report.get("metadata") or {}).get("tariff_mode", "")).strip()
+            if mode:
+                modes.add(mode)
+    if len(modes) != 1:
+        raise ComparisonReportError(
+            f"expected one paired tariff_mode, found {sorted(modes)}"
+        )
+    tariff_mode = next(iter(modes))
+    label = {
+        "tou_region": "分区定价",
+        "tou_uniform": "不分区定价",
+    }.get(tariff_mode, tariff_mode)
+    return tariff_mode, label
 
 
 def load_source_data(input_dir: Path):
@@ -381,6 +423,9 @@ def build_report_artifact(input_dir: Path, confidence_level: float = 0.95):
         validation, long_rows, manifest_rows, values, statuses, seeds, metrics
     ) = load_source_data(input_dir)
     generated_at = datetime.now(timezone.utc).isoformat()
+    tariff_mode, tariff_label = _tariff_context(manifest_rows)
+    seed_scope = "单 Seed" if len(seeds) == 1 else f"{len(seeds)} Seeds"
+    report_title = f"V2 {tariff_label}五种调度策略{seed_scope}对比"
 
     summaries = {}
     for metric in metrics:
@@ -515,9 +560,9 @@ def build_report_artifact(input_dir: Path, confidence_level: float = 0.95):
     seed_text = ", ".join(str(seed) for seed in seeds)
 
     metrics_source = _source(
-        "artifacts/v2/evaluation/five_policy/source_data/metrics_long.csv",
+        (input_dir / "metrics_long.csv").as_posix(),
         "metrics_long",
-        "V2 five-policy validated metric source rows",
+        f"V2 {tariff_mode} five-policy validated metric source rows",
         generated_at,
         (
             "成本为任务归因经济成本；每完成 CPU 小时成本=总经济成本/完成 CPU 小时。",
@@ -528,9 +573,9 @@ def build_report_artifact(input_dir: Path, confidence_level: float = 0.95):
         ),
     )
     manifest_source = _source(
-        "artifacts/v2/evaluation/five_policy/source_data/source_manifest.csv",
+        (input_dir / "source_manifest.csv").as_posix(),
         "source_manifest",
-        "V2 five-policy report provenance manifest",
+        f"V2 {tariff_mode} five-policy report provenance manifest",
         generated_at,
         ("同一 seed 内报告必须有效、无未结算任务且配对元数据完全一致。",),
     )
@@ -849,13 +894,36 @@ def build_report_artifact(input_dir: Path, confidence_level: float = 0.95):
                 "单 seed 只表示当前工作负载的诊断结果；运行效率应在相同设备、进程并发和审计配置下比较。"
             ),
         }]
-        diagnostic_blocks.extend({
-            "id": f"{chart_id}_block",
-            "type": "chart",
-            "chartId": chart_id,
-            "layout": "full",
-        } for chart_id, _ in diagnostic_chart_ids)
+        for chart_id, _ in diagnostic_chart_ids:
+            if chart_id == "average_task_latency_chart":
+                diagnostic_blocks.append({
+                    "id": "average_task_latency_finding",
+                    "type": "markdown",
+                    "sourceId": "metrics_long",
+                    "layout": "full",
+                    "body": (
+                        "## 任务平均完成时延\n\n"
+                        "**该图比较五种策略从任务到达到完成的平均时长，数值越低越好。** "
+                        f"每种策略先按 seed 汇总任务平均完成时延，再展示 {len(seeds)} 个 seed 的均值；"
+                        "多 seed 结果应结合置信区间和任务完成率共同解释。"
+                    ),
+                })
+            diagnostic_blocks.append({
+                "id": f"{chart_id}_block",
+                "type": "chart",
+                "chartId": chart_id,
+                "layout": "full",
+            })
         blocks[insertion:insertion] = diagnostic_blocks
+
+    for block in blocks:
+        if block["id"] == "title":
+            block["body"] = f"# {report_title}"
+        elif block["id"] == "definitions":
+            block["body"] = (
+                f"**定价模式：{tariff_label}（`{tariff_mode}`）。**\n\n"
+                + block["body"]
+            )
 
     artifact = {
         "surface": "report",
@@ -900,6 +968,11 @@ def build_report_artifact(input_dir: Path, confidence_level: float = 0.95):
         },
         "sources": sources,
     }
+    artifact["manifest"]["title"] = report_title
+    artifact["manifest"]["description"] = (
+        f"V2 {tariff_label}（{tariff_mode}）下五种冻结调度策略的{seed_scope}成本、"
+        "绿电、负载均衡、时延、可靠性、SLA 与运行效率对比。"
+    )
     notes = {
         "required_structure": {
             "title": "title",
@@ -921,6 +994,8 @@ def build_report_artifact(input_dir: Path, confidence_level: float = 0.95):
         ],
         "validation": validation,
         "seed_count": len(seeds),
+        "tariff_mode": tariff_mode,
+        "tariff_label": tariff_label,
         "confidence_method": "paired t interval" if len(seeds) >= 2 else "not estimable for one seed",
     }
     notes["chart_map"].extend({

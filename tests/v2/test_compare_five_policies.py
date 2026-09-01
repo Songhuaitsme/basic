@@ -1,6 +1,6 @@
 import unittest
 
-from v2.compare_five_policies import _best_policy, mean_ci
+from v2.compare_five_policies import _best_policy, _tariff_context, mean_ci
 
 
 class CompareFivePoliciesTest(unittest.TestCase):
@@ -21,6 +21,14 @@ class CompareFivePoliciesTest(unittest.TestCase):
         self.assertIn("并列", tied)
         self.assertEqual(value, 1.0)
         self.assertEqual(_best_policy(values, "neutral"), ("不判优", None))
+
+    def test_tariff_context_labels_regional_pricing(self):
+        mode, label = _tariff_context([
+            {"tariff_mode": "tou_region"},
+            {"tariff_mode": "tou_region"},
+        ])
+        self.assertEqual(mode, "tou_region")
+        self.assertEqual(label, "分区定价")
 
 
 if __name__ == "__main__":

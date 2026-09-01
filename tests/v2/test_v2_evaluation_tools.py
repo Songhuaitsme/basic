@@ -111,6 +111,15 @@ class V2EvaluationToolsTest(unittest.TestCase):
             self.assertEqual(completion["candidate_dqn"], "0.9")
             self.assertEqual(completion["candidate_dqn_status"], "VALID")
 
+            with (output / "source_manifest.csv").open(
+                newline="", encoding="utf-8-sig"
+            ) as handle:
+                manifest_rows = list(csv.DictReader(handle))
+            self.assertEqual(
+                {row["tariff_mode"] for row in manifest_rows},
+                {"shared-tariff_mode"},
+            )
+
     def test_export_rejects_unpaired_trace_hash(self):
         with self._temporary_directory() as temporary:
             root = Path(temporary)

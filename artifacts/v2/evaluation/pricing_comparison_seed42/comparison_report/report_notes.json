@@ -1,0 +1,79 @@
+{
+  "required_structure": {
+    "title": "title",
+    "executive_summary": "executive_summary",
+    "key_findings_with_visual_evidence": [
+      "cost_finding",
+      "green_finding",
+      "service_finding",
+      "latency_finding",
+      "balance_finding"
+    ],
+    "recommended_next_steps": "next_steps",
+    "further_questions": "further_questions",
+    "caveats_and_assumptions": "caveats"
+  },
+  "chart_map": [
+    {
+      "section": "成本",
+      "chart": "cost_chart",
+      "family": "Comparison & Ranking",
+      "type": "horizontalBar"
+    },
+    {
+      "section": "绿电",
+      "chart": "green_chart",
+      "family": "Comparison & Ranking",
+      "type": "grouped bar"
+    },
+    {
+      "section": "可靠性与 SLA",
+      "chart": "sla_chart",
+      "family": "Comparison & Ranking",
+      "type": "grouped bar"
+    },
+    {
+      "section": "时延",
+      "chart": "latency_chart",
+      "family": "Comparison & Ranking",
+      "type": "horizontalBar"
+    },
+    {
+      "section": "负载均衡",
+      "chart": "balance_chart",
+      "family": "Comparison & Ranking",
+      "type": "horizontalBar"
+    }
+  ],
+  "validation": {
+    "status": "PASS",
+    "seed": 42,
+    "arrival_cutoff_sim": 288.0,
+    "paired_metadata_match": true,
+    "paired_fields": [
+      "system_version",
+      "requirements_version",
+      "algorithm_version",
+      "task_schema_version",
+      "candidate_schema_version",
+      "model_schema_version",
+      "metric_schema_version",
+      "aggregation_schema_version",
+      "candidate_mode",
+      "seed",
+      "arrival_cutoff_sim",
+      "topology_hash",
+      "task_trace_hash",
+      "exogenous_trace_hash",
+      "dependency_lock_hash",
+      "gamma_per_second"
+    ],
+    "uniform_model_hash_match": true,
+    "regional_model_hash_match": true,
+    "all_reports_valid": true,
+    "all_unsettled_counts_zero": true
+  },
+  "confidence_method": "not estimable for one seed",
+  "comparison_basis": "tou_region - tou_uniform",
+  "cost_comparability_caveat": "tariff definitions differ; cost delta is not a pure policy effect"
+}

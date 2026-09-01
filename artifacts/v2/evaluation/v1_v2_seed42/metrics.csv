@@ -1,0 +1,5 @@
+﻿metric,v1,v2,absolute_delta,relative_delta
+cost_yuan_per_completed_cpu_hour,12.47803148927941,12.47803148927941,0.0,0.0
+completed_task_green_coverage,0.704673788349581,0.704673788349581,0.0,0.0
+allocated_cpu_hours_cv,0.7422666188944541,0.7422666188944541,0.0,0.0
+mean_completion_delay_hours,6.822416264695302,6.822416264695302,0.0,0.0

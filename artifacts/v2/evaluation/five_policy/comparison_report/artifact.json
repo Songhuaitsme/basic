@@ -3,9 +3,9 @@
   "manifest": {
     "version": 1,
     "surface": "report",
-    "title": "V2 五种调度策略指标对比",
-    "description": "冻结策略在配对仿真任务上的成本、绿电、可靠性、SLA 与等待行为比较。",
-    "generatedAt": "2026-08-19T16:23:12.725083+00:00",
+    "title": "V2 不分区定价五种调度策略单 Seed 对比",
+    "description": "V2 不分区定价（tou_uniform）下五种冻结调度策略的单 Seed 成本、绿电、负载均衡、时延、可靠性、SLA 与运行效率对比。",
+    "generatedAt": "2026-08-21T12:54:52.251464+00:00",
     "cards": [
       {
         "id": "dqn_cost_card",
@@ -395,6 +395,67 @@
         }
       },
       {
+        "id": "average_task_latency_chart",
+        "title": "任务平均完成时延",
+        "subtitle": "Seeds: 42；同一任务与实验条件下的策略比较",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "五种策略的sim-time如何比较？",
+        "rationale": "五个离散策略的一项同单位指标适合使用横向条形图直接比较。",
+        "comparisonContext": {
+          "baseline": "equal_weight",
+          "grain": "policy",
+          "unit": "sim-time",
+          "semanticFamily": "policy comparison"
+        },
+        "type": "horizontalBar",
+        "dataset": "average_task_latency_chart_data",
+        "sourceId": "metrics_long",
+        "encodings": {
+          "x": {
+            "field": "policy_label",
+            "type": "nominal",
+            "label": "策略"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "format": "number",
+            "label": "sim-time"
+          },
+          "tooltip": [
+            {
+              "field": "seed_count",
+              "type": "quantitative",
+              "label": "Seed 数"
+            },
+            {
+              "field": "ci_low",
+              "type": "quantitative",
+              "label": "95% CI 下界"
+            },
+            {
+              "field": "ci_high",
+              "type": "quantitative",
+              "label": "95% CI 上界"
+            }
+          ]
+        },
+        "xAxisTitle": "策略",
+        "yAxisTitle": "sim-time",
+        "valueFormat": "number",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "single",
+            "root": "pink"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      },
+      {
         "id": "task_latency_chart",
         "title": "任务完成时延 P95",
         "subtitle": "Seeds: 42；同一任务与实验条件下的策略比较",
@@ -731,14 +792,14 @@
     "sources": [
       {
         "id": "metrics_long",
-        "label": "V2 five-policy validated metric source rows",
+        "label": "V2 tou_uniform five-policy validated metric source rows",
         "path": "artifacts/v2/evaluation/five_policy/source_data/metrics_long.csv",
         "query": {
           "engine": "Python csv",
           "language": "Python",
           "sql": "SELECT * FROM read_csv_auto('artifacts/v2/evaluation/five_policy/source_data/metrics_long.csv')",
           "description": "读取已校验的 V2 五策略评估源数据并进行配对聚合。",
-          "executed_at": "2026-08-19T16:23:12.725083+00:00",
+          "executed_at": "2026-08-21T12:54:52.251464+00:00",
           "filters": [
             "evaluation status=VALID",
             "zero unsettled tasks",
@@ -759,14 +820,14 @@
       },
       {
         "id": "source_manifest",
-        "label": "V2 five-policy report provenance manifest",
+        "label": "V2 tou_uniform five-policy report provenance manifest",
         "path": "artifacts/v2/evaluation/five_policy/source_data/source_manifest.csv",
         "query": {
           "engine": "Python csv",
           "language": "Python",
           "sql": "SELECT * FROM read_csv_auto('artifacts/v2/evaluation/five_policy/source_data/source_manifest.csv')",
           "description": "读取已校验的 V2 五策略评估源数据并进行配对聚合。",
-          "executed_at": "2026-08-19T16:23:12.725083+00:00",
+          "executed_at": "2026-08-21T12:54:52.251464+00:00",
           "filters": [
             "evaluation status=VALID",
             "zero unsettled tasks",
@@ -786,7 +847,7 @@
       {
         "id": "title",
         "type": "markdown",
-        "body": "# V2 五种调度策略指标对比",
+        "body": "# V2 不分区定价五种调度策略单 Seed 对比",
         "layout": "full"
       },
       {
@@ -801,7 +862,7 @@
         "type": "markdown",
         "sourceId": "metrics_long",
         "layout": "full",
-        "body": "## 比较口径\n\n报告覆盖 seeds **42**，每个 seed 的五种策略共享相同任务轨迹、外生轨迹、配置和拓扑。成本越低越好；绿电覆盖率、完成率、预留可靠性和准时率越高越好。主动等待数量和等待时长用于描述策略行为，不直接作为越低越好的服务质量指标。"
+        "body": "**定价模式：不分区定价（`tou_uniform`）。**\n\n## 比较口径\n\n报告覆盖 seeds **42**，每个 seed 的五种策略共享相同任务轨迹、外生轨迹、配置和拓扑。成本越低越好；绿电覆盖率、完成率、预留可靠性和准时率越高越好。主动等待数量和等待时长用于描述策略行为，不直接作为越低越好的服务质量指标。"
       },
       {
         "id": "headline_metrics",
@@ -888,6 +949,12 @@
         "body": "## 细粒度评估：任务、节点、网络与算法效率\n\n以下指标由任务执行记录、资源预留区间和决策墙钟计时逐层汇总。单 seed 只表示当前工作负载的诊断结果；运行效率应在相同设备、进程并发和审计配置下比较。"
       },
       {
+        "id": "average_task_latency_chart_block",
+        "type": "chart",
+        "chartId": "average_task_latency_chart",
+        "layout": "full"
+      },
+      {
         "id": "task_latency_chart_block",
         "type": "chart",
         "chartId": "task_latency_chart",
@@ -966,7 +1033,7 @@
   },
   "snapshot": {
     "version": 1,
-    "generatedAt": "2026-08-19T16:23:12.725083+00:00",
+    "generatedAt": "2026-08-21T12:54:52.251464+00:00",
     "status": "ready",
     "datasets": {
       "headline": [
@@ -1751,12 +1818,12 @@
           "uncertainty": "点估计；单 seed 无法估计区间"
         },
         {
-          "group": "其他",
+          "group": "任务时延",
           "metric_path": "diagnostics.task_summary.completion_delay_sim.mean",
-          "metric": "diagnostics.task_summary.completion_delay_sim.mean",
-          "direction": "不判优",
-          "best_policy": "不判优",
-          "best_value": "N/A",
+          "metric": "任务平均完成时延",
+          "direction": "越低越好",
+          "best_policy": "Earliest feasible",
+          "best_value": "24.015",
           "seed_count": 1,
           "uncertainty": "点估计；单 seed 无法估计区间"
         },
@@ -2503,6 +2570,48 @@
           "paired_metadata_match": "True"
         }
       ],
+      "average_task_latency_chart_data": [
+        {
+          "policy": "earliest_feasible",
+          "policy_label": "Earliest feasible",
+          "value": 24.015094718201176,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "lowest_cost",
+          "policy_label": "Lowest cost",
+          "value": 86.44623590937152,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "highest_green",
+          "policy_label": "Highest green",
+          "value": 81.74757909970887,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "equal_weight",
+          "policy_label": "Equal weight",
+          "value": 110.18238751287008,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        },
+        {
+          "policy": "candidate_dqn",
+          "policy_label": "Candidate DQN",
+          "value": 81.86899517634362,
+          "ci_low": null,
+          "ci_high": null,
+          "seed_count": 1
+        }
+      ],
       "task_latency_chart_data": [
         {
           "policy": "earliest_feasible",
@@ -2635,14 +2744,14 @@
   "sources": [
     {
       "id": "metrics_long",
-      "label": "V2 five-policy validated metric source rows",
+      "label": "V2 tou_uniform five-policy validated metric source rows",
       "path": "artifacts/v2/evaluation/five_policy/source_data/metrics_long.csv",
       "query": {
         "engine": "Python csv",
         "language": "Python",
         "sql": "SELECT * FROM read_csv_auto('artifacts/v2/evaluation/five_policy/source_data/metrics_long.csv')",
         "description": "读取已校验的 V2 五策略评估源数据并进行配对聚合。",
-        "executed_at": "2026-08-19T16:23:12.725083+00:00",
+        "executed_at": "2026-08-21T12:54:52.251464+00:00",
         "filters": [
           "evaluation status=VALID",
           "zero unsettled tasks",
@@ -2663,14 +2772,14 @@
     },
     {
       "id": "source_manifest",
-      "label": "V2 five-policy report provenance manifest",
+      "label": "V2 tou_uniform five-policy report provenance manifest",
       "path": "artifacts/v2/evaluation/five_policy/source_data/source_manifest.csv",
       "query": {
         "engine": "Python csv",
         "language": "Python",
         "sql": "SELECT * FROM read_csv_auto('artifacts/v2/evaluation/five_policy/source_data/source_manifest.csv')",
         "description": "读取已校验的 V2 五策略评估源数据并进行配对聚合。",
-        "executed_at": "2026-08-19T16:23:12.725083+00:00",
+        "executed_at": "2026-08-21T12:54:52.251464+00:00",
         "filters": [
           "evaluation status=VALID",
           "zero unsettled tasks",

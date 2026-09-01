@@ -1,0 +1,1102 @@
+{
+  "surface": "report",
+  "manifest": {
+    "version": 1,
+    "surface": "report",
+    "title": "V2 分区与不分区定价模型对比",
+    "description": "同一 seed 与轨迹下，V2 分区和不分区定价 Candidate DQN 的成本、绿电、SLA、时延与负载均衡比较。",
+    "generatedAt": "2026-08-21T11:52:45.961406+00:00",
+    "cards": [
+      {
+        "id": "regional_cost_card",
+        "description": "分区定价单位成本及其相对不分区定价的变化。",
+        "dataset": "headline",
+        "sourceId": "pricing_metrics",
+        "metrics": [
+          {
+            "label": "分区定价单位成本",
+            "field": "regional_cost",
+            "format": "number"
+          },
+          {
+            "label": "相对不分区定价",
+            "field": "cost_delta",
+            "format": "percent",
+            "signed": true
+          }
+        ]
+      },
+      {
+        "id": "regional_green_card",
+        "description": "分区定价任务绿电覆盖率及百分点变化。",
+        "dataset": "headline",
+        "sourceId": "pricing_metrics",
+        "metrics": [
+          {
+            "label": "分区定价绿电覆盖率",
+            "field": "regional_green",
+            "format": "percent"
+          },
+          {
+            "label": "百分点变化",
+            "field": "green_delta",
+            "format": "percent",
+            "signed": true
+          }
+        ]
+      },
+      {
+        "id": "completion_card",
+        "description": "分区定价任务完成率及百分点变化。",
+        "dataset": "headline",
+        "sourceId": "pricing_metrics",
+        "metrics": [
+          {
+            "label": "分区定价完成率",
+            "field": "regional_completion",
+            "format": "percent"
+          },
+          {
+            "label": "百分点变化",
+            "field": "completion_delta",
+            "format": "percent",
+            "signed": true
+          }
+        ]
+      },
+      {
+        "id": "latency_card",
+        "description": "分区定价平均完成时延及相对变化。",
+        "dataset": "headline",
+        "sourceId": "pricing_metrics",
+        "metrics": [
+          {
+            "label": "平均完成时延（小时）",
+            "field": "regional_latency",
+            "format": "number"
+          },
+          {
+            "label": "相对变化",
+            "field": "latency_delta",
+            "format": "percent",
+            "signed": true
+          }
+        ]
+      },
+      {
+        "id": "balance_card",
+        "description": "分区定价节点 CPU 工作量 CV 及相对变化。",
+        "dataset": "headline",
+        "sourceId": "pricing_metrics",
+        "metrics": [
+          {
+            "label": "节点工作量 CV",
+            "field": "regional_balance",
+            "format": "number"
+          },
+          {
+            "label": "相对变化",
+            "field": "balance_delta",
+            "format": "percent",
+            "signed": true
+          }
+        ]
+      }
+    ],
+    "charts": [
+      {
+        "id": "cost_chart",
+        "title": "每完成 CPU 小时成本",
+        "subtitle": "Seed 42；人民币/完成 CPU 小时，越低越好",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "分区与不分区定价的每完成 CPU 小时成本如何比较？",
+        "rationale": "两个离散定价模式的一项同单位指标适合使用横向条形图。",
+        "comparisonContext": {
+          "baseline": "不分区定价",
+          "grain": "pricing mode",
+          "unit": "CNY/CPU-hour",
+          "semanticFamily": "pricing model comparison"
+        },
+        "type": "horizontalBar",
+        "dataset": "cost_comparison",
+        "sourceId": "pricing_metrics",
+        "encodings": {
+          "x": {
+            "field": "pricing_label",
+            "type": "nominal",
+            "label": "定价模式"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "format": "number",
+            "label": "CNY/CPU-hour"
+          },
+          "tooltip": [
+            {
+              "field": "seed",
+              "type": "quantitative",
+              "label": "Seed"
+            },
+            {
+              "field": "direction_label",
+              "type": "nominal",
+              "label": "判优方向"
+            }
+          ]
+        },
+        "xAxisTitle": "定价模式",
+        "yAxisTitle": "CNY/CPU-hour",
+        "valueFormat": "number",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "single",
+            "root": "blue"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      },
+      {
+        "id": "green_chart",
+        "title": "绿电利用指标",
+        "subtitle": "Seed 42；完成任务绿电覆盖率与系统绿电吸收率，越高越好",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "分区与不分区定价的任务绿电覆盖率和系统吸收率如何比较？",
+        "rationale": "两个同单位绿电比例使用分组柱形图，保留定价模式与指标两个维度。",
+        "comparisonContext": {
+          "baseline": "不分区定价",
+          "grain": "pricing mode by green metric",
+          "unit": "fraction",
+          "semanticFamily": "green-energy comparison"
+        },
+        "type": "bar",
+        "dataset": "green_comparison",
+        "sourceId": "pricing_metrics",
+        "encodings": {
+          "x": {
+            "field": "pricing_label",
+            "type": "nominal",
+            "label": "定价模式"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "format": "percent",
+            "label": "比例"
+          },
+          "color": {
+            "field": "metric_label",
+            "type": "nominal",
+            "label": "绿电指标"
+          },
+          "tooltip": [
+            {
+              "field": "seed",
+              "type": "quantitative",
+              "label": "Seed"
+            }
+          ]
+        },
+        "xAxisTitle": "定价模式",
+        "yAxisTitle": "比例",
+        "valueFormat": "percent",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "categorical",
+            "roots": [
+              "olive",
+              "gold"
+            ]
+          },
+          "legend": {
+            "position": "top"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      },
+      {
+        "id": "sla_chart",
+        "title": "可靠性与首选窗口准时率",
+        "subtitle": "Seed 42；完成率、Soft 与 Flexible 准时率，越高越好",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "定价模式改变后，完成率与两类 SLA 准时率是否保持？",
+        "rationale": "三个同单位比例使用分组柱形图展示定价模式内的护栏表现。",
+        "comparisonContext": {
+          "baseline": "不分区定价",
+          "grain": "pricing mode by service metric",
+          "unit": "fraction",
+          "semanticFamily": "service-quality comparison"
+        },
+        "type": "bar",
+        "dataset": "sla_comparison",
+        "sourceId": "pricing_metrics",
+        "encodings": {
+          "x": {
+            "field": "pricing_label",
+            "type": "nominal",
+            "label": "定价模式"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "format": "percent",
+            "label": "比例"
+          },
+          "color": {
+            "field": "metric_label",
+            "type": "nominal",
+            "label": "服务指标"
+          },
+          "tooltip": [
+            {
+              "field": "seed",
+              "type": "quantitative",
+              "label": "Seed"
+            }
+          ]
+        },
+        "xAxisTitle": "定价模式",
+        "yAxisTitle": "比例",
+        "valueFormat": "percent",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "categorical",
+            "roots": [
+              "blue",
+              "gold",
+              "orange"
+            ]
+          },
+          "legend": {
+            "position": "top"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      },
+      {
+        "id": "latency_chart",
+        "title": "平均任务完成时延",
+        "subtitle": "Seed 42；仅统计已完成任务，物理小时，越低越好",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "分区与不分区定价的平均任务完成时延如何比较？",
+        "rationale": "两个离散定价模式的一项同单位指标适合使用横向条形图。",
+        "comparisonContext": {
+          "baseline": "不分区定价",
+          "grain": "pricing mode",
+          "unit": "hours",
+          "semanticFamily": "pricing model comparison"
+        },
+        "type": "horizontalBar",
+        "dataset": "latency_comparison",
+        "sourceId": "pricing_metrics",
+        "encodings": {
+          "x": {
+            "field": "pricing_label",
+            "type": "nominal",
+            "label": "定价模式"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "format": "number",
+            "label": "hours"
+          },
+          "tooltip": [
+            {
+              "field": "seed",
+              "type": "quantitative",
+              "label": "Seed"
+            },
+            {
+              "field": "direction_label",
+              "type": "nominal",
+              "label": "判优方向"
+            }
+          ]
+        },
+        "xAxisTitle": "定价模式",
+        "yAxisTitle": "hours",
+        "valueFormat": "number",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "single",
+            "root": "orange"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      },
+      {
+        "id": "balance_chart",
+        "title": "节点 CPU 工作量变异系数",
+        "subtitle": "Seed 42；各节点完成 CPU 小时 CV，越低表示越均衡",
+        "showDescription": true,
+        "intent": "comparison",
+        "question": "分区与不分区定价的节点 CPU 工作量变异系数如何比较？",
+        "rationale": "两个离散定价模式的一项同单位指标适合使用横向条形图。",
+        "comparisonContext": {
+          "baseline": "不分区定价",
+          "grain": "pricing mode",
+          "unit": "fraction",
+          "semanticFamily": "pricing model comparison"
+        },
+        "type": "horizontalBar",
+        "dataset": "balance_comparison",
+        "sourceId": "pricing_metrics",
+        "encodings": {
+          "x": {
+            "field": "pricing_label",
+            "type": "nominal",
+            "label": "定价模式"
+          },
+          "y": {
+            "field": "value",
+            "type": "quantitative",
+            "format": "number",
+            "label": "fraction"
+          },
+          "tooltip": [
+            {
+              "field": "seed",
+              "type": "quantitative",
+              "label": "Seed"
+            },
+            {
+              "field": "direction_label",
+              "type": "nominal",
+              "label": "判优方向"
+            }
+          ]
+        },
+        "xAxisTitle": "定价模式",
+        "yAxisTitle": "fraction",
+        "valueFormat": "number",
+        "layout": "full",
+        "surface": {
+          "palette": {
+            "kind": "single",
+            "root": "gold"
+          },
+          "valueLabels": {
+            "mode": "all"
+          }
+        }
+      }
+    ],
+    "tables": [
+      {
+        "id": "exact_metrics_table",
+        "title": "分区与不分区定价关键指标",
+        "subtitle": "Seed 42；差值为分区定价 - 不分区定价",
+        "showDescription": true,
+        "dataset": "exact_metrics",
+        "sourceId": "pricing_metrics",
+        "defaultSort": {
+          "field": "group",
+          "direction": "asc"
+        },
+        "density": "spacious",
+        "layout": "full",
+        "columns": [
+          {
+            "field": "group",
+            "label": "方面",
+            "type": "text"
+          },
+          {
+            "field": "metric_label",
+            "label": "指标",
+            "type": "text"
+          },
+          {
+            "field": "direction_label",
+            "label": "方向",
+            "type": "text"
+          },
+          {
+            "field": "uniform_display",
+            "label": "不分区定价",
+            "type": "text"
+          },
+          {
+            "field": "regional_display",
+            "label": "分区定价",
+            "type": "text"
+          },
+          {
+            "field": "delta_display",
+            "label": "差值",
+            "type": "text"
+          }
+        ]
+      }
+    ],
+    "sources": [
+      {
+        "id": "pricing_metrics",
+        "label": "V2 regional-vs-uniform pricing comparison metrics",
+        "path": "artifacts/v2/evaluation/pricing_comparison_seed42/comparison_report/source_data/pricing_metrics.csv",
+        "query": {
+          "engine": "Python csv",
+          "language": "Python",
+          "sql": "SELECT * FROM read_csv_auto('artifacts/v2/evaluation/pricing_comparison_seed42/comparison_report/source_data/pricing_metrics.csv')",
+          "description": "读取经过配对校验的 V2 定价模型单 seed 指标。",
+          "executed_at": "2026-08-21T11:52:45.961406+00:00",
+          "filters": [
+            "seed=42",
+            "evaluation status=VALID",
+            "zero unsettled tasks",
+            "identical task, topology and exogenous trace hashes",
+            "candidate_dqn epsilon=0 during evaluation"
+          ],
+          "metric_definitions": [
+            "每完成 CPU 小时成本=任务归因经济成本/完成 CPU 小时。",
+            "完成任务绿电覆盖率=完成任务绿电能量/完成任务总能量。",
+            "系统绿电吸收率=完成任务使用的绿电能量/系统可用绿电能量。",
+            "节点 CPU 工作量变异系数=各节点完成 CPU 小时的总体标准差/均值。",
+            "平均任务完成时延仅统计最终状态为 Completed 的任务，并换算为物理小时。",
+            "全部差值定义为分区定价 - 不分区定价。"
+          ],
+          "tables_used": [
+            "artifacts/v2/evaluation/pricing_comparison_seed42/comparison_report/source_data/pricing_metrics.csv"
+          ]
+        }
+      },
+      {
+        "id": "pricing_source_manifest",
+        "label": "V2 pricing-model paired report provenance",
+        "path": "artifacts/v2/evaluation/pricing_comparison_seed42/comparison_report/source_data/source_manifest.csv",
+        "query": {
+          "engine": "Python csv",
+          "language": "Python",
+          "sql": "SELECT * FROM read_csv_auto('artifacts/v2/evaluation/pricing_comparison_seed42/comparison_report/source_data/source_manifest.csv')",
+          "description": "读取经过配对校验的 V2 定价模型单 seed 指标。",
+          "executed_at": "2026-08-21T11:52:45.961406+00:00",
+          "filters": [
+            "seed=42",
+            "evaluation status=VALID",
+            "zero unsettled tasks",
+            "identical task, topology and exogenous trace hashes",
+            "candidate_dqn epsilon=0 during evaluation"
+          ],
+          "metric_definitions": [
+            "两份报告必须有效、无未结算任务，且 seed、任务、拓扑和外生轨迹哈希一致。",
+            "报告模型哈希必须与对应 tou_uniform 或 tou_region checkpoint 一致。"
+          ],
+          "tables_used": [
+            "artifacts/v2/evaluation/pricing_comparison_seed42/comparison_report/source_data/source_manifest.csv"
+          ]
+        }
+      }
+    ],
+    "blocks": [
+      {
+        "id": "title",
+        "type": "markdown",
+        "body": "# V2 分区与不分区定价模型对比",
+        "layout": "full"
+      },
+      {
+        "id": "executive_summary",
+        "type": "markdown",
+        "sourceId": "pricing_metrics",
+        "layout": "full",
+        "body": "## Executive Summary\n\n- **分区定价在当前 seed 上同时呈现更低的账面成本和更高的任务绿电覆盖。** 每完成 CPU 小时成本相对不分区定价变化 **-50.94%**，完成任务绿电覆盖率变化 **+14.49 个百分点**。\n- **总体完成率保持不变，但 SLA 存在结构性权衡。** 完成率变化 **+0.00 个百分点**；Soft 准时率变化 **-1.26 个百分点**，Flexible 准时率变化 **+2.27 个百分点**。\n- **分区定价提高了调度集中度并轻微增加平均完成时延。** 节点工作量 CV 相对变化 **+30.18%**，平均完成时延相对变化 **+1.29%**。\n- **当前结论仅是单 seed 描述性结果。** 成本差异包含计价基准变化，不能全部解释为 DQN 策略能力提升。"
+      },
+      {
+        "id": "comparison_basis",
+        "type": "markdown",
+        "sourceId": "pricing_source_manifest",
+        "layout": "full",
+        "body": "## 比较口径\n\n两份冻结 Candidate DQN 报告均为 **V2.0、seed 42、arrival cutoff 288**。它们共享完全相同的任务、拓扑和外生轨迹，并分别匹配 `tou_uniform` 与 `tou_region` 600,000 周期 checkpoint。成本、时延和负载均衡越低越好；绿电、完成率与准时率越高越好。"
+      },
+      {
+        "id": "headline_metrics",
+        "type": "metric-strip",
+        "cardIds": [
+          "regional_cost_card",
+          "regional_green_card",
+          "completion_card",
+          "latency_card",
+          "balance_card"
+        ],
+        "layout": "full"
+      },
+      {
+        "id": "cost_finding",
+        "type": "markdown",
+        "sourceId": "pricing_metrics",
+        "layout": "full",
+        "body": "## 分区定价的账面单位成本约减半\n\n**不分区定价为 12.4780 元/完成 CPU 小时，分区定价为 6.1213 元，变化 -50.94%。** 该差值同时反映定价规则和调度选择；若要单独判断策略效率，需要在共同反事实价格口径下重新计价。"
+      },
+      {
+        "id": "cost_chart_block",
+        "type": "chart",
+        "chartId": "cost_chart",
+        "layout": "full"
+      },
+      {
+        "id": "green_finding",
+        "type": "markdown",
+        "sourceId": "pricing_metrics",
+        "layout": "full",
+        "body": "## 分区定价提高了任务绿电覆盖和系统绿电吸收\n\n**任务绿电覆盖率由 70.47% 升至 84.96%（+14.49 个百分点）。** 系统绿电吸收率同时变化 +2.75 个百分点，说明提升不只是分母变化。"
+      },
+      {
+        "id": "green_chart_block",
+        "type": "chart",
+        "chartId": "green_chart",
+        "layout": "full"
+      },
+      {
+        "id": "service_finding",
+        "type": "markdown",
+        "sourceId": "pricing_metrics",
+        "layout": "full",
+        "body": "## 总体完成率不变，Soft 与 Flexible SLA 方向相反\n\n**两种定价模式的任务完成率均为 99.38%。** 分区定价的 Soft 准时率变化 -1.26 个百分点，而 Flexible 准时率变化 +2.27 个百分点。部署判断不应只看总体完成率，需要分别保留 SLA 护栏。"
+      },
+      {
+        "id": "sla_chart_block",
+        "type": "chart",
+        "chartId": "sla_chart",
+        "layout": "full"
+      },
+      {
+        "id": "latency_finding",
+        "type": "markdown",
+        "sourceId": "pricing_metrics",
+        "layout": "full",
+        "body": "## 平均完成时延小幅增加\n\n**平均任务完成时延由 6.822 小时变为 6.910 小时，变化 +1.29%。** 当前增幅不大，但单 seed 无法判断其稳定性，仍需检查更多 seed 和长尾时延。"
+      },
+      {
+        "id": "latency_chart_block",
+        "type": "chart",
+        "chartId": "latency_chart",
+        "layout": "full"
+      },
+      {
+        "id": "balance_finding",
+        "type": "markdown",
+        "sourceId": "pricing_metrics",
+        "layout": "full",
+        "body": "## 分区定价带来更明显的节点工作量集中\n\n**节点 CPU 工作量 CV 从 0.742 上升到 0.966，变化 +30.18%。** 这表明区域价格信号可能把任务更集中地引导到部分节点；应继续监控热点、容量余量和故障域暴露。"
+      },
+      {
+        "id": "balance_chart_block",
+        "type": "chart",
+        "chartId": "balance_chart",
+        "layout": "full"
+      },
+      {
+        "id": "exact_values",
+        "type": "markdown",
+        "layout": "full",
+        "body": "## 关键指标精确值\n\n下表汇总两种定价模式的核心指标和差值，便于复核图表与后续引用。"
+      },
+      {
+        "id": "exact_metrics_table_block",
+        "type": "table",
+        "tableId": "exact_metrics_table",
+        "layout": "full"
+      },
+      {
+        "id": "next_steps",
+        "type": "markdown",
+        "layout": "full",
+        "body": "## 建议的下一步\n\n1. 在至少 10 个未参与训练的 seed 上重复分区/不分区配对评估。\n2. 用统一的反事实计价口径重算两种模型的资源与能源消耗，拆分“价格规则变化”和“调度行为变化”。\n3. 将完成率、Soft/Flexible SLA、P95 时延、节点热点和物理违规设为部署护栏。"
+      },
+      {
+        "id": "further_questions",
+        "type": "markdown",
+        "layout": "full",
+        "body": "## 仍需回答的问题\n\n- 绿电覆盖提升是否在多 seed、不同负载日和不同区域供给组合下持续存在？\n- 节点工作量集中是否由少数低价或高绿电区域主导？\n- 在共同价格口径下，分区模型是否仍能降低真实资源成本？"
+      },
+      {
+        "id": "caveats",
+        "type": "markdown",
+        "sourceId": "pricing_source_manifest",
+        "layout": "full",
+        "body": "## 限制与假设\n\n当前报告只有一个 seed，无法估计跨 seed 方差、置信区间或统计显著性。两种模型在不同价格特征和目标尺度下训练，且分区与不分区的成本定义不同；因此账面成本变化不是严格的策略因果效应。报告比较冻结模型在同一仿真输入下的描述性结果。"
+      }
+    ]
+  },
+  "snapshot": {
+    "version": 1,
+    "generatedAt": "2026-08-21T11:52:45.961406+00:00",
+    "status": "ready",
+    "datasets": {
+      "headline": [
+        {
+          "regional_cost": 6.121265831828917,
+          "cost_delta": -0.5094365776294084,
+          "regional_green": 0.8495865253214234,
+          "green_delta": 0.14491273697184237,
+          "regional_completion": 0.9937913907284768,
+          "completion_delta": 0.0,
+          "regional_latency": 6.910157830709463,
+          "latency_delta": 0.012860775802878956,
+          "regional_balance": 0.9662457082520693,
+          "balance_delta": 0.30175018471289183
+        }
+      ],
+      "cost_comparison": [
+        {
+          "seed": 42,
+          "pricing_mode": "tou_uniform",
+          "pricing_label": "不分区定价",
+          "metric": "cost_yuan_per_completed_cpu_hour",
+          "metric_label": "每完成 CPU 小时成本",
+          "value": 12.47803148927941,
+          "unit": "CNY/CPU-hour",
+          "direction_label": "越低越好"
+        },
+        {
+          "seed": 42,
+          "pricing_mode": "tou_region",
+          "pricing_label": "分区定价",
+          "metric": "cost_yuan_per_completed_cpu_hour",
+          "metric_label": "每完成 CPU 小时成本",
+          "value": 6.121265831828917,
+          "unit": "CNY/CPU-hour",
+          "direction_label": "越低越好"
+        }
+      ],
+      "green_comparison": [
+        {
+          "seed": 42,
+          "pricing_mode": "tou_uniform",
+          "pricing_label": "不分区定价",
+          "metric": "completed_task_green_coverage",
+          "metric_label": "完成任务绿电覆盖率",
+          "value": 0.704673788349581,
+          "unit": "fraction",
+          "direction_label": "越高越好"
+        },
+        {
+          "seed": 42,
+          "pricing_mode": "tou_region",
+          "pricing_label": "分区定价",
+          "metric": "completed_task_green_coverage",
+          "metric_label": "完成任务绿电覆盖率",
+          "value": 0.8495865253214234,
+          "unit": "fraction",
+          "direction_label": "越高越好"
+        },
+        {
+          "seed": 42,
+          "pricing_mode": "tou_uniform",
+          "pricing_label": "不分区定价",
+          "metric": "system_green_absorption_rate",
+          "metric_label": "系统绿电吸收率",
+          "value": 0.043187661712295475,
+          "unit": "fraction",
+          "direction_label": "越高越好"
+        },
+        {
+          "seed": 42,
+          "pricing_mode": "tou_region",
+          "pricing_label": "分区定价",
+          "metric": "system_green_absorption_rate",
+          "metric_label": "系统绿电吸收率",
+          "value": 0.07065459358498269,
+          "unit": "fraction",
+          "direction_label": "越高越好"
+        }
+      ],
+      "sla_comparison": [
+        {
+          "seed": 42,
+          "pricing_mode": "tou_uniform",
+          "pricing_label": "不分区定价",
+          "metric": "completion_rate",
+          "metric_label": "任务完成率",
+          "value": 0.9937913907284768,
+          "unit": "fraction",
+          "direction_label": "越高越好"
+        },
+        {
+          "seed": 42,
+          "pricing_mode": "tou_region",
+          "pricing_label": "分区定价",
+          "metric": "completion_rate",
+          "metric_label": "任务完成率",
+          "value": 0.9937913907284768,
+          "unit": "fraction",
+          "direction_label": "越高越好"
+        },
+        {
+          "seed": 42,
+          "pricing_mode": "tou_uniform",
+          "pricing_label": "不分区定价",
+          "metric": "soft_preferred_on_time_rate",
+          "metric_label": "Soft 首选窗口准时率",
+          "value": 0.9965010496850945,
+          "unit": "fraction",
+          "direction_label": "越高越好"
+        },
+        {
+          "seed": 42,
+          "pricing_mode": "tou_region",
+          "pricing_label": "分区定价",
+          "metric": "soft_preferred_on_time_rate",
+          "metric_label": "Soft 首选窗口准时率",
+          "value": 0.9839048285514346,
+          "unit": "fraction",
+          "direction_label": "越高越好"
+        },
+        {
+          "seed": 42,
+          "pricing_mode": "tou_uniform",
+          "pricing_label": "不分区定价",
+          "metric": "flexible_preferred_on_time_rate",
+          "metric_label": "Flexible 首选窗口准时率",
+          "value": 0.943342776203966,
+          "unit": "fraction",
+          "direction_label": "越高越好"
+        },
+        {
+          "seed": 42,
+          "pricing_mode": "tou_region",
+          "pricing_label": "分区定价",
+          "metric": "flexible_preferred_on_time_rate",
+          "metric_label": "Flexible 首选窗口准时率",
+          "value": 0.9660056657223796,
+          "unit": "fraction",
+          "direction_label": "越高越好"
+        }
+      ],
+      "latency_comparison": [
+        {
+          "seed": 42,
+          "pricing_mode": "tou_uniform",
+          "pricing_label": "不分区定价",
+          "metric": "mean_completion_delay_hours",
+          "metric_label": "平均任务完成时延",
+          "value": 6.822416264695302,
+          "unit": "hours",
+          "direction_label": "越低越好"
+        },
+        {
+          "seed": 42,
+          "pricing_mode": "tou_region",
+          "pricing_label": "分区定价",
+          "metric": "mean_completion_delay_hours",
+          "metric_label": "平均任务完成时延",
+          "value": 6.910157830709463,
+          "unit": "hours",
+          "direction_label": "越低越好"
+        }
+      ],
+      "balance_comparison": [
+        {
+          "seed": 42,
+          "pricing_mode": "tou_uniform",
+          "pricing_label": "不分区定价",
+          "metric": "allocated_cpu_hours_cv",
+          "metric_label": "节点 CPU 工作量变异系数",
+          "value": 0.7422666188944541,
+          "unit": "fraction",
+          "direction_label": "越低越好"
+        },
+        {
+          "seed": 42,
+          "pricing_mode": "tou_region",
+          "pricing_label": "分区定价",
+          "metric": "allocated_cpu_hours_cv",
+          "metric_label": "节点 CPU 工作量变异系数",
+          "value": 0.9662457082520693,
+          "unit": "fraction",
+          "direction_label": "越低越好"
+        }
+      ],
+      "exact_metrics": [
+        {
+          "group": "成本",
+          "metric": "cost_yuan_per_completed_cpu_hour",
+          "metric_label": "每完成 CPU 小时成本",
+          "unit": "CNY/CPU-hour",
+          "direction": "lower",
+          "uniform_value": 12.47803148927941,
+          "regional_value": 6.121265831828917,
+          "absolute_delta": -6.3567656574504925,
+          "relative_delta": -0.5094365776294084,
+          "direction_label": "越低越好",
+          "uniform_display": "12.478031 元",
+          "regional_display": "6.121266 元",
+          "delta_display": "-6.356766 元"
+        },
+        {
+          "group": "绿电",
+          "metric": "completed_task_green_coverage",
+          "metric_label": "完成任务绿电覆盖率",
+          "unit": "fraction",
+          "direction": "higher",
+          "uniform_value": 0.704673788349581,
+          "regional_value": 0.8495865253214234,
+          "absolute_delta": 0.14491273697184237,
+          "relative_delta": 0.20564513590216404,
+          "direction_label": "越高越好",
+          "uniform_display": "70.4674%",
+          "regional_display": "84.9587%",
+          "delta_display": "+14.4913 pp"
+        },
+        {
+          "group": "绿电",
+          "metric": "system_green_absorption_rate",
+          "metric_label": "系统绿电吸收率",
+          "unit": "fraction",
+          "direction": "higher",
+          "uniform_value": 0.043187661712295475,
+          "regional_value": 0.07065459358498269,
+          "absolute_delta": 0.027466931872687214,
+          "relative_delta": 0.6359902523934843,
+          "direction_label": "越高越好",
+          "uniform_display": "4.3188%",
+          "regional_display": "7.0655%",
+          "delta_display": "+2.7467 pp"
+        },
+        {
+          "group": "可靠性",
+          "metric": "completion_rate",
+          "metric_label": "任务完成率",
+          "unit": "fraction",
+          "direction": "higher",
+          "uniform_value": 0.9937913907284768,
+          "regional_value": 0.9937913907284768,
+          "absolute_delta": 0.0,
+          "relative_delta": 0.0,
+          "direction_label": "越高越好",
+          "uniform_display": "99.3791%",
+          "regional_display": "99.3791%",
+          "delta_display": "+0.0000 pp"
+        },
+        {
+          "group": "可靠性",
+          "metric": "reservation_reliability",
+          "metric_label": "预留可靠性",
+          "unit": "fraction",
+          "direction": "higher",
+          "uniform_value": 1.0,
+          "regional_value": 1.0,
+          "absolute_delta": 0.0,
+          "relative_delta": 0.0,
+          "direction_label": "越高越好",
+          "uniform_display": "100.0000%",
+          "regional_display": "100.0000%",
+          "delta_display": "+0.0000 pp"
+        },
+        {
+          "group": "SLA",
+          "metric": "soft_preferred_on_time_rate",
+          "metric_label": "Soft 首选窗口准时率",
+          "unit": "fraction",
+          "direction": "higher",
+          "uniform_value": 0.9965010496850945,
+          "regional_value": 0.9839048285514346,
+          "absolute_delta": -0.01259622113365988,
+          "relative_delta": -0.012640449438202224,
+          "direction_label": "越高越好",
+          "uniform_display": "99.6501%",
+          "regional_display": "98.3905%",
+          "delta_display": "-1.2596 pp"
+        },
+        {
+          "group": "SLA",
+          "metric": "flexible_preferred_on_time_rate",
+          "metric_label": "Flexible 首选窗口准时率",
+          "unit": "fraction",
+          "direction": "higher",
+          "uniform_value": 0.943342776203966,
+          "regional_value": 0.9660056657223796,
+          "absolute_delta": 0.022662889518413554,
+          "relative_delta": 0.02402402402402398,
+          "direction_label": "越高越好",
+          "uniform_display": "94.3343%",
+          "regional_display": "96.6006%",
+          "delta_display": "+2.2663 pp"
+        },
+        {
+          "group": "SLA",
+          "metric": "hard_start_delay_p95_hours",
+          "metric_label": "Hard 开始时延 P95",
+          "unit": "hours",
+          "direction": "lower",
+          "uniform_value": 0.05596275840546053,
+          "regional_value": 0.0738584543020501,
+          "absolute_delta": 0.01789569589658957,
+          "relative_delta": 0.3197786600676819,
+          "direction_label": "越低越好",
+          "uniform_display": "0.055963 小时",
+          "regional_display": "0.073858 小时",
+          "delta_display": "+0.017896 小时"
+        },
+        {
+          "group": "任务时延",
+          "metric": "mean_completion_delay_hours",
+          "metric_label": "平均任务完成时延",
+          "unit": "hours",
+          "direction": "lower",
+          "uniform_value": 6.822416264695302,
+          "regional_value": 6.910157830709463,
+          "absolute_delta": 0.08774156601416117,
+          "relative_delta": 0.012860775802878956,
+          "direction_label": "越低越好",
+          "uniform_display": "6.822416 小时",
+          "regional_display": "6.910158 小时",
+          "delta_display": "+0.087742 小时"
+        },
+        {
+          "group": "负载均衡",
+          "metric": "allocated_cpu_hours_cv",
+          "metric_label": "节点 CPU 工作量变异系数",
+          "unit": "fraction",
+          "direction": "lower",
+          "uniform_value": 0.7422666188944541,
+          "regional_value": 0.9662457082520693,
+          "absolute_delta": 0.22397908935761524,
+          "relative_delta": 0.30175018471289183,
+          "direction_label": "越低越好",
+          "uniform_display": "74.2267%",
+          "regional_display": "96.6246%",
+          "delta_display": "+22.3979 pp"
+        },
+        {
+          "group": "等待行为",
+          "metric": "active_wait_count",
+          "metric_label": "主动等待任务数",
+          "unit": "tasks",
+          "direction": "neutral",
+          "uniform_value": 1134.0,
+          "regional_value": 1733.0,
+          "absolute_delta": 599.0,
+          "relative_delta": 0.5282186948853616,
+          "direction_label": "描述性指标",
+          "uniform_display": "1134.000000",
+          "regional_display": "1733.000000",
+          "delta_display": "+599.000000"
+        },
+        {
+          "group": "等待行为",
+          "metric": "mean_active_wait_hours",
+          "metric_label": "平均主动等待时间",
+          "unit": "hours",
+          "direction": "neutral",
+          "uniform_value": 10.207761243386258,
+          "regional_value": 6.801078332371625,
+          "absolute_delta": -3.4066829110146335,
+          "relative_delta": -0.33373457997186873,
+          "direction_label": "描述性指标",
+          "uniform_display": "10.207761 小时",
+          "regional_display": "6.801078 小时",
+          "delta_display": "-3.406683 小时"
+        }
+      ],
+      "source_reports": [
+        {
+          "seed": 42,
+          "pricing_mode": "tou_uniform",
+          "pricing_label": "不分区定价",
+          "status": "VALID",
+          "unsettled_count": 0,
+          "report_path": "artifacts/v2/evaluation/five_policy/seed_42/candidate_dqn_seed42.json",
+          "model_path": "artifacts/v2/formal/candidate_dqn_seed7_layered_pool_600000_from_scratch.pt",
+          "model_hash": "1670b960fad8ab5b6850192713a1f2764eff054e6faf5a0d396b74c74691353e",
+          "task_trace_hash": "db427715e1c4463a813d0fe3639fdecc1cd9107500b45a011f00dac41460bb84",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "arrival_cutoff_sim": 288.0,
+          "system_version": "2.0"
+        },
+        {
+          "seed": 42,
+          "pricing_mode": "tou_region",
+          "pricing_label": "分区定价",
+          "status": "VALID",
+          "unsettled_count": 0,
+          "report_path": "artifacts/v2/evaluation/five_policy_refresh/seed_42/candidate_dqn_seed42.json",
+          "model_path": "artifacts/v2/formal/candidate_dqn_seed7_layered_pool_600000_tou_region_from_scratch.pt",
+          "model_hash": "a934da538e084241e10e1fd8292f6c94d1ea36da8dc0907cae3935c2659642dd",
+          "task_trace_hash": "db427715e1c4463a813d0fe3639fdecc1cd9107500b45a011f00dac41460bb84",
+          "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+          "topology_hash": "9668e171e5b36fbe4ef9b2a39e207bf0a605f8fbf3c7377040e425f2cf4a26bc",
+          "arrival_cutoff_sim": 288.0,
+          "system_version": "2.0"
+        }
+      ]
+    },
+    "accessIssues": []
+  },
+  "sources": [
+    {
+      "id": "pricing_metrics",
+      "label": "V2 regional-vs-uniform pricing comparison metrics",
+      "path": "artifacts/v2/evaluation/pricing_comparison_seed42/comparison_report/source_data/pricing_metrics.csv",
+      "query": {
+        "engine": "Python csv",
+        "language": "Python",
+        "sql": "SELECT * FROM read_csv_auto('artifacts/v2/evaluation/pricing_comparison_seed42/comparison_report/source_data/pricing_metrics.csv')",
+        "description": "读取经过配对校验的 V2 定价模型单 seed 指标。",
+        "executed_at": "2026-08-21T11:52:45.961406+00:00",
+        "filters": [
+          "seed=42",
+          "evaluation status=VALID",
+          "zero unsettled tasks",
+          "identical task, topology and exogenous trace hashes",
+          "candidate_dqn epsilon=0 during evaluation"
+        ],
+        "metric_definitions": [
+          "每完成 CPU 小时成本=任务归因经济成本/完成 CPU 小时。",
+          "完成任务绿电覆盖率=完成任务绿电能量/完成任务总能量。",
+          "系统绿电吸收率=完成任务使用的绿电能量/系统可用绿电能量。",
+          "节点 CPU 工作量变异系数=各节点完成 CPU 小时的总体标准差/均值。",
+          "平均任务完成时延仅统计最终状态为 Completed 的任务，并换算为物理小时。",
+          "全部差值定义为分区定价 - 不分区定价。"
+        ],
+        "tables_used": [
+          "artifacts/v2/evaluation/pricing_comparison_seed42/comparison_report/source_data/pricing_metrics.csv"
+        ]
+      }
+    },
+    {
+      "id": "pricing_source_manifest",
+      "label": "V2 pricing-model paired report provenance",
+      "path": "artifacts/v2/evaluation/pricing_comparison_seed42/comparison_report/source_data/source_manifest.csv",
+      "query": {
+        "engine": "Python csv",
+        "language": "Python",
+        "sql": "SELECT * FROM read_csv_auto('artifacts/v2/evaluation/pricing_comparison_seed42/comparison_report/source_data/source_manifest.csv')",
+        "description": "读取经过配对校验的 V2 定价模型单 seed 指标。",
+        "executed_at": "2026-08-21T11:52:45.961406+00:00",
+        "filters": [
+          "seed=42",
+          "evaluation status=VALID",
+          "zero unsettled tasks",
+          "identical task, topology and exogenous trace hashes",
+          "candidate_dqn epsilon=0 during evaluation"
+        ],
+        "metric_definitions": [
+          "两份报告必须有效、无未结算任务，且 seed、任务、拓扑和外生轨迹哈希一致。",
+          "报告模型哈希必须与对应 tou_uniform 或 tou_region checkpoint 一致。"
+        ],
+        "tables_used": [
+          "artifacts/v2/evaluation/pricing_comparison_seed42/comparison_report/source_data/source_manifest.csv"
+        ]
+      }
+    }
+  ]
+}

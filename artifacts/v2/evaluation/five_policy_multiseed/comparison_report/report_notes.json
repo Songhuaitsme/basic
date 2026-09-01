@@ -45,6 +45,12 @@
       "type": "horizontalBar"
     },
     {
+      "section": "任务平均完成时延",
+      "chart": "average_task_latency_chart",
+      "family": "Comparison & Ranking",
+      "type": "horizontalBar"
+    },
+    {
       "section": "任务完成时延 P95",
       "chart": "task_latency_chart",
       "family": "Comparison & Ranking",
@@ -136,5 +142,7 @@
     "paired_metadata_match": true
   },
   "seed_count": 10,
+  "tariff_mode": "tou_region",
+  "tariff_label": "分区定价",
   "confidence_method": "paired t interval"
 }

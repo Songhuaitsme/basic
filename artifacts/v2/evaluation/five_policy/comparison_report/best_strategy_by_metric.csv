@@ -29,7 +29,7 @@
 其他,diagnostics.task_summary.candidate_count_per_decision.p95,diagnostics.task_summary.candidate_count_per_decision.p95,不判优,不判优,N/A,1,点估计；单 seed 无法估计区间
 其他,diagnostics.task_summary.completion_delay_sim.count,diagnostics.task_summary.completion_delay_sim.count,不判优,不判优,N/A,1,点估计；单 seed 无法估计区间
 其他,diagnostics.task_summary.completion_delay_sim.maximum,diagnostics.task_summary.completion_delay_sim.maximum,不判优,不判优,N/A,1,点估计；单 seed 无法估计区间
-其他,diagnostics.task_summary.completion_delay_sim.mean,diagnostics.task_summary.completion_delay_sim.mean,不判优,不判优,N/A,1,点估计；单 seed 无法估计区间
+任务时延,diagnostics.task_summary.completion_delay_sim.mean,任务平均完成时延,越低越好,Earliest feasible,24.015,1,点估计；单 seed 无法估计区间
 其他,diagnostics.task_summary.completion_delay_sim.p50,diagnostics.task_summary.completion_delay_sim.p50,不判优,不判优,N/A,1,点估计；单 seed 无法估计区间
 任务时延,diagnostics.task_summary.completion_delay_sim.p95,任务完成时延 P95,越低越好,Earliest feasible,95.647,1,点估计；单 seed 无法估计区间
 其他,diagnostics.task_summary.decision_count_per_arrived_task,diagnostics.task_summary.decision_count_per_arrived_task,不判优,不判优,N/A,1,点估计；单 seed 无法估计区间

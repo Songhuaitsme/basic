@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "seed": 42,
+  "arrival_cutoff_sim": 288.0,
+  "paired_metadata_match": true,
+  "paired_fields": [
+    "system_version",
+    "requirements_version",
+    "algorithm_version",
+    "task_schema_version",
+    "candidate_schema_version",
+    "model_schema_version",
+    "metric_schema_version",
+    "aggregation_schema_version",
+    "candidate_mode",
+    "seed",
+    "arrival_cutoff_sim",
+    "topology_hash",
+    "task_trace_hash",
+    "exogenous_trace_hash",
+    "dependency_lock_hash",
+    "gamma_per_second"
+  ],
+  "uniform_model_hash_match": true,
+  "regional_model_hash_match": true,
+  "all_reports_valid": true,
+  "all_unsettled_counts_zero": true
+}
