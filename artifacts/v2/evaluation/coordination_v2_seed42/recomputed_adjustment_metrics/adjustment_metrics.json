@@ -1,0 +1,22 @@
+{
+  "scheduled_task_denominator": 2401,
+  "comparison_basis": "per-decision counterfactual vs Earliest Feasible Candidate",
+  "temporal_tolerance": 1e-12,
+  "node_adjustment_tasks": 2049,
+  "node_adjustment_ratio": 0.8533944189920867,
+  "region_adjustment_tasks": 1961,
+  "region_adjustment_ratio": 0.8167430237401083,
+  "temporal_adjustment_tasks": 1733,
+  "temporal_adjustment_ratio": 0.7217825905872554,
+  "node_temporal_adjustment_tasks": 1532,
+  "node_temporal_adjustment_ratio": 0.6380674718867139,
+  "region_temporal_adjustment_tasks": 1451,
+  "region_temporal_adjustment_ratio": 0.6043315285297792,
+  "definitions": {
+    "node_adjustment": "selected_target_node != earliest_target_node",
+    "region_adjustment": "region(selected_target_node) != region(earliest_target_node)",
+    "temporal_adjustment": "selected_start > earliest_start + temporal_tolerance",
+    "ratio_denominator": "tasks with a committed reservation",
+    "benefit_scope": "per-decision counterfactual vs Earliest Feasible Candidate"
+  }
+}

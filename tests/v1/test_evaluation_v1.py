@@ -278,6 +278,17 @@ class EvaluationV1Test(unittest.TestCase):
             + task_record.active_wait_sim,
         )
         self.assertIsNotNone(task_record.task_attributed_cost_yuan)
+        self.assertEqual(task_record.source_node, "N")
+        self.assertEqual(task_record.cpu_demand, 1.0)
+        self.assertEqual(task_record.sla_type, "Hard")
+        self.assertEqual(task_record.earliest_target_node, "N")
+        self.assertEqual(
+            task_record.earliest_compute_start_sim,
+            task_record.compute_start_sim,
+        )
+        self.assertIsNotNone(
+            task_record.earliest_candidate_marginal_system_cost_yuan
+        )
         decision = report.decision_records[0]
         self.assertEqual(len(decision.candidate_set_hash), 64)
         self.assertTrue(decision.decision_id.startswith("decision-"))
@@ -298,7 +309,7 @@ class EvaluationV1Test(unittest.TestCase):
         )
 
     def test_four_level_diagnostics_are_derived_from_exact_reservations(self):
-        _, calendar, _, runner = self._system(capacity=1.0)
+        _, calendar, scheduler, runner = self._system(capacity=1.0)
         report = runner.run_frozen_policy(
             (self._task("diagnostic", duration=1.0),),
             arrival_cutoff_sim=1.0,
@@ -310,6 +321,7 @@ class EvaluationV1Test(unittest.TestCase):
             link_capacities={},
             time_converter=TimeConverter(3600.0),
             profiler_summary={"total_wall_seconds": 0.25},
+            energy_accounting=scheduler.metrics_ledger.accounting,
         )
 
         self.assertEqual(diagnostics["schema_version"], "1.0")
@@ -330,6 +342,15 @@ class EvaluationV1Test(unittest.TestCase):
             diagnostics["task_summary"]["decision_wall_seconds"]["count"],
             1,
         )
+        time_record = diagnostics["time_records"][0]
+        self.assertEqual(time_record["active_tasks"], 1)
+        self.assertEqual(time_record["computing_load"], 1.0)
+        self.assertEqual(time_record["total_energy_demand"], 1.0)
+        self.assertEqual(time_record["renewable_used"], 1.0)
+        node_record = diagnostics["node_records"][0]
+        self.assertEqual(node_record["node_id"], "N")
+        self.assertEqual(node_record["assigned_tasks"], 1)
+        self.assertEqual(node_record["green_energy_used"], 1.0)
 
     # STAT-001 / STAT-002 / AGG-007
     def test_seed_pairing_uses_seed_ids_and_sample_ddof_one(self):

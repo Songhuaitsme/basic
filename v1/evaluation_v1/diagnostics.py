@@ -12,7 +12,7 @@ import math
 import statistics
 from typing import Iterable, Mapping
 
-from v1.domain.reservations import Reservation, canonical_edge
+from v1.domain.reservations import Reservation, TimeInterval, canonical_edge
 
 from .metrics import linear_percentile
 from .statistics import UtilizationInterval, summarize_load
@@ -83,12 +83,26 @@ def _resource_records(
     end_sim: float,
     time_converter,
     accounting_report,
+    energy_accounting=None,
 ):
     cpu_events = defaultdict(lambda: defaultdict(float))
     link_events = defaultdict(lambda: defaultdict(float))
     compute_count_events = defaultdict(int)
     transmit_count_events = defaultdict(int)
     boundaries = {start_sim, end_sim}
+    if energy_accounting is not None and end_sim > start_sim:
+        evaluation_interval = TimeInterval(start_sim, end_sim)
+        for node in node_capacities:
+            boundaries.update(
+                energy_accounting.tariff_by_node[node].boundaries(
+                    evaluation_interval
+                )
+            )
+            boundaries.update(
+                energy_accounting.green_by_node[node].boundaries(
+                    evaluation_interval
+                )
+            )
 
     for reservation in reservations:
         compute = reservation.compute_interval_sim
@@ -150,6 +164,49 @@ def _resource_records(
         }
         node_values = tuple(node_utilizations.values())
         link_values = tuple(link_utilizations.values())
+        computing_load = math.fsum(cpu_used.values())
+        total_energy_demand_mw = None
+        renewable_generation_mw = None
+        renewable_used_mw = None
+        electricity_price_yuan_per_mwh = None
+        green_coverage_rate = None
+        if energy_accounting is not None:
+            probe = left + (right - left) / 2.0
+            power_by_node = {
+                node: (
+                    energy_accounting.power_model.task_power_mw(amount)
+                    if amount > 0.0 else 0.0
+                )
+                for node, amount in cpu_used.items()
+            }
+            total_energy_demand_mw = math.fsum(power_by_node.values())
+            renewable_by_node = {
+                node: energy_accounting.green_by_node[node].value_at(probe)
+                for node in node_capacities
+            }
+            tariff_by_node = {
+                node: energy_accounting.tariff_by_node[node].value_at(probe)
+                for node in node_capacities
+            }
+            renewable_generation_mw = math.fsum(
+                renewable_by_node.values()
+            )
+            renewable_used_mw = math.fsum(
+                min(power_by_node[node], renewable_by_node[node])
+                for node in node_capacities
+            )
+            electricity_price_yuan_per_mwh = (
+                math.fsum(
+                    tariff_by_node[node] * power_by_node[node]
+                    for node in node_capacities
+                ) / total_energy_demand_mw
+                if total_energy_demand_mw > 0.0
+                else statistics.fmean(tariff_by_node.values())
+            )
+            green_coverage_rate = (
+                renewable_used_mw / total_energy_demand_mw
+                if total_energy_demand_mw > 0.0 else None
+            )
         load_intervals.append(UtilizationInterval(duration_seconds, node_values))
         for node, utilization in node_utilizations.items():
             node_integrals[node] += utilization * duration_seconds
@@ -166,12 +223,20 @@ def _resource_records(
             else statistics.pstdev(node_values) / node_mean
         )
         time_records.append({
+            "time": left,
             "start_sim": left,
             "end_sim": right,
             "duration_sim": duration_sim,
             "duration_seconds": duration_seconds,
             "active_compute_task_count": active_compute,
             "active_transmission_task_count": active_transmit,
+            "active_tasks": active_compute,
+            "computing_load": computing_load,
+            "total_energy_demand": total_energy_demand_mw,
+            "renewable_generation": renewable_generation_mw,
+            "renewable_used": renewable_used_mw,
+            "electricity_price": electricity_price_yuan_per_mwh,
+            "green_coverage_rate": green_coverage_rate,
             "mean_node_cpu_utilization": node_mean,
             "max_node_cpu_utilization": max(node_values, default=0.0),
             "node_load_cv": node_cv,
@@ -239,13 +304,37 @@ def _resource_records(
             reservation_count_by_node[reservation.target_node] += 1
     total_cpu_hours = math.fsum(cpu_hours_by_node.values())
     node_records = []
+    accounting_interval = (
+        TimeInterval(start_sim, end_sim) if end_sim > start_sim else None
+    )
     for node, capacity in sorted(node_capacities.items()):
         accounting = accounting_by_node[node]
         energy = accounting["task_energy_mwh"]
+        green_available = None
+        if energy_accounting is not None and accounting_interval is not None:
+            forecast = energy_accounting.green_by_node[node]
+            boundaries = forecast.boundaries(accounting_interval)
+            green_available = math.fsum(
+                forecast.value_at(left + (right - left) / 2.0)
+                * time_converter.sim_to_hours(right - left)
+                for left, right in zip(boundaries[:-1], boundaries[1:])
+                if right > left
+            )
+        green_used = (
+            None if accounting_report is None
+            else accounting_report.node_green_used_mwh.get(node, 0.0)
+        )
+        electricity_cost = (
+            None if accounting_report is None
+            else accounting_report.node_bill_yuan.get(node, 0.0)
+        )
         node_records.append({
+            "node_id": node,
             "node": node,
             "capacity_cpu": capacity,
+            "assigned_tasks": reservation_count_by_node[node],
             "reservation_count": reservation_count_by_node[node],
+            "total_cpu_hours": cpu_hours_by_node[node],
             "allocated_cpu_hours": cpu_hours_by_node[node],
             "allocation_share": (
                 cpu_hours_by_node[node] / total_cpu_hours
@@ -254,10 +343,21 @@ def _resource_records(
             "time_weighted_cpu_utilization": (
                 node_integrals[node] / total_seconds if total_seconds > 0.0 else None
             ),
+            "average_cpu_utilization": (
+                node_integrals[node] / total_seconds if total_seconds > 0.0 else None
+            ),
             "peak_cpu_utilization": node_peaks[node],
+            "total_energy_consumption": energy,
             "task_energy_mwh": energy,
+            "electricity_cost": electricity_cost,
             "task_attributed_cost_yuan": accounting["task_cost_yuan"],
+            "green_energy_available": green_available,
+            "green_energy_used": green_used,
             "task_attributed_green_energy_mwh": accounting["task_green_energy_mwh"],
+            "green_coverage_rate": (
+                accounting["task_green_energy_mwh"] / energy
+                if energy > 0.0 else None
+            ),
             "task_green_coverage": (
                 accounting["task_green_energy_mwh"] / energy if energy > 0.0 else None
             ),
@@ -284,6 +384,7 @@ def build_evaluation_diagnostics(
     link_capacities: Mapping[tuple[str, str], float],
     time_converter,
     profiler_summary: Mapping[str, object],
+    energy_accounting=None,
 ) -> dict:
     """Build auditable task/time/node/system diagnostics for one report."""
 
@@ -310,6 +411,7 @@ def build_evaluation_diagnostics(
         end_sim=end_sim,
         time_converter=time_converter,
         accounting_report=report.accounting_report,
+        energy_accounting=energy_accounting,
     )
 
     task_records = tuple(report.task_records)

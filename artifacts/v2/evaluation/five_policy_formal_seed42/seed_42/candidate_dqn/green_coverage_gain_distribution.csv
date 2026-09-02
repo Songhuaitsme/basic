@@ -1,0 +1,2 @@
+﻿task_count,gain_positive_tasks,gain_positive_ratio,gain_zero_tasks,gain_zero_ratio,gain_negative_tasks,gain_negative_ratio,mean,median,p25,p75,p90,p95,max,min,zero_tolerance,comparison_basis
+2401,645,0.26863806747188673,1560,0.6497292794668887,196,0.08163265306122448,0.022912782129773854,0.0,0.0,0.0031441382229951964,0.06375924050908577,0.16602401307415537,0.7602261661879359,-0.6300765387902812,1e-12,per-decision counterfactual vs Earliest Feasible Candidate

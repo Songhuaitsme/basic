@@ -1,0 +1,21 @@
+{
+  "status": "VALID",
+  "generated_at": "2026-09-02T12:07:26.422401+08:00",
+  "source_directory": "D:\\project\\DQN\\basic\\artifacts\\v2\\evaluation\\coordination_v2_seed42",
+  "source_task_metrics": "D:\\project\\DQN\\basic\\artifacts\\v2\\evaluation\\coordination_v2_seed42\\task_metrics.csv",
+  "source_task_metrics_sha256": "d6949b8fdcc3bf34b1159125fb1d0d52d25139530c19013bcd122cf72d2fbdaf",
+  "source_row_count": 2416,
+  "scheduled_task_denominator": 2401,
+  "comparison_basis": "per-decision counterfactual vs Earliest Feasible Candidate",
+  "model_or_scheduler_executed": false,
+  "source_data_unchanged": true,
+  "result_files": [
+    "adjustment_metrics.json",
+    "coordination_adjustment_report.json",
+    "coordination_type_metrics.csv",
+    "coordination_type_metrics_mutually_exclusive.csv",
+    "green_coverage_gain_distribution.csv",
+    "sla_type_metrics.csv",
+    "task_adjustment_metrics.csv"
+  ]
+}

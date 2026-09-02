@@ -74,6 +74,12 @@ class EvaluationMetadata:
 @dataclass(frozen=True)
 class TaskEvaluationRecord:
     task_id: str
+    source_node: str
+    cpu_demand: float
+    execution_duration_sim: float
+    sla_type: str
+    preferred_start_limit_sim: Optional[float]
+    latest_start_limit_sim: float
     final_state: str
     terminal_reason: Optional[str]
     arrival_time_sim: float
@@ -96,6 +102,14 @@ class TaskEvaluationRecord:
     task_attributed_green_energy_mwh: Optional[float]
     candidate_marginal_system_cost_yuan: Optional[float]
     candidate_marginal_green_energy_mwh: Optional[float]
+    selected_green_coverage: Optional[float]
+    selected_green_absorption_delta: Optional[float]
+    earliest_target_node: Optional[str]
+    earliest_compute_start_sim: Optional[float]
+    earliest_candidate_marginal_system_cost_yuan: Optional[float]
+    earliest_green_coverage: Optional[float]
+    earliest_candidate_marginal_green_energy_mwh: Optional[float]
+    earliest_green_absorption_delta: Optional[float]
     estimated_vs_realized_errors: Optional[Mapping[str, float]]
 
 
@@ -384,6 +398,7 @@ class EvaluationRunner:
             runtime = self.scheduler.state_machine.runtime(task.task_id)
             reservation = self.calendar_reservation_for(task.task_id)
             candidate = self.scheduler.committed_candidate(task.task_id)
+            earliest = self.scheduler.committed_earliest_candidate(task.task_id)
             realized = realized_by_task.get(task.task_id)
             if candidate is None:
                 timeline = (None,) * 13
@@ -410,6 +425,17 @@ class EvaluationRunner:
                 )
                 marginal_cost = candidate.estimated_candidate_marginal_system_cost_yuan
                 marginal_green = candidate.estimated_candidate_marginal_green_energy_mwh
+            if earliest is None:
+                earliest_values = (None,) * 6
+            else:
+                earliest_values = (
+                    earliest.target_node,
+                    earliest.compute_start_sim,
+                    earliest.estimated_candidate_marginal_system_cost_yuan,
+                    earliest.estimated_green_coverage,
+                    earliest.estimated_candidate_marginal_green_energy_mwh,
+                    earliest.estimated_green_absorption_delta,
+                )
             errors = None
             if candidate is not None and realized is not None:
                 errors = {
@@ -427,17 +453,61 @@ class EvaluationRunner:
                     ),
                 }
             records.append(TaskEvaluationRecord(
-                task.task_id,
-                runtime.state.value,
-                runtime.terminal_reason,
-                task.arrival_time_sim,
-                *timeline,
-                task.cpu_work_cpu_hours(self.time_converter),
-                None if realized is None else realized.task_energy_mwh,
-                None if realized is None else realized.task_attributed_cost_yuan,
-                None if realized is None else realized.task_attributed_green_energy_mwh,
-                marginal_cost,
-                marginal_green,
-                errors,
+                task_id=task.task_id,
+                source_node=task.source_node,
+                cpu_demand=task.cpu_demand,
+                execution_duration_sim=task.execution_duration_sim,
+                sla_type=task.sla_type.value,
+                preferred_start_limit_sim=task.preferred_start_limit_sim,
+                latest_start_limit_sim=task.latest_start_limit_sim,
+                final_state=runtime.state.value,
+                terminal_reason=runtime.terminal_reason,
+                arrival_time_sim=task.arrival_time_sim,
+                decision_time_sim=timeline[0],
+                transmission_start_sim=timeline[1],
+                transmission_end_sim=timeline[2],
+                compute_start_sim=timeline[3],
+                compute_end_sim=timeline[4],
+                target_node=timeline[5],
+                path_id=timeline[6],
+                scheduler_queue_delay_sim=timeline[7],
+                earliest_feasibility_lead_sim=timeline[8],
+                active_wait_sim=timeline[9],
+                reservation_lead_sim=timeline[10],
+                start_delay_sim=timeline[11],
+                completion_delay_sim=timeline[12],
+                cpu_work_cpu_hours=task.cpu_work_cpu_hours(self.time_converter),
+                task_energy_mwh=(
+                    None if realized is None else realized.task_energy_mwh
+                ),
+                task_attributed_cost_yuan=(
+                    None if realized is None
+                    else realized.task_attributed_cost_yuan
+                ),
+                task_attributed_green_energy_mwh=(
+                    None if realized is None
+                    else realized.task_attributed_green_energy_mwh
+                ),
+                candidate_marginal_system_cost_yuan=marginal_cost,
+                candidate_marginal_green_energy_mwh=marginal_green,
+                selected_green_coverage=(
+                    None if candidate is None
+                    else candidate.estimated_green_coverage
+                ),
+                selected_green_absorption_delta=(
+                    None if candidate is None
+                    else candidate.estimated_green_absorption_delta
+                ),
+                earliest_target_node=earliest_values[0],
+                earliest_compute_start_sim=earliest_values[1],
+                earliest_candidate_marginal_system_cost_yuan=(
+                    earliest_values[2]
+                ),
+                earliest_green_coverage=earliest_values[3],
+                earliest_candidate_marginal_green_energy_mwh=(
+                    earliest_values[4]
+                ),
+                earliest_green_absorption_delta=earliest_values[5],
+                estimated_vs_realized_errors=errors,
             ))
         return tuple(records)

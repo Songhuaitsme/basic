@@ -1,0 +1,2 @@
+﻿policy,seed,total_tasks,completed_tasks,completion_rate,sla_violation_tasks,sla_violation_rate,reservation_success_tasks,reservation_success_rate,total_cost,total_energy_consumption,total_green_energy_used,task_green_coverage,system_green_absorption,active_wait_tasks,active_wait_ratio,average_active_wait,average_cpu_utilization,peak_cpu_utilization
+earliest_feasible,42,2416,2401,0.9937913907284768,15,0.006208609271523178,2401,0.9937913907284768,21467185.52454166,31548.579612481193,21937.79312257219,0.6953654773698034,0.06463054271532595,0,0.0,,0.09216675692148545,1.0

@@ -10,6 +10,7 @@ from v2.export_five_policy_metrics import (
     EvaluationDataError,
     PAIRED_METADATA_FIELDS,
     POLICIES,
+    export_policy_artifacts,
     export_reports,
 )
 
@@ -119,6 +120,14 @@ class V2EvaluationToolsTest(unittest.TestCase):
                 {row["tariff_mode"] for row in manifest_rows},
                 {"shared-tariff_mode"},
             )
+            with (output / "policy_summary.csv").open(
+                newline="", encoding="utf-8-sig"
+            ) as handle:
+                summary_rows = list(csv.DictReader(handle))
+            self.assertEqual(len(summary_rows), 5)
+            self.assertEqual(
+                {row["policy"] for row in summary_rows}, set(POLICIES)
+            )
 
     def test_export_rejects_unpaired_trace_hash(self):
         with self._temporary_directory() as temporary:
@@ -184,6 +193,80 @@ class V2EvaluationToolsTest(unittest.TestCase):
                 "node_metrics.csv", "network_metrics.csv", "runtime_metrics.csv",
             ):
                 self.assertTrue((output / filename).is_file())
+
+    def test_candidate_policy_export_uses_adjustment_not_spatial_metrics(self):
+        with self._temporary_directory() as temporary:
+            root = Path(temporary)
+            report = self._report(42, "candidate_dqn")
+            report["metrics"].update({
+                "arrival_count": 1,
+                "reserved_ever_count": 1,
+                "completed_count": 1,
+                "total_economic_cost_yuan": 8.0,
+                "completed_task_green_coverage": {"value": 0.75},
+                "system_green_absorption_rate": {"value": 0.5},
+            })
+            report.update({
+                "task_records": [{
+                    "task_id": "task-1",
+                    "source_node": "A0",
+                    "target_node": "B1",
+                    "earliest_target_node": "A1",
+                    "compute_start_sim": 3.0,
+                    "earliest_compute_start_sim": 2.0,
+                    "active_wait_sim": 1.0,
+                    "final_state": "Completed",
+                    "start_delay_sim": 1.0,
+                    "latest_start_limit_sim": 2.0,
+                    "task_energy_mwh": 2.0,
+                    "candidate_marginal_system_cost_yuan": 8.0,
+                    "earliest_candidate_marginal_system_cost_yuan": 10.0,
+                    "selected_green_coverage": 0.75,
+                    "earliest_green_coverage": 0.25,
+                    "candidate_marginal_green_energy_mwh": 1.5,
+                    "earliest_candidate_marginal_green_energy_mwh": 0.5,
+                    "sla_type": "Flexible",
+                }],
+                "decision_records": [{
+                    "task_id": "task-1", "decision_id": "decision-1"
+                }],
+                "accounting_report": {
+                    "total_task_attributed_green_energy_mwh": 1.5,
+                },
+                "diagnostics": {
+                    "node_summary": {
+                        "time_node_mean_cpu_utilization": 0.2,
+                        "maximum_node_cpu_utilization": 0.8,
+                    },
+                    "time_records": [{"start_sim": 0.0, "end_sim": 1.0}],
+                    "node_records": [{"node": "B1"}],
+                },
+            })
+            report_path = root / "candidate_dqn_seed42.json"
+            report_path.write_text(json.dumps(report), encoding="utf-8")
+            output = root / "candidate_dqn"
+
+            metrics = export_policy_artifacts(report_path, output)
+
+            self.assertEqual(metrics["node_adjustment_ratio"], 1.0)
+            self.assertEqual(metrics["region_adjustment_ratio"], 1.0)
+            self.assertEqual(metrics["temporal_adjustment_ratio"], 1.0)
+            self.assertNotIn("spatial_migration_ratio", metrics)
+            for filename in (
+                "task_metrics.csv", "decision_metrics.csv", "time_metrics.csv",
+                "node_metrics.csv", "system_metrics.json", "system_metrics.csv",
+                "coordination_type_metrics.csv",
+                "coordination_type_metrics_mutually_exclusive.csv",
+                "green_coverage_gain_distribution.csv",
+                "sla_type_coordination_metrics.csv",
+            ):
+                self.assertTrue((output / filename).is_file())
+            with (output / "task_metrics.csv").open(
+                newline="", encoding="utf-8-sig"
+            ) as handle:
+                task = next(csv.DictReader(handle))
+            self.assertEqual(task["node_adjustment"], "True")
+            self.assertNotIn("spatial_migration", task)
 
 
 if __name__ == "__main__":

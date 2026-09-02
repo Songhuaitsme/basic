@@ -15,6 +15,7 @@ import torch
 
 from shared import config
 from v1.ablation_settings import apply_ablation_variant, variant_names
+from v1.domain.models import TaskSpec
 from v1.evaluation_v1 import EvaluationRunner
 from v1.evaluation_v1.diagnostics import build_evaluation_diagnostics
 from v1.learning import validate_checkpoint_metadata
@@ -96,6 +97,7 @@ def run_evaluation(
     system_version=None,
     audit_mode="full",
     audit_interval=500,
+    task_trace=None,
 ):
     system_version = str(
         config.SYSTEM_VERSION if system_version is None else system_version
@@ -115,6 +117,7 @@ def run_evaluation(
                 system_version=system_version,
                 audit_mode=audit_mode,
                 audit_interval=audit_interval,
+                task_trace=task_trace,
             )
     if (
         (soft_tardiness_weight is not None or flexible_tardiness_weight is not None)
@@ -139,6 +142,9 @@ def run_evaluation(
         soft_weight,
         flexible_weight,
     )
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
     horizon = cutoff + config.V1_MAX_FORECAST_LOOKAHEAD_SIM
     runtime = create_v1_runtime(
         policy_name=policy,
@@ -153,11 +159,17 @@ def run_evaluation(
         if not model_path:
             raise ValueError("candidate_dqn evaluation requires --model-path")
         checkpoint_path = Path(model_path)
+        if not checkpoint_path.is_file():
+            raise FileNotFoundError(
+                f"model checkpoint does not exist: {checkpoint_path}"
+            )
         checkpoint = torch.load(
             checkpoint_path,
             map_location="cpu",
             weights_only=False,
         )
+        if not isinstance(checkpoint.get("model_state_dict"), dict):
+            raise ValueError("model checkpoint does not contain model_state_dict")
         metadata = checkpoint.get("metadata", {})
         architecture = "shared_candidate_q_v1"
         if not config.V1_DQN_USE_GLOBAL_STATE or not config.V1_DQN_DOUBLE_DQN:
@@ -173,9 +185,16 @@ def run_evaluation(
         runtime.candidate_q_network.load_state_dict(
             checkpoint["model_state_dict"]
         )
+        runtime.candidate_q_network.eval()
         runtime.scheduler.policy.epsilon = 0.0
         model_hash = hashlib.sha256(checkpoint_path.read_bytes()).hexdigest()
-    trace = _generate_trace(runtime, cutoff, seed)
+    trace = (
+        _generate_trace(runtime, cutoff, seed)
+        if task_trace is None
+        else tuple(task_trace)
+    )
+    if any(task.arrival_time_sim >= cutoff for task in trace):
+        raise ValueError("task trace contains arrivals outside the evaluation cutoff")
     # The configured lookahead is only an initial allocation.  A generated
     # task can legally start near the end of its SLA window and then execute
     # beyond ``cutoff + V1_MAX_FORECAST_LOOKAHEAD_SIM``.  Extend both physical
@@ -271,6 +290,7 @@ def run_evaluation(
         link_capacities=link_capacities,
         time_converter=runtime.time_converter,
         profiler_summary=profiler.summary(evaluation_wall_seconds),
+        energy_accounting=runtime.accounting,
     )
     return replace(report, diagnostics=diagnostics)
 
@@ -311,6 +331,11 @@ def main(
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--safety-cap", type=int, default=1000000)
     parser.add_argument("--model-path")
+    parser.add_argument(
+        "--task-trace-input",
+        type=Path,
+        help="JSON task trace reused verbatim instead of generating new tasks",
+    )
     parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
     parser.add_argument(
         "--candidate-chunk-size",
@@ -339,6 +364,19 @@ def main(
         "--ablation-variant", choices=variant_names()
     )
     args = parser.parse_args()
+    task_trace = None
+    if args.task_trace_input is not None:
+        trace_payload = json.loads(
+            args.task_trace_input.read_text(encoding="utf-8")
+        )
+        trace_rows = (
+            trace_payload.get("tasks")
+            if isinstance(trace_payload, dict)
+            else trace_payload
+        )
+        if not isinstance(trace_rows, list):
+            parser.error("--task-trace-input must contain a JSON task list")
+        task_trace = tuple(TaskSpec.from_mapping(row) for row in trace_rows)
     report = run_evaluation(
         args.policy,
         args.arrival_cutoff,
@@ -353,6 +391,7 @@ def main(
         system_version=effective_system_version,
         audit_mode=args.audit,
         audit_interval=args.audit_interval,
+        task_trace=task_trace,
     )
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)

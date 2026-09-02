@@ -23,6 +23,18 @@ from pathlib import Path
 import statistics
 from typing import Iterable, Mapping, Sequence
 
+from v2.coordination_metrics import (
+    ADJUSTMENT_FIELDS,
+    GROUP_METRIC_FIELDS,
+    SLA_METRIC_FIELDS,
+    build_adjustment_metrics,
+    build_green_coverage_gain_distribution,
+    build_mutually_exclusive_coordination_groups,
+    build_requested_coordination_groups,
+    build_sla_type_metrics,
+    enrich_adjustments,
+)
+
 
 POLICIES = (
     "earliest_feasible",
@@ -57,6 +69,40 @@ PAIRED_METADATA_FIELDS = (
 
 class EvaluationDataError(ValueError):
     """Raised when reports are incomplete or cannot be compared fairly."""
+
+
+POLICY_SUMMARY_FIELDS = (
+    "policy",
+    "completion_rate",
+    "sla_violation_rate",
+    "total_cost",
+    "total_green_energy_used",
+    "task_green_coverage",
+    "system_green_absorption",
+    "active_wait_ratio",
+)
+
+SYSTEM_METRIC_FIELDS = (
+    "policy",
+    "seed",
+    "total_tasks",
+    "completed_tasks",
+    "completion_rate",
+    "sla_violation_tasks",
+    "sla_violation_rate",
+    "reservation_success_tasks",
+    "reservation_success_rate",
+    "total_cost",
+    "total_energy_consumption",
+    "total_green_energy_used",
+    "task_green_coverage",
+    "system_green_absorption",
+    "active_wait_tasks",
+    "active_wait_ratio",
+    "average_active_wait",
+    "average_cpu_utilization",
+    "peak_cpu_utilization",
+)
 
 
 def _read_report(path: Path) -> dict:
@@ -329,6 +375,240 @@ def _diagnostic_metric_source(report):
     }
 
 
+def _metric_value(value):
+    if isinstance(value, Mapping):
+        return value.get("value")
+    return value
+
+
+def build_unified_system_metrics(report: Mapping, policy: str) -> dict:
+    """Build the common five-policy scorecard from one complete report."""
+
+    metrics = report.get("metrics") or {}
+    metadata = report.get("metadata") or {}
+    tasks = tuple(report.get("task_records") or ())
+    total = int(metrics.get("arrival_count") or len(tasks))
+    completed = int(metrics.get("completed_count") or sum(
+        task.get("final_state") == "Completed" for task in tasks
+    ))
+    reserved = int(metrics.get("reserved_ever_count") or sum(
+        task.get("compute_start_sim") is not None for task in tasks
+    ))
+    violations = sum(
+        task.get("final_state") != "Completed"
+        or task.get("start_delay_sim") is None
+        or float(task["start_delay_sim"])
+        > float(task.get("latest_start_limit_sim") or 0.0) + 1e-12
+        for task in tasks
+    ) if tasks else max(0, total - completed)
+    positive_waits = [
+        float(task["active_wait_sim"])
+        for task in tasks
+        if task.get("compute_start_sim") is not None
+        and task.get("active_wait_sim") is not None
+        and float(task["active_wait_sim"]) > 1e-12
+    ]
+    accounting = report.get("accounting_report") or {}
+    diagnostics = report.get("diagnostics") or {}
+    node_summary = diagnostics.get("node_summary") or {}
+    total_energy = math.fsum(
+        float(task.get("task_energy_mwh") or 0.0) for task in tasks
+    )
+    system = {
+        "policy": policy,
+        "seed": metadata.get("seed"),
+        "total_tasks": total,
+        "completed_tasks": completed,
+        "completion_rate": completed / total if total else None,
+        "sla_violation_tasks": violations,
+        "sla_violation_rate": violations / total if total else None,
+        "reservation_success_tasks": reserved,
+        "reservation_success_rate": reserved / total if total else None,
+        "total_cost": metrics.get("total_economic_cost_yuan"),
+        "total_energy_consumption": total_energy,
+        "total_green_energy_used": accounting.get(
+            "total_task_attributed_green_energy_mwh"
+        ),
+        "task_green_coverage": _metric_value(
+            metrics.get("completed_task_green_coverage")
+        ),
+        "system_green_absorption": _metric_value(
+            metrics.get("system_green_absorption_rate")
+        ),
+        "active_wait_tasks": len(positive_waits),
+        "active_wait_ratio": len(positive_waits) / reserved if reserved else None,
+        "average_active_wait": (
+            statistics.fmean(positive_waits) if positive_waits else None
+        ),
+        "average_cpu_utilization": node_summary.get(
+            "time_node_mean_cpu_utilization"
+        ),
+        "peak_cpu_utilization": node_summary.get(
+            "maximum_node_cpu_utilization"
+        ),
+        "provenance": {
+            "task_trace_hash": metadata.get("task_trace_hash"),
+            "config_hash": metadata.get("config_hash"),
+            "topology_hash": metadata.get("topology_hash"),
+            "exogenous_trace_hash": metadata.get("exogenous_trace_hash"),
+            "model_hash": metadata.get("model_hash"),
+        },
+        "definitions": {
+            "sla_violation": (
+                "task did not complete within its absolute latest-start limit"
+            ),
+            "reservation_success_rate": (
+                "tasks ever reserved / total arrived tasks"
+            ),
+            "active_wait": (
+                "selected compute start minus earliest feasible compute start"
+            ),
+            "active_wait_ratio": (
+                "positive-active-wait tasks / tasks ever reserved"
+            ),
+            "average_active_wait": "mean over positive-active-wait tasks",
+            "average_cpu_utilization": (
+                "time-node mean CPU utilization over the evaluation span"
+            ),
+            "peak_cpu_utilization": (
+                "maximum node CPU utilization over the evaluation span"
+            ),
+        },
+    }
+    return system
+
+
+def _candidate_coordination_rows(tasks: Sequence[Mapping]) -> list[dict]:
+    rows = []
+    for original in tasks:
+        row = dict(original)
+        selected_start = row.get("compute_start_sim")
+        earliest_start = row.get("earliest_compute_start_sim")
+        earliest_cost = row.get("earliest_candidate_marginal_system_cost_yuan")
+        selected_cost = row.get("candidate_marginal_system_cost_yuan")
+        earliest_green = row.get("earliest_green_coverage")
+        selected_green = row.get("selected_green_coverage")
+        earliest_green_energy = row.get(
+            "earliest_candidate_marginal_green_energy_mwh"
+        )
+        selected_green_energy = row.get("candidate_marginal_green_energy_mwh")
+        row.update({
+            "selected_start": selected_start,
+            "earliest_start": earliest_start,
+            "active_wait": (
+                None if selected_start is None or earliest_start is None
+                else float(selected_start) - float(earliest_start)
+            ),
+            "cost_saving": (
+                None if earliest_cost is None or selected_cost is None
+                else float(earliest_cost) - float(selected_cost)
+            ),
+            "green_coverage_gain": (
+                None if earliest_green is None or selected_green is None
+                else float(selected_green) - float(earliest_green)
+            ),
+            "green_energy_gain": (
+                None
+                if earliest_green_energy is None or selected_green_energy is None
+                else float(selected_green_energy) - float(earliest_green_energy)
+            ),
+            "sla_satisfied": (
+                row.get("final_state") == "Completed"
+                and row.get("start_delay_sim") is not None
+                and float(row["start_delay_sim"])
+                <= float(row.get("latest_start_limit_sim") or 0.0) + 1e-12
+            ),
+        })
+        rows.append(row)
+    return enrich_adjustments(rows)
+
+
+def export_policy_artifacts(report_path: Path, output_dir: Path) -> dict:
+    """Write one policy's independent task/decision/time/node/system files."""
+
+    report = _read_report(report_path)
+    metadata = report.get("metadata") or {}
+    seed = int(metadata["seed"])
+    policy = _policy_from_name(report_path, seed)
+    source_text = report_path.as_posix()
+    tasks = [dict(item) for item in report.get("task_records") or ()]
+    if policy == "candidate_dqn":
+        tasks = _candidate_coordination_rows(tasks)
+    decisions = [dict(item) for item in report.get("decision_records") or ()]
+    diagnostics = report.get("diagnostics") or {}
+    time_rows = [dict(item) for item in diagnostics.get("time_records") or ()]
+    node_rows = [dict(item) for item in diagnostics.get("node_records") or ()]
+    for rows in (tasks, decisions, time_rows, node_rows):
+        for row in rows:
+            row.update({"seed": seed, "policy": policy, "source_file": source_text})
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    _write_dynamic_csv(
+        output_dir / "task_metrics.csv", tasks,
+        ("seed", "policy", "task_id", "source_file"),
+    )
+    _write_dynamic_csv(
+        output_dir / "decision_metrics.csv", decisions,
+        ("seed", "policy", "task_id", "decision_id", "source_file"),
+    )
+    _write_dynamic_csv(
+        output_dir / "time_metrics.csv", time_rows,
+        ("seed", "policy", "start_sim", "end_sim", "source_file"),
+    )
+    _write_dynamic_csv(
+        output_dir / "node_metrics.csv", node_rows,
+        ("seed", "policy", "node", "source_file"),
+    )
+
+    system_metrics = build_unified_system_metrics(report, policy)
+    if policy == "candidate_dqn":
+        adjustment_metrics = build_adjustment_metrics(tasks)
+        adjustment_definitions = adjustment_metrics.pop("definitions")
+        system_metrics.update(adjustment_metrics)
+        system_metrics["definitions"].update(adjustment_definitions)
+        requested = build_requested_coordination_groups(tasks)
+        exclusive = build_mutually_exclusive_coordination_groups(tasks)
+        gain_distribution = build_green_coverage_gain_distribution(tasks)
+        sla_metrics = build_sla_type_metrics(tasks)
+        _write_csv(
+            output_dir / "coordination_type_metrics.csv",
+            GROUP_METRIC_FIELDS,
+            requested,
+        )
+        _write_csv(
+            output_dir / "coordination_type_metrics_mutually_exclusive.csv",
+            GROUP_METRIC_FIELDS,
+            exclusive,
+        )
+        _write_dynamic_csv(
+            output_dir / "green_coverage_gain_distribution.csv",
+            [gain_distribution],
+            tuple(gain_distribution),
+        )
+        _write_csv(
+            output_dir / "sla_type_coordination_metrics.csv",
+            SLA_METRIC_FIELDS,
+            sla_metrics,
+        )
+
+    (output_dir / "system_metrics.json").write_text(
+        json.dumps(system_metrics, ensure_ascii=False, indent=2, allow_nan=False),
+        encoding="utf-8",
+    )
+    system_csv_fields = SYSTEM_METRIC_FIELDS + tuple(
+            field
+            for adjustment in ADJUSTMENT_FIELDS
+            for field in (f"{adjustment}_tasks", f"{adjustment}_ratio")
+            if field in system_metrics
+        )
+    _write_csv(
+        output_dir / "system_metrics.csv",
+        system_csv_fields,
+        [{field: system_metrics.get(field) for field in system_csv_fields}],
+    )
+    return system_metrics
+
+
 def export_reports(report_paths: Iterable[Path], output_dir: Path) -> dict:
     """Validate reports and create long, wide, and provenance source tables."""
 
@@ -341,6 +621,7 @@ def export_reports(report_paths: Iterable[Path], output_dir: Path) -> dict:
     node_rows = []
     network_rows = []
     runtime_rows = []
+    policy_summary_rows = []
 
     for seed in sorted(grouped):
         for policy in POLICIES:
@@ -348,6 +629,10 @@ def export_reports(report_paths: Iterable[Path], output_dir: Path) -> dict:
             metadata = report["metadata"]
             metrics = report["metrics"]
             source_text = source_path.as_posix()
+            system_metrics = build_unified_system_metrics(report, policy)
+            policy_summary_rows.append({
+                field: system_metrics[field] for field in POLICY_SUMMARY_FIELDS
+            })
             for metric in flatten_metrics(metrics):
                 long_rows.append({
                     "seed": seed,
@@ -553,6 +838,11 @@ def export_reports(report_paths: Iterable[Path], output_dir: Path) -> dict:
     _write_csv(output_dir / "metrics_long.csv", long_fields, long_rows)
     _write_csv(output_dir / "metrics_wide.csv", wide_fields, wide_rows)
     _write_csv(output_dir / "source_manifest.csv", manifest_fields, manifest_rows)
+    _write_csv(
+        output_dir / "policy_summary.csv",
+        POLICY_SUMMARY_FIELDS,
+        policy_summary_rows,
+    )
     _write_dynamic_csv(
         output_dir / "task_metrics.csv", task_rows,
         ("seed", "policy", "task_id", "source_file"),
@@ -593,6 +883,7 @@ def export_reports(report_paths: Iterable[Path], output_dir: Path) -> dict:
         "node_row_count": len(node_rows),
         "network_row_count": len(network_rows),
         "runtime_row_count": len(runtime_rows),
+        "policy_summary_row_count": len(policy_summary_rows),
         "granularity_coverage": {
             "task": bool(task_rows),
             "decision": bool(decision_rows),

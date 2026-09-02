@@ -1,0 +1,37 @@
+{
+  "policy": "highest_green",
+  "seed": 42,
+  "total_tasks": 2416,
+  "completed_tasks": 2401,
+  "completion_rate": 0.9937913907284768,
+  "sla_violation_tasks": 15,
+  "sla_violation_rate": 0.006208609271523178,
+  "reservation_success_tasks": 2401,
+  "reservation_success_rate": 0.9937913907284768,
+  "total_cost": 17952229.517910495,
+  "total_energy_consumption": 31548.579612481193,
+  "total_green_energy_used": 31548.579612481193,
+  "task_green_coverage": 1.0000000000000016,
+  "system_green_absorption": 0.06208456994855707,
+  "active_wait_tasks": 1522,
+  "active_wait_ratio": 0.6339025406080799,
+  "average_active_wait": 99.33941524310119,
+  "average_cpu_utilization": 0.05871228566771935,
+  "peak_cpu_utilization": 0.9949056603773585,
+  "provenance": {
+    "task_trace_hash": "db427715e1c4463a813d0fe3639fdecc1cd9107500b45a011f00dac41460bb84",
+    "config_hash": "2d18479d4470e9209088d3e424b39cc1b9dba903e762c946fede3b15859aa4d4",
+    "topology_hash": "7fee460512c7df65ee677bf31a891d507a83aadee16ce42a6c64d963c625b4fa",
+    "exogenous_trace_hash": "fd555275b5d4e147dde92f41848b2c7c40555b22a86a8bcda260295f999fd458",
+    "model_hash": "32adf3226da3ac8f3d6dc5fd114f37c732aa71b2978be6a41519c805a61a4921"
+  },
+  "definitions": {
+    "sla_violation": "task did not complete within its absolute latest-start limit",
+    "reservation_success_rate": "tasks ever reserved / total arrived tasks",
+    "active_wait": "selected compute start minus earliest feasible compute start",
+    "active_wait_ratio": "positive-active-wait tasks / tasks ever reserved",
+    "average_active_wait": "mean over positive-active-wait tasks",
+    "average_cpu_utilization": "time-node mean CPU utilization over the evaluation span",
+    "peak_cpu_utilization": "maximum node CPU utilization over the evaluation span"
+  }
+}

@@ -15,3 +15,4 @@ artifacts/**/logs/
 # Generated legacy reports.
 artifacts/legacy/training_metrics*.csv
 artifacts/legacy/training_report*.png
+artifacts/v2/evaluation/five_policy_formal_seed42/source_data/time_metrics.csv

@@ -93,6 +93,7 @@ class V1Scheduler:
         self.policy = policy or EarliestFeasiblePolicy()
         self.metrics_ledger = metrics_ledger
         self._committed_candidates = {}
+        self._committed_earliest_candidates = {}
         # Training can attach a lightweight profiler without changing the
         # scheduler's public construction contract or formal scheduling logic.
         self.profiler = None
@@ -313,6 +314,11 @@ class V1Scheduler:
             if commit.status is CommitDecisionStatus.COMMITTED:
                 reservation = commit.calendar_result.reservation
                 self._committed_candidates[task.task_id] = selected
+                if not hasattr(self, "_committed_earliest_candidates"):
+                    self._committed_earliest_candidates = {}
+                self._committed_earliest_candidates[task.task_id] = (
+                    selection.earliest_candidate
+                )
                 return self._decision_record(
                     task.task_id,
                     "RESERVED",
@@ -358,6 +364,11 @@ class V1Scheduler:
 
     def committed_candidate(self, task_id: str):
         return self._committed_candidates.get(task_id)
+
+    def committed_earliest_candidate(self, task_id: str):
+        """Return the same-snapshot earliest feasible counterfactual."""
+
+        return getattr(self, "_committed_earliest_candidates", {}).get(task_id)
 
     @staticmethod
     def _decision_record(

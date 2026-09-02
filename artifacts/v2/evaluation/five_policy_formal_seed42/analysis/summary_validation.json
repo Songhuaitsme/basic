@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "policy_count": 5,
+  "task_count_per_policy": 2416,
+  "task_trace_hash": "db427715e1c4463a813d0fe3639fdecc1cd9107500b45a011f00dac41460bb84",
+  "reference_task_trace_hash_match": true,
+  "paired_fields": [
+    "seed",
+    "arrival_cutoff_sim",
+    "config_hash",
+    "topology_hash",
+    "task_trace_hash",
+    "exogenous_trace_hash",
+    "dependency_lock_hash",
+    "tariff_mode"
+  ]
+}

@@ -1,0 +1,9 @@
+﻿Metric,Value,Unit,Comparison
+Cost change,-10.040750105094505,%,Candidate DQN vs Earliest Feasible Policy
+Green Energy Used change,22.17837840557487,%,Candidate DQN vs Earliest Feasible Policy
+Green Coverage change,15.422078687280694,percentage points,Candidate DQN vs Earliest Feasible Policy
+Green Absorption change,0.6024029157427446,percentage points,Candidate DQN vs Earliest Feasible Policy
+Completion Rate change,0.0,percentage points,Candidate DQN vs Earliest Feasible Policy
+SLA Violation change,0.0,percentage points,Candidate DQN vs Earliest Feasible Policy
+Active Wait Tasks change,1733,tasks,Candidate DQN vs Earliest Feasible Policy
+Active Wait Ratio change,72.17825905872553,percentage points,Candidate DQN vs Earliest Feasible Policy
