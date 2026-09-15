@@ -72,6 +72,9 @@ V1_COMPLETION_OUTCOME_REWARD = 0.0
 V1_EXPIRATION_PENALTY = -1.0
 V1_FAILURE_PENALTY = -1.0
 V1_MAX_FORECAST_LOOKAHEAD_SIM = 4000.0
+# Evaluation and training reach steady state for one simulated traffic day
+# before opening their formal measurement/learning window.
+WARMUP_DAYS = 1.0
 V1_TARGET_UPDATE_INTERVAL = 1000
 V1_CANDIDATE_CHUNK_SIZE = 4096
 V1_REPLAY_MIN_SIZE = 128
@@ -111,7 +114,7 @@ ENABLE_GREEN_SUBSIDY = True
 ENABLE_CARBON_TAX = True
 PRICE_ALPHA = 2.0
 PRICE_BETA = 3.0
-PRICE_TIER_MULTIPLIERS = {1: 0.85, 2: 1.0, 3: 1.2}
+PRICE_TIER_MULTIPLIERS = {1: 0.9, 2: 1.0, 3: 1.1}
 ELECTRICITY_LOAD_PER_YUAN_MW = 1.0
 BASELINE_ELECTRICITY_PRICE_YUAN_PER_MW = 1.30   
 USE_UNIFORM_BASE_ELECTRICITY_PRICE = True
@@ -128,16 +131,16 @@ PRICE_NORMALIZATION_FACTOR = 0.05
 REGION_BASE_ELECTRICITY_PRICE = {
     'A': 0.86, 'B': 0.82, 'C': 0.78, 'D': 0.88, 'E': 0.84, 'F': 0.80,
     'J': 0.68, 'K': 0.62, 'L': 0.66, 'M': 0.64,
-    'G': 0.50, 'H': 0.54, 'I': 0.56
+    'G': 0.52, 'H': 0.54, 'I': 0.56
 }
 
 # 分时电价倍率：先取地区基础价，再乘当前时段倍率。
-# 谷段约 0.55，平段约 1.0，峰段约 1.45，尖峰约 1.65。
+# 保留原有峰谷时序与曲线形状，将日内倍率收窄到约 0.75~1.35。
 TOU_PRICE_HOURS = [
     0.0, 6.0, 8.0, 11.0, 13.0, 17.0, 19.0, 21.0, 23.0, 24.0
 ]
 TOU_PRICE_MULTIPLIERS = [
-    0.55, 0.70, 1.00, 1.35, 1.05, 1.30, 1.65, 1.25, 0.75, 0.55
+    0.80, 0.85, 1.00, 1.10, 1.05, 1.00, 1.15, 1.00, 0.85, 0.80
 ]
 
 # ================= 强化学习与训练配置 =================
@@ -161,7 +164,7 @@ GNN_NODE_FEATURE_DIM = 21
 
 # ================= 环境预热配置 =================
 ENABLE_ENV_WARMUP = True
-ENV_WARMUP_CYCLES = 2000
+ENV_WARMUP_DAYS = WARMUP_DAYS
 WARMUP_FILL_REPLAY = False
 WARMUP_RECORD_METRICS = False
 WARMUP_POLICY = "random_valid_compute"

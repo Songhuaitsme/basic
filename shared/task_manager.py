@@ -54,23 +54,22 @@ class TaskManager:
         # ==========================================
         self.task_templates = {
             "Realtime_Service": {  # 实时响应型服务
-                "sla_type": "Hard", "latency_range": (0.01, 1.0),
+                "sla_type": "Hard", "latency_range": (0.01, 0.2),
                 "base_data": 5, "base_cpu": 30, "base_dur":1.0,
                 "lognormal_sigma": 0.3
             },
             "Interactive_Query": {  # 交互式分析
-                "sla_type": "Soft", "latency_range": (1.0, 10.0),
+                "sla_type": "Soft", "latency_range": (0.2, 2.0),
                 "base_data": 80, "base_cpu": 60, "base_dur": 8.0,
                 "lognormal_sigma": 0.5
             },
             "Data_Intensive": {  # 数据密集型计算
-                "sla_type": "Soft", "latency_range": (10.0, 100.0),
+                "sla_type": "Soft", "latency_range": (2.0, 100.0),
                 "base_data": 300, "base_cpu": 100, "base_dur":20.0,
                 "lognormal_sigma": 0.8
             },
             "Model_Training": {  # 模型密集型训练
-                "sla_type": "Flexible", "latency_range": (100.0,1440),
-                "sla_type": "Flexible", "latency_range": (100.0, 1440.0),
+                "sla_type": "Flexible", "latency_range": (10.0, 500.0),
                 "base_data": 200, "base_cpu": 300, "base_dur": 50.0,
                 "lognormal_sigma": 1.2
             }

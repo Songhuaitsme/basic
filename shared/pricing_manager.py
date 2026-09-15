@@ -19,17 +19,34 @@ class PricingManager:
         profiles = {}
         if not self.G: return profiles
 
+        green_ratio_by_region = {
+            'I': 0.30, 'K': 0.45, 'G': 0.60,
+            'H': 0.60, 'J': 0.72, 'L': 0.84, 'M': 0.95,
+        }
         for node in self.G.nodes():
             node_str = str(node)
-            # 东部节点 (A-F): 灰电主导，几乎无绿电装机 (典型的需求中心)
-            if node_str[0] in ['A', 'B', 'C', 'D', 'E', 'F']:
+            region = node_str[0]
+            # 一档 A-F：保持原有装机比率和数值。
+            if region in ['A', 'B', 'C', 'D', 'E', 'F']:
                 profiles[node] = {'solar': 5.0, 'wind': 5.0}
-            # 西部光伏主导节点 (例如 K, I): 沙漠光伏基地
-            elif node_str[0] in ['K', 'I']:
-                profiles[node] = {'solar': 150.0, 'wind': 20.0}
-            # 西部风电主导节点 (例如 G, H, J, L, M): 戈壁风电场
+                continue
+
+            full_load_power_mw = float(self.G.nodes[node].get('capacity', 0.0)) * getattr(
+                config, 'CPU_POWER_UNIT_MW', 0.01
+            )
+            green_capacity_mw = full_load_power_mw * green_ratio_by_region[region]
+            # 二档 I/K/G：30%~60%；I/K 保持光伏主导。
+            if region in ['I', 'K']:
+                profiles[node] = {
+                    'solar': green_capacity_mw * 15.0 / 17.0,
+                    'wind': green_capacity_mw * 2.0 / 17.0,
+                }
+            # G 与三档 H/J/L/M 保持风电主导。
             else:
-                profiles[node] = {'solar': 30.0, 'wind': 120.0}
+                profiles[node] = {
+                    'solar': green_capacity_mw * 0.20,
+                    'wind': green_capacity_mw * 0.80,
+                }
         return profiles
 
     def _initialize_smooth_price_lut(self, resolution: int = 144) -> np.ndarray:
