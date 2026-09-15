@@ -626,7 +626,7 @@ def main() -> None:
         ),
         "initial_time": args.initial_time,
         "warmup_enabled": not args.no_warmup and config.ENABLE_ENV_WARMUP,
-        "warmup_cycles": config.ENV_WARMUP_CYCLES,
+        "warmup_days": config.ENV_WARMUP_DAYS,
         "sample_interval": args.sample_interval,
         "config": serializable_config(),
     }

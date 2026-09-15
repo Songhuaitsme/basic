@@ -273,11 +273,19 @@ def warmup_environment(env, task_manager, total_compute_capacity, global_time):
     """
     active_tasks = []
     wait_queue = []
-    warmup_cycles = int(getattr(config, "ENV_WARMUP_CYCLES", 0))
+    warmup_days = float(getattr(config, "ENV_WARMUP_DAYS", 0.0))
+    warmup_step_count = round(
+        warmup_days
+        * config.TRAFFIC_DAY_DURATION_IN_SIM
+        / config.SCHEDULING_CYCLE
+    )
 
-    print(f"=== Environment warm-up start: {warmup_cycles} cycles ===")
+    print(
+        f"=== Environment warm-up start: {warmup_days} days "
+        f"({warmup_step_count} scheduler steps) ==="
+    )
 
-    for cycle in range(warmup_cycles):
+    for cycle in range(warmup_step_count):
         global_time += config.SCHEDULING_CYCLE
         update_active_tasks(env, active_tasks, global_time)
 
