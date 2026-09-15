@@ -83,8 +83,11 @@ def _resource_records(
     end_sim: float,
     time_converter,
     accounting_report,
+    system_accounting_report=None,
     energy_accounting=None,
 ):
+    if system_accounting_report is None:
+        system_accounting_report = accounting_report
     cpu_events = defaultdict(lambda: defaultdict(float))
     link_events = defaultdict(lambda: defaultdict(float))
     compute_count_events = defaultdict(int)
@@ -321,12 +324,12 @@ def _resource_records(
                 if right > left
             )
         green_used = (
-            None if accounting_report is None
-            else accounting_report.node_green_used_mwh.get(node, 0.0)
+            None if system_accounting_report is None
+            else system_accounting_report.node_green_used_mwh.get(node, 0.0)
         )
         electricity_cost = (
-            None if accounting_report is None
-            else accounting_report.node_bill_yuan.get(node, 0.0)
+            None if system_accounting_report is None
+            else system_accounting_report.node_bill_yuan.get(node, 0.0)
         )
         node_records.append({
             "node_id": node,
@@ -390,9 +393,9 @@ def build_evaluation_diagnostics(
 
     items = tuple(reservations)
     start_sim = report.metadata.evaluation_start_sim
-    end_sim = report.metadata.final_settlement_time_sim
-    if end_sim <= start_sim:
-        end_sim = report.metadata.arrival_cutoff_sim
+    # System-level diagnostics are strictly bounded by Measurement.  Drain is
+    # used only to settle the task cohort and must not dilute utilization.
+    end_sim = report.metadata.arrival_cutoff_sim
     normalized_links = {
         canonical_edge(edge): float(capacity)
         for edge, capacity in link_capacities.items()
@@ -411,6 +414,7 @@ def build_evaluation_diagnostics(
         end_sim=end_sim,
         time_converter=time_converter,
         accounting_report=report.accounting_report,
+        system_accounting_report=report.system_accounting_report,
         energy_accounting=energy_accounting,
     )
 
@@ -443,8 +447,14 @@ def build_evaluation_diagnostics(
         ),
     }
 
+    measured_ids = set(report.measured_task_ids)
+    task_reservations = tuple(
+        reservation for reservation in items
+        if reservation.task_id in measured_ids
+    )
     remote = tuple(
-        reservation for reservation in items if not reservation.path.is_local
+        reservation for reservation in task_reservations
+        if not reservation.path.is_local
     )
     transmission_seconds = tuple(
         time_converter.sim_to_seconds(
@@ -457,9 +467,11 @@ def build_evaluation_diagnostics(
         for reservation, seconds in zip(remote, transmission_seconds)
     )
     network_summary = {
-        "reservation_count": len(items),
+        "reservation_count": len(task_reservations),
         "remote_reservation_count": len(remote),
-        "remote_task_rate": len(remote) / len(items) if items else None,
+        "remote_task_rate": (
+            len(remote) / len(task_reservations) if task_reservations else None
+        ),
         "transmission_duration_seconds": _summary(transmission_seconds),
         "total_transmitted_data_mb": transmitted_data_mb,
         "mean_path_hops": (
@@ -518,6 +530,18 @@ def build_evaluation_diagnostics(
     }
 
     physical_hours = time_converter.sim_to_hours(end_sim - start_sim)
+    if end_sim > start_sim:
+        system_window = TimeInterval(start_sim, end_sim)
+        window_reservations = tuple(
+            reservation for reservation in items
+            if reservation.compute_interval_sim.overlaps(system_window)
+            or (
+                reservation.transmission_interval_sim is not None
+                and reservation.transmission_interval_sim.overlaps(system_window)
+            )
+        )
+    else:
+        window_reservations = ()
     completed_count = (
         0 if report.metrics is None else report.metrics.completed_count
     )
@@ -527,7 +551,7 @@ def build_evaluation_diagnostics(
         "completed_tasks_per_physical_hour": (
             completed_count / physical_hours if physical_hours > 0.0 else None
         ),
-        "reservation_count": len(items),
+        "reservation_count": len(window_reservations),
         "time_interval_count": len(time_records),
     }
     runtime_summary = dict(profiler_summary)

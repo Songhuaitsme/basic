@@ -1,6 +1,8 @@
 """Production-oriented v1.0 candidate-DQN training entry point."""
 
 import argparse
+from collections import deque
+from contextlib import contextmanager
 import csv
 from dataclasses import asdict, replace
 import hashlib
@@ -16,7 +18,7 @@ import torch
 from shared import config
 from v1.ablation_settings import apply_ablation_variant, variant_names
 from v1.audit_v1 import scan_scheduler_invariants
-from v1.domain.models import SlaType, TaskState
+from v1.domain.models import SlaType, TaskSpec, TaskState
 from v1.learning import (
     CandidateDQNTrainer,
     CandidateDqnMetadata,
@@ -35,6 +37,43 @@ from v1.v1_runtime import (
     extend_v1_runtime_forecasts,
     v1_runtime_forecast_end,
 )
+
+
+DEFAULT_REWARD_ROLLING_WINDOW = 1000
+DEFAULT_VALIDATION_CUTOFF_SIM = 12.0
+DEFAULT_VALIDATION_SAFETY_CAP = 1000000
+REWARD_COMPONENT_FIELDS = (
+    "immediate_reward",
+    "realized_reward",
+    "failure_penalty",
+    "expiration_penalty",
+    "completion_reward",
+    "realization_correction",
+)
+
+
+def _empty_reward_components():
+    return {field: 0.0 for field in REWARD_COMPONENT_FIELDS}
+
+
+@contextmanager
+def _preserve_rng_state():
+    """Keep validation and trace generation invisible to training RNG streams."""
+
+    python_state = random.getstate()
+    numpy_state = np.random.get_state()
+    torch_state = torch.get_rng_state()
+    cuda_state = (
+        torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None
+    )
+    try:
+        yield
+    finally:
+        random.setstate(python_state)
+        np.random.set_state(numpy_state)
+        torch.set_rng_state(torch_state)
+        if cuda_state is not None:
+            torch.cuda.set_rng_state_all(cuda_state)
 
 
 def _positive_int(name, value):
@@ -303,12 +342,64 @@ class V1TrainingLoop:
         self.update_count = 0
         self.losses = []
         self.q_summaries = []
+        self.reward_rolling_window = DEFAULT_REWARD_ROLLING_WINDOW
+        self.rolling_rewards = deque(maxlen=self.reward_rolling_window)
+        self.rewards_since_log = []
+        self.reward_components_since_log = _empty_reward_components()
+        self.td_errors_since_log = []
+        self.completion_reward_details = {}
         self.candidate_count = 0
         self.profiler = profiler
         self.runtime.scheduler.profiler = profiler
         self.runtime.scheduler.candidate_generator.profiler = profiler
         self.policy.profiler = profiler
         self.trainer.profiler = profiler
+
+    def ensure_monitoring_state(self, reward_rolling_window=None):
+        """Add monitoring state when resuming checkpoints made by older code."""
+
+        window = (
+            getattr(self, "reward_rolling_window", DEFAULT_REWARD_ROLLING_WINDOW)
+            if reward_rolling_window is None
+            else _positive_int("reward_rolling_window", reward_rolling_window)
+        )
+        old_rolling = tuple(getattr(self, "rolling_rewards", ()))
+        self.reward_rolling_window = window
+        self.rolling_rewards = deque(old_rolling[-window:], maxlen=window)
+        if not hasattr(self, "rewards_since_log"):
+            self.rewards_since_log = []
+        if not hasattr(self, "reward_components_since_log"):
+            self.reward_components_since_log = _empty_reward_components()
+        else:
+            for field in REWARD_COMPONENT_FIELDS:
+                self.reward_components_since_log.setdefault(field, 0.0)
+        if not hasattr(self, "td_errors_since_log"):
+            self.td_errors_since_log = []
+        if not hasattr(self, "completion_reward_details"):
+            self.completion_reward_details = {}
+        if not hasattr(self.trainer, "last_td_errors"):
+            self.trainer.last_td_errors = ()
+
+    def consume_monitoring_interval(self):
+        rewards = tuple(self.rewards_since_log)
+        q_summaries = tuple(self.q_summaries)
+        td_errors = (
+            np.concatenate(self.td_errors_since_log)
+            if self.td_errors_since_log
+            else np.asarray((), dtype=np.float32)
+        )
+        components = dict(self.reward_components_since_log)
+        self.rewards_since_log.clear()
+        self.q_summaries.clear()
+        self.td_errors_since_log.clear()
+        self.reward_components_since_log = _empty_reward_components()
+        return {
+            "rewards": rewards,
+            "rolling_rewards": tuple(self.rolling_rewards),
+            "reward_components": components,
+            "q_summaries": q_summaries,
+            "td_errors": td_errors,
+        }
 
     def _next_candidate_feature_chunks(self, context):
         evaluator = self.runtime.accounting.candidate_metric_evaluator(
@@ -361,6 +452,7 @@ class V1TrainingLoop:
             elif (
                 event.event_type == "TASK_FAILED"
                 and config.V1_REWARD_TERMINAL_PENALTIES_ENABLED
+                and event.task_id in self.decision_by_task
             ):
                 self.reward_assembler.buffer_event(TimestampedReward(
                     event.event_time_sim,
@@ -372,6 +464,7 @@ class V1TrainingLoop:
             if (
                 transition.new_state is TaskState.EXPIRED
                 and config.V1_REWARD_TERMINAL_PENALTIES_ENABLED
+                and transition.task_id in self.decision_by_task
             ):
                 self.reward_assembler.buffer_event(TimestampedReward(
                     transition.event_time_sim,
@@ -456,19 +549,65 @@ class V1TrainingLoop:
             realized_candidate, task.sla_type
         ).total_score
         if config.V1_REWARD_REALIZATION_CORRECTION_ENABLED:
-            correction = (
+            realization_correction = (
                 realized_utility
                 - (
                     record.estimated_local_utility
                     if config.V1_REWARD_ESTIMATE_ENABLED else 0.0
                 )
+            )
+            correction = (
+                realization_correction
                 + config.V1_COMPLETION_OUTCOME_REWARD
             )
         else:
+            realization_correction = 0.0
             correction = config.V1_COMPLETION_OUTCOME_REWARD
+        self.completion_reward_details[record.decision_id] = {
+            # Realized utility is diagnostic context.  The additive reward
+            # path is completion_reward + realization_correction.
+            "realized_reward": realized_utility,
+            "completion_reward": config.V1_COMPLETION_OUTCOME_REWARD,
+            "realization_correction": realization_correction,
+        }
         self.reward_assembler.buffer_event(TimestampedReward(
             event_time_sim, correction, record.decision_id, "TASK_COMPLETED"
         ))
+
+    def _record_transition_reward(self, data, transition):
+        components = _empty_reward_components()
+        components["immediate_reward"] = float(data["immediate_reward"])
+        for event in transition.timestamped_event_rewards:
+            elapsed = self.reward_assembler.clock.elapsed_seconds(
+                data["record"].decision_time_sim,
+                event.event_time_sim,
+            )
+            discount = self.reward_assembler.clock.discount(elapsed)
+            if event.event_type == "TASK_FAILED":
+                components["failure_penalty"] += discount * event.reward
+            elif event.event_type == "TASK_EXPIRED":
+                components["expiration_penalty"] += discount * event.reward
+            elif event.event_type == "TASK_COMPLETED":
+                detail = self.completion_reward_details.pop(
+                    event.decision_id,
+                    {
+                        "realized_reward": event.reward,
+                        "completion_reward": 0.0,
+                        "realization_correction": event.reward,
+                    },
+                )
+                components["realized_reward"] += float(
+                    detail["realized_reward"]
+                )
+                for field in (
+                    "completion_reward",
+                    "realization_correction",
+                ):
+                    components[field] += discount * float(detail[field])
+        self.rewards_since_log.append(float(transition.reward))
+        self.rolling_rewards.append(float(transition.reward))
+        for field, value in components.items():
+            self.reward_components_since_log[field] += value
 
     def _close_pending(self, *, next_state, next_context, next_time, terminal):
         data = self.pending
@@ -513,6 +652,7 @@ class V1TrainingLoop:
             transition,
             next_candidate_features=cached_features,
         )
+        self._record_transition_reward(data, transition)
         self.replay.add(transition)
         self.transition_count += 1
         if len(self.replay) >= self.min_replay_size:
@@ -520,6 +660,9 @@ class V1TrainingLoop:
                 batch = self.replay.sample(self.batch_size, self.replay_random)
                 loss = self.trainer.train_batch(batch)
                 self.losses.append(loss)
+                self.td_errors_since_log.append(
+                    self.trainer.last_td_errors
+                )
                 self.update_count += 1
                 self.policy.epsilon = max(
                     config.EPSILON_MIN,
@@ -607,6 +750,77 @@ def _generate_arrivals(runtime, current, cycle, total_capacity):
             * config.TASK_PEAK_LOAD_MULTIPLIER
         ),
     )
+
+
+def _run_training_warmup(
+    runtime,
+    loop,
+    *,
+    warmup_days,
+    total_capacity,
+    invariant_check_every,
+    profiler=None,
+):
+    """Advance the live runtime to T0 without creating learning experience."""
+
+    days = float(warmup_days)
+    if not np.isfinite(days) or days < 0.0:
+        raise ValueError("warmup_days must be finite and non-negative")
+    warmup_end = days * config.TRAFFIC_DAY_DURATION_IN_SIM
+    if warmup_end <= 0.0:
+        return 0.0, 0
+
+    initial_replay_size = len(loop.replay)
+    initial_transition_count = loop.transition_count
+    initial_update_count = loop.update_count
+    initial_candidate_count = loop.candidate_count
+    record_selection_traces = loop.policy.record_selection_traces
+    loop.policy.record_selection_traces = False
+    current = 0.0
+    warmup_cycle = 0
+    forecast_end = v1_runtime_forecast_end(runtime)
+    try:
+        while current < warmup_end - 1e-12:
+            current = min(
+                warmup_end,
+                current + config.SCHEDULING_CYCLE,
+            )
+            arrivals = _generate_arrivals(
+                runtime,
+                current,
+                -(warmup_cycle + 1),
+                total_capacity,
+            )
+            if arrivals:
+                forecast_end = ensure_v1_runtime_forecasts_for_tasks(
+                    runtime, arrivals
+                )
+            result = _run_profiled_operation(
+                profiler,
+                "warmup_scheduler_cycle_count",
+                lambda: runtime.scheduler.run_cycle(
+                    current,
+                    arrivals=arrivals,
+                    forecast_covered_until_sim=forecast_end,
+                ),
+            )
+            warmup_cycle += 1
+            if warmup_cycle % invariant_check_every == 0:
+                _assert_scheduler_invariants(runtime.scheduler, result)
+    finally:
+        loop.policy.pop_selection_traces()
+        loop.policy.record_selection_traces = record_selection_traces
+
+    _assert_scheduler_invariants(runtime.scheduler)
+    if (
+        len(loop.replay) != initial_replay_size
+        or loop.transition_count != initial_transition_count
+        or loop.update_count != initial_update_count
+        or loop.candidate_count != initial_candidate_count
+        or loop.pending is not None
+    ):
+        raise RuntimeError("training warm-up mutated learning state")
+    return current, warmup_cycle
 
 
 def _estimate_candidate_work(
@@ -768,8 +982,272 @@ def preflight_training(
     }
 
 
+def _training_monitoring_values(interval):
+    rewards = interval["rewards"]
+    rolling = interval["rolling_rewards"]
+    q_summaries = interval["q_summaries"]
+    td_errors = interval["td_errors"]
+    values = {
+        "mean_reward": float(np.mean(rewards)) if rewards else "",
+        "rolling_reward": float(np.mean(rolling)) if rolling else "",
+        "total_reward": float(np.sum(rewards)) if rewards else 0.0,
+        **interval["reward_components"],
+        "q_mean": "",
+        "q_max": "",
+        "q_min": "",
+        "q_range": "",
+        "td_error_mean": float(np.mean(td_errors)) if len(td_errors) else "",
+        "td_error_p95": (
+            float(np.percentile(td_errors, 95.0)) if len(td_errors) else ""
+        ),
+    }
+    if q_summaries:
+        q_mins, q_maxes, q_means = zip(*q_summaries)
+        values.update({
+            "q_mean": float(np.mean(q_means)),
+            "q_max": float(max(q_maxes)),
+            "q_min": float(min(q_mins)),
+        })
+        values["q_range"] = values["q_max"] - values["q_min"]
+    return values
+
+
+def _overall_cpu_utilization(runtime, time_sim):
+    """Return current system-wide reserved CPU divided by total CPU capacity."""
+
+    capacities = {
+        node: runtime.calendar.node_capacity(node)
+        for node in runtime.infrastructure.compute_nodes
+    }
+    total_capacity = float(sum(capacities.values()))
+    if total_capacity <= 0.0:
+        return 0.0
+    used_cpu = sum(
+        allocation.amount
+        for allocation in runtime.calendar.snapshot().cpu_calendar_view
+        if allocation.resource_id in capacities
+        and allocation.interval_sim.contains(time_sim)
+    )
+    return float(used_cpu / total_capacity)
+
+
 def _checkpoint_path(output):
     return output.with_name(output.stem + ".last.pt")
+
+
+def _model_artifact_payload(runtime, loop, *, cycle, seed, device, run_config):
+    metadata = _metadata(runtime)
+    return {
+        "model_state_dict": runtime.candidate_q_network.state_dict(),
+        "target_state_dict": loop.target.state_dict(),
+        "optimizer_state_dict": loop.trainer.optimizer.state_dict(),
+        "metadata": asdict(metadata),
+        "model_id": metadata.model_id,
+        "training_steps": cycle,
+        "transition_count": loop.transition_count,
+        "update_count": loop.update_count,
+        "mean_loss": float(np.mean(loop.losses)) if loop.losses else None,
+        "epsilon": loop.policy.epsilon,
+        "seed": seed,
+        "device": device,
+        "run_config": run_config,
+        "config_hash": _canonical_hash(run_config),
+        "training_monitoring_schema_version": "1.0",
+    }
+
+
+def _save_model_artifact(
+    path, runtime, loop, *, cycle, seed, device, run_config
+):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    torch.save(
+        _model_artifact_payload(
+            runtime,
+            loop,
+            cycle=cycle,
+            seed=seed,
+            device=device,
+            run_config=run_config,
+        ),
+        temporary,
+    )
+    os.replace(temporary, path)
+    return path
+
+
+def _load_task_trace(path):
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    rows = payload.get("tasks") if isinstance(payload, dict) else payload
+    if not isinstance(rows, list):
+        raise ValueError("validation task trace must contain a JSON task list")
+    return tuple(TaskSpec.from_mapping(row) for row in rows)
+
+
+def _generate_fixed_validation_trace(cutoff, seed):
+    from v1.evaluate_v1 import _generate_trace
+
+    with _preserve_rng_state():
+        runtime = create_v1_runtime(
+            policy_name="earliest_feasible",
+            forecast_end_sim=cutoff + config.V1_MAX_FORECAST_LOOKAHEAD_SIM,
+            random_seed=seed,
+            device="cpu",
+        )
+        return _generate_trace(runtime, cutoff, seed)
+
+
+def _write_validation_trace(path, trace, *, cutoff, seed):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    task_rows = []
+    for task in trace:
+        row = asdict(task)
+        row["sla_type"] = task.sla_type.value
+        task_rows.append(row)
+    payload = {
+        "schema_version": "1.0",
+        "validation_seed": seed,
+        "arrival_cutoff_sim": cutoff,
+        "tasks": task_rows,
+    }
+    path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False),
+        encoding="utf-8",
+    )
+    return path
+
+
+def _metric_value(metric):
+    return "" if metric is None or metric.value is None else float(metric.value)
+
+
+def _validation_metrics_row(
+    report,
+    *,
+    cycle,
+    time_sim,
+    checkpoint_path,
+    validation_seed,
+    validation_cutoff,
+):
+    metrics = report.metrics
+    diagnostics = report.diagnostics or {}
+    task_summary = diagnostics.get("task_summary", {})
+    runtime_summary = diagnostics.get("runtime_summary", {})
+    expired_rate = ""
+    if metrics is not None and metrics.arrival_count:
+        expired_rate = metrics.expired_count / metrics.arrival_count
+    row = {
+        "cycle": cycle,
+        "time_sim": time_sim,
+        "status": report.status.value,
+        "checkpoint_path": str(checkpoint_path),
+        "validation_seed": validation_seed,
+        "arrival_cutoff_sim": validation_cutoff,
+        "task_trace_hash": report.metadata.task_trace_hash,
+        "completion_rate": (
+            "" if metrics is None else _metric_value(metrics.completion_rate)
+        ),
+        # In v1, missing the latest-start SLA boundary terminates as EXPIRED.
+        # Keep both names so monitoring is explicit without introducing a new
+        # formal metric definition.
+        "sla_violation_rate": expired_rate,
+        "expired_rate": expired_rate,
+        "start_delay_p95_sim": task_summary.get(
+            "start_delay_sim", {}
+        ).get("p95", ""),
+        "cost_yuan_per_completed_cpu_hour": (
+            ""
+            if metrics is None
+            else _metric_value(metrics.cost_yuan_per_completed_cpu_hour)
+        ),
+        "task_green_coverage": (
+            ""
+            if metrics is None
+            else _metric_value(metrics.completed_task_green_coverage)
+        ),
+        "system_green_absorption": (
+            ""
+            if metrics is None
+            else _metric_value(metrics.system_green_absorption_rate)
+        ),
+        "active_wait_positive_benefit_rate": (
+            ""
+            if metrics is None
+            else _metric_value(
+                metrics.active_wait_metrics.positive_benefit_rate
+            )
+        ),
+        "decision_wall_p95_seconds": task_summary.get(
+            "decision_wall_seconds", {}
+        ).get("p95", ""),
+        "evaluation_wall_seconds": runtime_summary.get(
+            "total_wall_seconds", ""
+        ),
+    }
+    return {
+        key: "" if value is None else value for key, value in row.items()
+    }
+
+
+def _run_fixed_validation(
+    *,
+    snapshot_path,
+    report_path,
+    cycle,
+    time_sim,
+    trace,
+    validation_seed,
+    validation_cutoff,
+    validation_safety_cap,
+    device,
+    candidate_chunk_size,
+    system_version,
+):
+    from v1.evaluate_v1 import run_evaluation
+
+    with _preserve_rng_state():
+        report = run_evaluation(
+            "candidate_dqn",
+            validation_cutoff,
+            validation_seed,
+            validation_safety_cap,
+            snapshot_path,
+            device=device,
+            candidate_chunk_size=candidate_chunk_size,
+            system_version=system_version,
+            audit_mode="final",
+            task_trace=trace,
+            # Training-checkpoint validation retains its existing zero-warm-up
+            # fixture until the separate training warm-up runner is introduced.
+            warmup_days=0.0,
+        )
+    row = _validation_metrics_row(
+        report,
+        cycle=cycle,
+        time_sim=time_sim,
+        checkpoint_path=snapshot_path,
+        validation_seed=validation_seed,
+        validation_cutoff=validation_cutoff,
+    )
+    report_path = Path(report_path)
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(
+        json.dumps(
+            {
+                "layer": "validation",
+                "metric_source": "v1.evaluate_v1.run_evaluation",
+                "metrics": row,
+            },
+            ensure_ascii=False,
+            indent=2,
+            allow_nan=False,
+        ),
+        encoding="utf-8",
+    )
+    return row
 
 
 def _save_checkpoint(path, runtime, loop, *, cycle, current_time, seed, run_config):
@@ -877,8 +1355,28 @@ def _load_checkpoint(
 def _append_log(path, row):
     path.parent.mkdir(parents=True, exist_ok=True)
     exists = path.exists() and path.stat().st_size > 0
+    fieldnames = list(row)
+    if exists:
+        with path.open("r", newline="", encoding="utf-8-sig") as handle:
+            reader = csv.DictReader(handle)
+            existing_fields = list(reader.fieldnames or ())
+            if existing_fields != fieldnames:
+                historical_rows = list(reader)
+                fieldnames = existing_fields + [
+                    field for field in fieldnames if field not in existing_fields
+                ]
+                with path.open(
+                    "w", newline="", encoding="utf-8"
+                ) as migrated:
+                    writer = csv.DictWriter(
+                        migrated, fieldnames=fieldnames, extrasaction="ignore"
+                    )
+                    writer.writeheader()
+                    writer.writerows(historical_rows)
     with path.open("a", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=tuple(row))
+        writer = csv.DictWriter(
+            handle, fieldnames=fieldnames, extrasaction="ignore"
+        )
         if not exists:
             writer.writeheader()
         writer.writerow(row)
@@ -898,6 +1396,14 @@ def run_training(
     checkpoint_every=None,
     log_every=None,
     invariant_check_every=None,
+    reward_rolling_window=DEFAULT_REWARD_ROLLING_WINDOW,
+    validation_every=None,
+    validation_cutoff=DEFAULT_VALIDATION_CUTOFF_SIM,
+    validation_seed=None,
+    validation_trace_path=None,
+    validation_safety_cap=DEFAULT_VALIDATION_SAFETY_CAP,
+    enable_validation=True,
+    generate_plots=True,
     resume_path=None,
     allow_large_run=False,
     allow_uncalibrated_objective=False,
@@ -906,6 +1412,7 @@ def run_training(
     profile_output_path=None,
     skip_idle_cycles=None,
     system_version=None,
+    warmup_days=None,
 ):
     if isinstance(steps, bool) or not isinstance(steps, int) or steps < 0:
         raise ValueError("steps must be a non-negative integer")
@@ -917,6 +1424,12 @@ def run_training(
         skip_idle_cycles = system_version.startswith("2")
     if not isinstance(skip_idle_cycles, bool):
         raise ValueError("skip_idle_cycles must be a boolean")
+    warmup_days = (
+        config.WARMUP_DAYS
+        if warmup_days is None else float(warmup_days)
+    )
+    if not np.isfinite(warmup_days) or warmup_days < 0.0:
+        raise ValueError("warmup_days must be finite and non-negative")
     chunk_size = _positive_int(
         "candidate_chunk_size",
         config.V1_CANDIDATE_CHUNK_SIZE
@@ -950,8 +1463,39 @@ def run_training(
         config.V1_INVARIANT_CHECK_INTERVAL_CYCLES
         if invariant_check_every is None else invariant_check_every,
     )
+    reward_rolling_window = _positive_int(
+        "reward_rolling_window", reward_rolling_window
+    )
+    if not isinstance(enable_validation, bool):
+        raise ValueError("enable_validation must be a boolean")
+    if not isinstance(generate_plots, bool):
+        raise ValueError("generate_plots must be a boolean")
+    if enable_validation:
+        validation_every = _positive_int(
+            "validation_every",
+            checkpoint_every
+            if validation_every is None else validation_every,
+        )
+        validation_cutoff = float(validation_cutoff)
+        if not np.isfinite(validation_cutoff) or validation_cutoff <= 0.0:
+            raise ValueError("validation_cutoff must be positive and finite")
+        validation_safety_cap = _positive_int(
+            "validation_safety_cap", validation_safety_cap
+        )
+        validation_seed = (
+            seed + 1000003 if validation_seed is None else int(validation_seed)
+        )
     output = Path(output_path)
     log_path = output.with_name(output.stem + ".training.csv")
+    validation_log_path = output.with_name(output.stem + ".validation.csv")
+    validation_trace_output_path = output.with_name(
+        output.stem + ".validation.trace.json"
+    )
+    validation_checkpoint_dir = output.with_name(
+        output.stem + ".checkpoints"
+    )
+    validation_report_dir = output.with_name(output.stem + ".validation")
+    curve_dir = output.with_name(output.stem + ".curves")
     profiler = TrainingPerformanceProfiler() if profile else None
     profile_path = (
         Path(profile_output_path)
@@ -966,9 +1510,15 @@ def run_training(
         bootstrap_candidate_limit=bootstrap_candidate_limit,
         invariant_check_every=invariant_check_every,
         skip_idle_cycles=skip_idle_cycles,
+        warmup_days=warmup_days,
         SYSTEM_VERSION=system_version,
     )
-    horizon = steps * config.SCHEDULING_CYCLE + config.V1_MAX_FORECAST_LOOKAHEAD_SIM
+    warmup_duration = warmup_days * config.TRAFFIC_DAY_DURATION_IN_SIM
+    horizon = (
+        warmup_duration
+        + steps * config.SCHEDULING_CYCLE
+        + config.V1_MAX_FORECAST_LOOKAHEAD_SIM
+    )
 
     if run_preflight and resume_path is None:
         report = preflight_training(
@@ -1044,6 +1594,84 @@ def run_training(
         start_cycle = 0
         current = 0.0
 
+        total_capacity = sum(
+            runtime.calendar.node_capacity(node)
+            for node in runtime.infrastructure.compute_nodes
+        )
+        current, warmup_cycle_count = _run_training_warmup(
+            runtime,
+            loop,
+            warmup_days=warmup_days,
+            total_capacity=total_capacity,
+            invariant_check_every=invariant_check_every,
+            profiler=profiler,
+        )
+        print(json.dumps({
+            "training_warmup": {
+                "warmup_days": warmup_days,
+                "warmup_cycle_count": warmup_cycle_count,
+                "measurement_start_sim": current,
+                "task_count": runtime.scheduler.state_machine.task_count,
+                "replay_size": len(loop.replay),
+                "transition_count": loop.transition_count,
+                "update_count": loop.update_count,
+            }
+        }, ensure_ascii=False))
+
+    loop.ensure_monitoring_state(reward_rolling_window)
+    validation_trace = None
+    if enable_validation and steps > 0:
+        if validation_trace_path is not None:
+            validation_trace = _load_task_trace(validation_trace_path)
+        elif resume_path is not None and validation_trace_output_path.is_file():
+            validation_trace = _load_task_trace(validation_trace_output_path)
+        else:
+            validation_trace = _generate_fixed_validation_trace(
+                validation_cutoff, validation_seed
+            )
+        if any(
+            task.arrival_time_sim >= validation_cutoff
+            for task in validation_trace
+        ):
+            raise ValueError(
+                "validation task trace contains arrivals outside validation cutoff"
+            )
+        _write_validation_trace(
+            validation_trace_output_path,
+            validation_trace,
+            cutoff=validation_cutoff,
+            seed=validation_seed,
+        )
+
+    def run_validation_checkpoint(cycle, time_sim):
+        snapshot_path = validation_checkpoint_dir / f"step_{cycle:09d}.pt"
+        report_path = validation_report_dir / f"step_{cycle:09d}.json"
+        _save_model_artifact(
+            snapshot_path,
+            runtime,
+            loop,
+            cycle=cycle,
+            seed=seed,
+            device=device,
+            run_config=run_config,
+        )
+        validation_row = _run_fixed_validation(
+            snapshot_path=snapshot_path,
+            report_path=report_path,
+            cycle=cycle,
+            time_sim=time_sim,
+            trace=validation_trace,
+            validation_seed=validation_seed,
+            validation_cutoff=validation_cutoff,
+            validation_safety_cap=validation_safety_cap,
+            device=device,
+            candidate_chunk_size=chunk_size,
+            system_version=system_version,
+        )
+        _append_log(validation_log_path, validation_row)
+        print(json.dumps({"validation": validation_row}, ensure_ascii=False))
+        return validation_row
+
     forecast_end = v1_runtime_forecast_end(runtime)
 
     total_capacity = sum(
@@ -1115,17 +1743,24 @@ def run_training(
         if completed_cycle % log_every == 0 or completed_cycle == steps:
             wall = time.perf_counter() - interval_wall_start
             recent_losses = loop.losses[interval_losses:]
+            monitoring = _training_monitoring_values(
+                loop.consume_monitoring_interval()
+            )
             row = {
                 "cycle": completed_cycle,
                 "time_sim": current,
                 "tasks": runtime.scheduler.state_machine.task_count,
-                "transitions": loop.transition_count,
-                "updates": loop.update_count,
-                "replay_size": len(loop.replay),
-                "epsilon": loop.policy.epsilon,
+                "overall_cpu_utilization": _overall_cpu_utilization(
+                    runtime, current
+                ),
                 "mean_loss": (
                     float(np.mean(recent_losses)) if recent_losses else ""
                 ),
+                **monitoring,
+                "epsilon": loop.policy.epsilon,
+                "replay_size": len(loop.replay),
+                "transitions": loop.transition_count,
+                "updates": loop.update_count,
                 "candidates": loop.candidate_count,
                 "candidates_since_log": loop.candidate_count - interval_candidates,
                 "wall_seconds_since_log": wall,
@@ -1158,6 +1793,17 @@ def run_training(
                     "checkpoint_seconds",
                     time.perf_counter() - checkpoint_started,
                 )
+        if (
+            validation_trace is not None
+            and completed_cycle < steps
+            and completed_cycle % validation_every == 0
+        ):
+            validation_started = time.perf_counter()
+            run_validation_checkpoint(completed_cycle, current)
+            validation_elapsed = time.perf_counter() - validation_started
+            # Validation is an isolated observation layer and is intentionally
+            # excluded from the training throughput interval.
+            interval_wall_start += validation_elapsed
 
     # A resume checkpoint must represent the online state at the requested
     # cycle boundary. Settlement advances physical time to drain all accepted
@@ -1184,31 +1830,36 @@ def run_training(
         "training_process_cycle_count",
         lambda: loop.finalize(current),
     )
-    metadata = _metadata(runtime)
-    output.parent.mkdir(parents=True, exist_ok=True)
     artifact_started = time.perf_counter()
-    torch.save({
-        "model_state_dict": runtime.candidate_q_network.state_dict(),
-        "target_state_dict": loop.target.state_dict(),
-        "optimizer_state_dict": loop.trainer.optimizer.state_dict(),
-        "metadata": asdict(metadata),
-        "model_id": metadata.model_id,
-        "training_steps": steps,
-        "transition_count": loop.transition_count,
-        "update_count": loop.update_count,
-        "mean_loss": float(np.mean(loop.losses)) if loop.losses else None,
-        "epsilon": loop.policy.epsilon,
-        "seed": seed,
-        "device": device,
-        "run_config": run_config,
-        "config_hash": _canonical_hash(run_config),
-    }, output)
+    _save_model_artifact(
+        output,
+        runtime,
+        loop,
+        cycle=steps,
+        seed=seed,
+        device=device,
+        run_config=run_config,
+    )
     if profiler is not None:
         profiler.add(
             "artifact_save_seconds", time.perf_counter() - artifact_started
         )
         total_profile_wall = time.perf_counter() - profile_wall_start
         _write_profile_outputs(profiler, total_profile_wall, profile_path)
+    if validation_trace is not None:
+        run_validation_checkpoint(steps, current)
+    if generate_plots and steps > 0 and log_path.is_file():
+        from v1.plot_training_v1 import generate_training_curves
+
+        curve_paths = generate_training_curves(
+            log_path,
+            validation_log_path,
+            curve_dir,
+        )
+        print(json.dumps(
+            {"training_curves": [str(path) for path in curve_paths]},
+            ensure_ascii=False,
+        ))
     return output
 
 
@@ -1228,6 +1879,12 @@ def main(
         )
     )
     parser.add_argument("--steps", type=int, default=config.MAX_STEPS)
+    parser.add_argument(
+        "--warmup-days",
+        type=float,
+        default=config.WARMUP_DAYS,
+        help="state-only warm-up before training step 0 (simulated days)",
+    )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--output", default=default_output)
     parser.add_argument("--resume")
@@ -1262,6 +1919,48 @@ def main(
         ),
     )
     parser.add_argument("--log-every", type=int, default=config.V1_LOG_INTERVAL_CYCLES)
+    parser.add_argument(
+        "--reward-rolling-window",
+        type=int,
+        default=DEFAULT_REWARD_ROLLING_WINDOW,
+        help="number of latest transitions used by rolling_reward",
+    )
+    parser.add_argument(
+        "--validation-every",
+        type=int,
+        help="validation interval in cycles (default: checkpoint interval)",
+    )
+    parser.add_argument(
+        "--validation-cutoff",
+        type=float,
+        default=DEFAULT_VALIDATION_CUTOFF_SIM,
+        help="fixed validation trace arrival cutoff in simulation units",
+    )
+    parser.add_argument(
+        "--validation-seed",
+        type=int,
+        help="fixed validation seed (default: training seed + 1000003)",
+    )
+    parser.add_argument(
+        "--validation-trace",
+        type=Path,
+        help="optional fixed Task Trace JSON; otherwise generated once",
+    )
+    parser.add_argument(
+        "--validation-safety-cap",
+        type=int,
+        default=DEFAULT_VALIDATION_SAFETY_CAP,
+    )
+    parser.add_argument(
+        "--no-validation",
+        action="store_true",
+        help="disable the training-time validation layer",
+    )
+    parser.add_argument(
+        "--no-plots",
+        action="store_true",
+        help="disable automatic training/validation curve generation",
+    )
     parser.add_argument(
         "--invariant-check-every",
         type=int,
@@ -1322,6 +2021,14 @@ def main(
             checkpoint_every=args.checkpoint_every,
             log_every=args.log_every,
             invariant_check_every=args.invariant_check_every,
+            reward_rolling_window=args.reward_rolling_window,
+            validation_every=args.validation_every,
+            validation_cutoff=args.validation_cutoff,
+            validation_seed=args.validation_seed,
+            validation_trace_path=args.validation_trace,
+            validation_safety_cap=args.validation_safety_cap,
+            enable_validation=not args.no_validation,
+            generate_plots=not args.no_plots,
             resume_path=args.resume,
             allow_large_run=args.allow_large_run,
             allow_uncalibrated_objective=args.allow_uncalibrated_objective,
@@ -1330,8 +2037,29 @@ def main(
             profile_output_path=args.profile_output,
             skip_idle_cycles=args.skip_idle_cycles,
             system_version=effective_system_version,
+            warmup_days=args.warmup_days,
         )
-    completed = {"status": "complete", "model": str(path)}
+    completed = {
+        "status": "complete",
+        "model": str(path),
+        "training_log": str(path.with_name(path.stem + ".training.csv")),
+    }
+    if not args.no_validation and args.steps > 0:
+        completed.update({
+            "validation_log": str(
+                path.with_name(path.stem + ".validation.csv")
+            ),
+            "validation_trace": str(
+                path.with_name(path.stem + ".validation.trace.json")
+            ),
+            "validation_checkpoints": str(
+                path.with_name(path.stem + ".checkpoints")
+            ),
+        })
+    if not args.no_plots and args.steps > 0:
+        completed["training_curves"] = str(
+            path.with_name(path.stem + ".curves")
+        )
     if args.profile:
         completed["profile"] = str(
             Path(args.profile_output)

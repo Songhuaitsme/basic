@@ -630,8 +630,19 @@ class ExogenousEnergyAccounting:
         self,
         reservations: Iterable[Reservation],
         accounting_interval: Optional[TimeInterval] = None,
+        *,
+        clip_to_accounting_interval: bool = False,
     ) -> AccountingReport:
         items = tuple(reservations)
+        if clip_to_accounting_interval:
+            if accounting_interval is None:
+                raise ValueError(
+                    "clip_to_accounting_interval requires accounting_interval"
+                )
+            items = tuple(
+                item for item in items
+                if item.compute_interval_sim.overlaps(accounting_interval)
+            )
         by_node = {}
         for reservation in items:
             by_node.setdefault(reservation.target_node, []).append(reservation)
@@ -646,11 +657,14 @@ class ExogenousEnergyAccounting:
             tariff, green = self._forecasts(node)
             start = min(item.compute_interval_sim.start_sim for item in node_items)
             end = max(item.compute_interval_sim.end_sim for item in node_items)
+            if clip_to_accounting_interval:
+                start = max(start, accounting_interval.start_sim)
+                end = min(end, accounting_interval.end_sim)
             envelope = TimeInterval(start, end)
             boundaries = set(tariff.boundaries(envelope)) | set(green.boundaries(envelope))
             for item in node_items:
-                boundaries.add(item.compute_interval_sim.start_sim)
-                boundaries.add(item.compute_interval_sim.end_sim)
+                boundaries.add(max(start, item.compute_interval_sim.start_sim))
+                boundaries.add(min(end, item.compute_interval_sim.end_sim))
             ordered = sorted(boundaries)
             node_bill = 0.0
             node_green = 0.0
@@ -690,8 +704,20 @@ class ExogenousEnergyAccounting:
 
         for item in sorted(items, key=lambda value: value.task_id):
             power = self.power_model.task_power_mw(item.cpu_amount)
+            duration_sim = item.compute_interval_sim.duration_sim
+            if clip_to_accounting_interval:
+                duration_sim = (
+                    min(
+                        accounting_interval.end_sim,
+                        item.compute_interval_sim.end_sim,
+                    )
+                    - max(
+                        accounting_interval.start_sim,
+                        item.compute_interval_sim.start_sim,
+                    )
+                )
             energy = power * self.time_converter.sim_to_hours(
-                item.compute_interval_sim.duration_sim
+                duration_sim
             )
             records.append(TaskAccountingRecord(
                 item.reservation_id,

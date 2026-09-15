@@ -8,7 +8,7 @@ from typing import Iterable, Mapping, Optional, Tuple
 from v1.accounting.energy import AccountingReport
 from v1.audit_v1 import scan_scheduler_invariants
 from v1.domain.models import TaskSpec, TaskState
-from v1.domain.reservations import TimeInterval
+from v1.domain.reservations import TimeInterval, canonical_edge
 from v1.domain.units import TimeConverter, finite_number
 from v1.scheduler.v1_scheduler import SchedulingCycleResult, V1Scheduler
 
@@ -34,8 +34,10 @@ class EvaluationMetadata:
     candidate_mode: str
     arrival_cutoff_sim: float
     evaluation_start_sim: float
+    warmup_start_sim: float
     final_settlement_time_sim: float
     evaluation_safety_cap: int
+    warmup_days: Optional[float] = None
     percentile_method: str = "linear"
     code_hash: str = hashlib.sha256(b"").hexdigest()
     model_hash: str = hashlib.sha256(b"").hexdigest()
@@ -124,6 +126,9 @@ class EvaluationReport:
     task_records: Tuple[TaskEvaluationRecord, ...]
     decision_records: tuple
     accounting_report: Optional[AccountingReport]
+    measured_task_ids: Tuple[str, ...] = ()
+    system_accounting_report: Optional[AccountingReport] = None
+    warmup_snapshot: Optional[Mapping[str, object]] = None
     diagnostics: Optional[Mapping[str, object]] = None
 
 
@@ -187,27 +192,41 @@ class EvaluationRunner:
         *,
         arrival_cutoff_sim: float,
         evaluation_start_sim: float = 0.0,
+        warmup_start_sim: float = 0.0,
         seed: int = 0,
     ) -> EvaluationReport:
+        warmup_start = finite_number("warmup_start_sim", warmup_start_sim)
         start = finite_number("evaluation_start_sim", evaluation_start_sim)
         cutoff = finite_number("arrival_cutoff_sim", arrival_cutoff_sim)
+        if start < warmup_start:
+            raise ValueError("evaluation start cannot precede warm-up start")
         if cutoff < start:
             raise ValueError("arrival cutoff cannot precede evaluation start")
-        trace = tuple(sorted(
+        full_trace = tuple(sorted(
             (
                 task for task in tasks
-                if start <= task.arrival_time_sim < cutoff
+                if warmup_start <= task.arrival_time_sim < cutoff
             ),
             key=lambda item: (item.arrival_time_sim, item.task_id),
         ))
-        pending_arrivals = list(trace)
+        measured_trace = tuple(
+            task for task in full_trace
+            if start <= task.arrival_time_sim < cutoff
+        )
+        measured_task_ids = tuple(task.task_id for task in measured_trace)
+        measured_task_id_set = set(measured_task_ids)
+        pending_arrivals = list(full_trace)
         results = []
         accepted = set()
-        phase_counts = {"arrival": 0, "admission_settlement": 0, "execution_drain": 0}
-        current = start
+        phase_counts = {"warmup": 0, "measurement": 0, "drain": 0}
+        current = warmup_start
         last_run_time = None
+        warmup_snapshot = (
+            self._warmup_snapshot(start)
+            if abs(warmup_start - start) <= 1e-12 else None
+        )
 
-        def run_batch(time_sim, arrivals=(), phase="arrival"):
+        def run_batch(time_sim, arrivals=(), phase="measurement"):
             nonlocal current, last_run_time
             if len(results) >= self.safety_cap:
                 return False
@@ -230,7 +249,8 @@ class EvaluationRunner:
                     accepted.add(decision.task_id)
             return True
 
-        # Phase 1: arrivals before the frozen cutoff plus all physical events.
+        # Warm-up and Measurement share one scheduler/runtime/EventEngine.  T0
+        # is only a cohort/statistics boundary; no state is reset there.
         while current < cutoff or pending_arrivals:
             next_arrival = (
                 pending_arrivals[0].arrival_time_sim
@@ -238,29 +258,52 @@ class EvaluationRunner:
             )
             next_event = self.scheduler.event_engine.next_event_time_sim
             choices = [cutoff]
+            if current < start - 1e-12:
+                choices.append(start)
             if next_arrival is not None and next_arrival < cutoff:
                 choices.append(next_arrival)
             if next_event is not None and next_event <= cutoff:
                 choices.append(next_event)
             next_time = min(value for value in choices if value >= current - 1e-12)
             arrivals_now = []
+            boundary_only = (
+                current < start - 1e-12
+                and abs(next_time - start) <= 1e-12
+            )
             while (
                 pending_arrivals
                 and abs(pending_arrivals[0].arrival_time_sim - next_time) <= 1e-12
                 and next_time < cutoff
+                and not boundary_only
             ):
                 arrivals_now.append(pending_arrivals.pop(0))
-            if not run_batch(next_time, arrivals_now, "arrival"):
-                return self._invalid(start, cutoff, seed, current, results, phase_counts)
+            phase = (
+                "warmup"
+                if next_time < start - 1e-12 or boundary_only
+                else "measurement"
+            )
+            if next_time >= cutoff - 1e-12:
+                phase = "drain"
+            if not run_batch(next_time, arrivals_now, phase):
+                return self._invalid(
+                    warmup_start, start, cutoff, seed, current, results,
+                    phase_counts, measured_task_ids,
+                )
+            if boundary_only:
+                warmup_snapshot = self._warmup_snapshot(start)
             if next_time >= cutoff - 1e-12:
                 break
 
         if last_run_time is None or last_run_time < cutoff - 1e-12:
-            if not run_batch(cutoff, (), "arrival"):
-                return self._invalid(start, cutoff, seed, current, results, phase_counts)
+            if not run_batch(cutoff, (), "drain"):
+                return self._invalid(
+                    warmup_start, start, cutoff, seed, current, results,
+                    phase_counts, measured_task_ids,
+                )
 
-        # Phase 2: settle every arrived task's admission outcome.
-        while self._task_ids_in_states(self.UNADMITTED):
+        # Drain: stop arrivals and keep advancing the same live scheduler until
+        # every Measurement-cohort task reaches a terminal state.
+        while self._task_ids_in_states(self.NONTERMINAL, measured_task_id_set):
             next_deadline = (
                 self.scheduler.queue_manager.next_uncommitted_deadline_sim()
             )
@@ -274,31 +317,44 @@ class EvaluationRunner:
             if next_event is not None and next_event >= current - 1e-12:
                 choices.append(next_event)
             if not choices:
-                return self._invalid(start, cutoff, seed, current, results, phase_counts)
+                return self._invalid(
+                    warmup_start, start, cutoff, seed, current, results,
+                    phase_counts, measured_task_ids,
+                )
             next_time = min(choices)
-            if not run_batch(next_time, (), "admission_settlement"):
-                return self._invalid(start, cutoff, seed, current, results, phase_counts)
+            if not run_batch(next_time, (), "drain"):
+                return self._invalid(
+                    warmup_start, start, cutoff, seed, current, results,
+                    phase_counts, measured_task_ids,
+                )
 
-        # Phase 3: no arrivals/admission work; drain accepted reservations.
-        while self._task_ids_in_states(self.ACCEPTED_ACTIVE):
-            next_event = self.scheduler.event_engine.next_event_time_sim
-            if next_event is None or next_event < current - 1e-12:
-                return self._invalid(start, cutoff, seed, current, results, phase_counts)
-            if not run_batch(next_event, (), "execution_drain"):
-                return self._invalid(start, cutoff, seed, current, results, phase_counts)
-
-        unsettled = self._task_ids_in_states(self.NONTERMINAL)
+        unsettled = self._task_ids_in_states(
+            self.NONTERMINAL, measured_task_id_set
+        )
         if unsettled:
-            return self._invalid(start, cutoff, seed, current, results, phase_counts)
+            return self._invalid(
+                warmup_start, start, cutoff, seed, current, results,
+                phase_counts, measured_task_ids,
+            )
         # Every valid formal result receives a final full audit regardless of
         # the runtime audit cadence.
         self._assert_invariants(results[-1] if results else None)
-        interval_end = current
-        if interval_end <= start:
-            interval_end = cutoff
-        accounting = self.scheduler.finalize_metrics_after_full_settlement(
-            accounting_interval=TimeInterval(start, interval_end)
-            if interval_end > start else None
+        all_reservations = tuple(self.scheduler.calendar.reservations())
+        full_accounting = self.scheduler.metrics_ledger.accounting.realize(
+            all_reservations
+        )
+        measurement_interval = (
+            TimeInterval(start, cutoff) if cutoff > start else None
+        )
+        system_accounting = self.scheduler.metrics_ledger.accounting.realize(
+            all_reservations,
+            accounting_interval=measurement_interval,
+            clip_to_accounting_interval=True,
+        ) if measurement_interval is not None else None
+        accounting = self._cohort_accounting(
+            full_accounting,
+            measured_task_id_set,
+            system_accounting,
         )
         outcomes = tuple(
             TaskOutcome(
@@ -306,25 +362,33 @@ class EvaluationRunner:
                 self.scheduler.state_machine.runtime(task.task_id).state,
                 self.calendar_reservation_for(task.task_id),
             )
-            for task in trace
+            for task in measured_trace
         )
         decision_records = tuple(
             decision
             for cycle_result in results
             for decision in cycle_result.decisions
+            if decision.task_id in measured_task_id_set
         )
+        cohort_state_counts = {
+            state: sum(
+                self.scheduler.state_machine.runtime(task_id).state is state
+                for task_id in measured_task_ids
+            )
+            for state in TaskState
+        }
         metrics = build_seed_metrics(
             outcomes,
-            accepted,
-            self.scheduler.state_machine.count_by_state(),
+            accepted & measured_task_id_set,
+            cohort_state_counts,
             accounting,
             self.time_converter,
             decision_records,
         )
-        task_records = self._task_records(trace, accounting)
+        task_records = self._task_records(measured_trace, accounting)
         return EvaluationReport(
             EvaluationStatus.VALID,
-            self._metadata(start, cutoff, seed, current),
+            self._metadata(warmup_start, start, cutoff, seed, current),
             metrics,
             (),
             tuple(results),
@@ -332,6 +396,9 @@ class EvaluationRunner:
             task_records,
             decision_records,
             accounting,
+            measured_task_ids,
+            system_accounting,
+            warmup_snapshot or self._warmup_snapshot(start),
         )
 
     def calendar_reservation_for(self, task_id: str):
@@ -340,8 +407,11 @@ class EvaluationRunner:
             return None
         return self.scheduler.calendar.get_reservation(runtime.reservation_id)
 
-    def _task_ids_in_states(self, states):
-        return self.scheduler.state_machine.task_ids_in_states(states)
+    def _task_ids_in_states(self, states, cohort=None):
+        task_ids = self.scheduler.state_machine.task_ids_in_states(states)
+        if cohort is None:
+            return task_ids
+        return tuple(task_id for task_id in task_ids if task_id in cohort)
 
     def _assert_invariants(self, cycle_result=None):
         violations = scan_scheduler_invariants(self.scheduler, cycle_result)
@@ -351,7 +421,7 @@ class EvaluationRunner:
             )
             raise RuntimeError(f"v1.0 invariant gate failed: {detail}")
 
-    def _metadata(self, start, cutoff, seed, final_time):
+    def _metadata(self, warmup_start, start, cutoff, seed, final_time):
         values = dict(
             system_version=self.system_version,
             requirements_version="1.0",
@@ -365,17 +435,24 @@ class EvaluationRunner:
             candidate_mode=self.scheduler.candidate_generator.candidate_mode.value,
             arrival_cutoff_sim=cutoff,
             evaluation_start_sim=start,
+            warmup_start_sim=warmup_start,
             final_settlement_time_sim=final_time,
             evaluation_safety_cap=self.safety_cap,
         )
         values.update(self.metadata_context)
         return EvaluationMetadata(**values)
 
-    def _invalid(self, start, cutoff, seed, current, results, phase_counts):
-        unsettled = self._task_ids_in_states(self.NONTERMINAL)
+    def _invalid(
+        self, warmup_start, start, cutoff, seed, current, results,
+        phase_counts, measured_task_ids,
+    ):
+        measured_task_id_set = set(measured_task_ids)
+        unsettled = self._task_ids_in_states(
+            self.NONTERMINAL, measured_task_id_set
+        )
         return EvaluationReport(
             EvaluationStatus.INVALID_INCOMPLETE_SETTLEMENT,
-            self._metadata(start, cutoff, seed, current),
+            self._metadata(warmup_start, start, cutoff, seed, current),
             None,
             unsettled,
             tuple(results),
@@ -387,6 +464,117 @@ class EvaluationRunner:
                 for decision in cycle_result.decisions
             ),
             None,
+            tuple(measured_task_ids),
+            None,
+            None,
+        )
+
+    def _warmup_snapshot(self, time_sim):
+        snapshot = self.scheduler.calendar.snapshot()
+        state_counts = self.scheduler.state_machine.count_by_state()
+        nodes = self.scheduler.candidate_generator.compute_nodes
+        cpu_used = {
+            node: sum(
+                allocation.amount
+                for allocation in snapshot.cpu_calendar_view
+                if allocation.resource_id == node
+                and allocation.interval_sim.contains(time_sim)
+            )
+            for node in nodes
+        }
+        node_utilizations = {
+            node: cpu_used[node] / self.scheduler.calendar.node_capacity(node)
+            for node in nodes
+        }
+        graph = self.scheduler.candidate_generator.path_provider.graph
+        link_ids = tuple(sorted(
+            canonical_edge(edge) for edge in graph.edges
+            if self.scheduler.calendar.link_capacity(
+                canonical_edge(edge)
+            ) is not None
+        ))
+        link_utilizations = {
+            f"{edge[0]}--{edge[1]}": (
+                sum(
+                    allocation.amount
+                    for allocation in snapshot.link_calendar_view
+                    if allocation.resource_id == edge
+                    and allocation.interval_sim.contains(time_sim)
+                ) / self.scheduler.calendar.link_capacity(edge)
+            )
+            for edge in link_ids
+        }
+        future_cpu_reserved = sum(
+            allocation.amount * max(
+                0.0,
+                allocation.interval_sim.end_sim
+                - max(time_sim, allocation.interval_sim.start_sim),
+            )
+            for allocation in snapshot.cpu_calendar_view
+            if allocation.interval_sim.end_sim > time_sim
+        )
+        return {
+            "time_sim": time_sim,
+            "state_counts": {
+                state.value: state_counts[state] for state in TaskState
+            },
+            "queued_or_unadmitted_task_count": sum(
+                state_counts[state] for state in self.UNADMITTED
+            ),
+            "active_task_count": sum(
+                state_counts[state] for state in self.ACCEPTED_ACTIVE
+            ),
+            "future_cpu_reserved_cpu_sim": future_cpu_reserved,
+            "node_cpu_utilizations": node_utilizations,
+            "mean_node_cpu_utilization": (
+                sum(node_utilizations.values()) / len(node_utilizations)
+                if node_utilizations else 0.0
+            ),
+            "link_utilizations": link_utilizations,
+            "mean_link_utilization": (
+                sum(link_utilizations.values()) / len(link_utilizations)
+                if link_utilizations else 0.0
+            ),
+        }
+
+    @staticmethod
+    def _cohort_accounting(full_report, measured_task_ids, system_report):
+        records = tuple(
+            record for record in full_report.task_records
+            if record.task_id in measured_task_ids
+        )
+        node_bill = {}
+        node_green = {}
+        for record in records:
+            node_bill[record.target_node] = (
+                node_bill.get(record.target_node, 0.0)
+                + record.task_attributed_cost_yuan
+            )
+            node_green[record.target_node] = (
+                node_green.get(record.target_node, 0.0)
+                + record.task_attributed_green_energy_mwh
+            )
+        total_cost = sum(record.task_attributed_cost_yuan for record in records)
+        total_green = sum(
+            record.task_attributed_green_energy_mwh for record in records
+        )
+        if system_report is None:
+            return AccountingReport(
+                records, node_bill, node_green, total_cost, total_green,
+                0.0, 0.0,
+                full_report.system_green_absorption_rate.not_applicable(
+                    "empty measurement interval"
+                ),
+            )
+        return AccountingReport(
+            records,
+            node_bill,
+            node_green,
+            total_cost,
+            total_green,
+            system_report.system_green_supply_mwh,
+            system_report.system_green_idle_mwh,
+            system_report.system_green_absorption_rate,
         )
 
     def _task_records(self, tasks, accounting):

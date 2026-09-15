@@ -768,6 +768,10 @@ class CandidateDQNTrainer:
             self.online.parameters(), lr=positive_finite("learning_rate", learning_rate)
         )
         self.loss_fn = nn.SmoothL1Loss()
+        # Monitoring-only side channel.  ``train_batch`` keeps its historical
+        # float return contract while exposing the already-computed absolute
+        # TD errors to the training logger without a second forward pass.
+        self.last_td_errors = ()
         self.profiler = None
         self._next_feature_cache = OrderedDict()
         self._next_feature_cache_capacity = 5000
@@ -785,6 +789,8 @@ class CandidateDQNTrainer:
             self._next_feature_cache = OrderedDict()
         if "_next_feature_cache_capacity" not in self.__dict__:
             self._next_feature_cache_capacity = 5000
+        if "last_td_errors" not in self.__dict__:
+            self.last_td_errors = ()
 
     def clear_next_feature_cache(self):
         if not hasattr(self, "_next_feature_cache"):
@@ -1043,4 +1049,10 @@ class CandidateDQNTrainer:
                 "backpropagation_seconds",
                 time.perf_counter() - backward_started,
             )
+        self.last_td_errors = (
+            torch.abs(target_tensor - predicted)
+            .detach()
+            .cpu()
+            .numpy()
+        )
         return float(loss.item())

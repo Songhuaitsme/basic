@@ -98,6 +98,7 @@ def run_evaluation(
     audit_mode="full",
     audit_interval=500,
     task_trace=None,
+    warmup_days=None,
 ):
     system_version = str(
         config.SYSTEM_VERSION if system_version is None else system_version
@@ -118,7 +119,21 @@ def run_evaluation(
                 audit_mode=audit_mode,
                 audit_interval=audit_interval,
                 task_trace=task_trace,
+                warmup_days=warmup_days,
             )
+    warmup_days = (
+        config.WARMUP_DAYS
+        if warmup_days is None else float(warmup_days)
+    )
+    if not np.isfinite(warmup_days) or warmup_days < 0.0:
+        raise ValueError("warmup_days must be a finite non-negative number")
+    measurement_duration = float(cutoff)
+    if not np.isfinite(measurement_duration) or measurement_duration < 0.0:
+        raise ValueError("cutoff must be a finite non-negative duration")
+    measurement_start = (
+        warmup_days * config.TRAFFIC_DAY_DURATION_IN_SIM
+    )
+    measurement_end = measurement_start + measurement_duration
     if (
         (soft_tardiness_weight is not None or flexible_tardiness_weight is not None)
         and policy != "equal_weight"
@@ -145,7 +160,7 @@ def run_evaluation(
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    horizon = cutoff + config.V1_MAX_FORECAST_LOOKAHEAD_SIM
+    horizon = measurement_end + config.V1_MAX_FORECAST_LOOKAHEAD_SIM
     runtime = create_v1_runtime(
         policy_name=policy,
         forecast_end_sim=horizon,
@@ -189,11 +204,11 @@ def run_evaluation(
         runtime.scheduler.policy.epsilon = 0.0
         model_hash = hashlib.sha256(checkpoint_path.read_bytes()).hexdigest()
     trace = (
-        _generate_trace(runtime, cutoff, seed)
+        _generate_trace(runtime, measurement_end, seed)
         if task_trace is None
         else tuple(task_trace)
     )
-    if any(task.arrival_time_sim >= cutoff for task in trace):
+    if any(task.arrival_time_sim >= measurement_end for task in trace):
         raise ValueError("task trace contains arrivals outside the evaluation cutoff")
     # The configured lookahead is only an initial allocation.  A generated
     # task can legally start near the end of its SLA window and then execute
@@ -251,6 +266,7 @@ def run_evaluation(
         }),
         "tariff_mode": config.V1_TARIFF_MODE,
         "gamma_per_second": config.V1_GAMMA_PER_SECOND,
+        "warmup_days": warmup_days,
     }
     runner = EvaluationRunner(
         runtime.scheduler,
@@ -269,7 +285,8 @@ def run_evaluation(
     evaluation_started = time.perf_counter()
     report = runner.run_frozen_policy(
         trace,
-        arrival_cutoff_sim=cutoff,
+        arrival_cutoff_sim=measurement_end,
+        evaluation_start_sim=measurement_start,
         seed=seed,
     )
     evaluation_wall_seconds = time.perf_counter() - evaluation_started
@@ -327,6 +344,13 @@ def main(
         "--arrival-cutoff",
         type=float,
         default=config.TRAFFIC_DAY_DURATION_IN_SIM,
+        help="Measurement duration in simulation-time units",
+    )
+    parser.add_argument(
+        "--warmup-days",
+        type=float,
+        default=config.WARMUP_DAYS,
+        help="Warm-up duration in simulated traffic days (default: 1)",
     )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--safety-cap", type=int, default=1000000)
@@ -392,6 +416,7 @@ def main(
         audit_mode=args.audit,
         audit_interval=args.audit_interval,
         task_trace=task_trace,
+        warmup_days=args.warmup_days,
     )
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
