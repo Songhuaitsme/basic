@@ -60,6 +60,7 @@ def evaluation_command(
     audit_interval: int,
     report_mode: str,
     task_trace_input: Path,
+    warmup_days: float,
 ) -> list[str]:
     command = [
         sys.executable,
@@ -70,6 +71,8 @@ def evaluation_command(
         policy,
         "--arrival-cutoff",
         str(arrival_cutoff),
+        "--warmup-days",
+        str(warmup_days),
         "--seed",
         str(seed),
         "--safety-cap",
@@ -109,6 +112,7 @@ def _is_reusable_report(
     seed: int,
     arrival_cutoff: float,
     model_hash: str,
+    warmup_days: float,
 ) -> bool:
     try:
         report = json.loads(path.read_text(encoding="utf-8"))
@@ -120,7 +124,11 @@ def _is_reusable_report(
         and not report.get("unsettled_task_ids")
         and metadata.get("system_version") == "2.0"
         and metadata.get("seed") == seed
-        and metadata.get("arrival_cutoff_sim") == arrival_cutoff
+        and metadata.get("arrival_cutoff_sim") == (
+            arrival_cutoff
+            + warmup_days * config.TRAFFIC_DAY_DURATION_IN_SIM
+        )
+        and metadata.get("warmup_days") == warmup_days
     )
     if policy == "candidate_dqn":
         reusable = reusable and metadata.get("model_hash") == model_hash
@@ -172,43 +180,84 @@ def _validate_against_reference(
         )
 
 
+def _validate_against_fixed_trace(
+    report_path: Path,
+    trace_payload: dict,
+    *,
+    policy: str,
+    model_hash: str,
+) -> None:
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    metadata = report.get("metadata") or {}
+    mismatches = []
+    if metadata.get("task_trace_hash") != trace_payload["task_trace_hash"]:
+        mismatches.append("task_trace_hash")
+    expected_ids = sorted(
+        item["task_id"] for item in trace_payload["tasks"]
+        if item["arrival_time_sim"] >= trace_payload["measurement_start_sim"]
+    )
+    report_ids = sorted(
+        item.get("task_id") for item in report.get("task_records") or ()
+    )
+    if report_ids != expected_ids:
+        mismatches.append("measured_task_id_set")
+    if policy == "candidate_dqn" and metadata.get("model_hash") != model_hash:
+        mismatches.append("model_hash")
+    if mismatches:
+        raise EvaluationDataError(
+            f"{policy} does not match the shared warm-up/measurement trace: "
+            + ", ".join(mismatches)
+        )
+
+
 def _prepare_fixed_task_trace(
     path: Path,
     *,
     seed: int,
     arrival_cutoff: float,
     candidate_chunk_size: int,
-    reference: dict,
+    warmup_days: float,
+    reference: dict | None = None,
 ) -> dict:
+    measurement_start = warmup_days * config.TRAFFIC_DAY_DURATION_IN_SIM
+    trace_end = measurement_start + arrival_cutoff
     runtime = create_v1_runtime(
         policy_name="earliest_feasible",
         forecast_end_sim=(
-            arrival_cutoff + config.V1_MAX_FORECAST_LOOKAHEAD_SIM
+            trace_end + config.V1_MAX_FORECAST_LOOKAHEAD_SIM
         ),
         random_seed=seed,
         device="cpu",
         candidate_chunk_size=candidate_chunk_size,
     )
-    trace = _generate_trace(runtime, arrival_cutoff, seed)
+    trace = _generate_trace(runtime, trace_end, seed)
     trace_hash = _canonical_hash([asdict(task) for task in trace])
-    reference_metadata = reference.get("metadata") or {}
-    reference_ids = [
-        item.get("task_id") for item in reference.get("task_records") or ()
-    ]
-    trace_ids = [task.task_id for task in trace]
-    if trace_hash != reference_metadata.get("task_trace_hash"):
-        raise EvaluationDataError(
-            "generated fixed task trace does not match coordination_v2_seed42"
-        )
-    if sorted(trace_ids) != sorted(reference_ids):
-        raise EvaluationDataError(
-            "generated fixed task IDs do not match coordination_v2_seed42"
-        )
+    if reference is not None:
+        reference_metadata = reference.get("metadata") or {}
+        reference_ids = [
+            item.get("task_id") for item in reference.get("task_records") or ()
+        ]
+        trace_ids = [task.task_id for task in trace]
+        if trace_hash != reference_metadata.get("task_trace_hash"):
+            raise EvaluationDataError(
+                "generated fixed task trace does not match coordination_v2_seed42"
+            )
+        if sorted(trace_ids) != sorted(reference_ids):
+            raise EvaluationDataError(
+                "generated fixed task IDs do not match coordination_v2_seed42"
+            )
     payload = {
-        "source_reference": str(DEFAULT_REFERENCE_REPORT),
+        "source_reference": (
+            str(DEFAULT_REFERENCE_REPORT) if reference is not None else None
+        ),
         "seed": seed,
-        "arrival_cutoff_sim": arrival_cutoff,
+        "warmup_days": warmup_days,
+        "measurement_start_sim": measurement_start,
+        "arrival_cutoff_sim": trace_end,
         "task_count": len(trace),
+        "measured_task_count": sum(
+            task.arrival_time_sim >= measurement_start for task in trace
+        ),
         "task_trace_hash": trace_hash,
         "tasks": [_jsonable(asdict(task)) for task in trace],
     }
@@ -238,6 +287,11 @@ def main() -> None:
         default=DEFAULT_REFERENCE_REPORT,
         help="VALID coordination report whose exact task trace must be reused",
     )
+    parser.add_argument(
+        "--warmup-days",
+        type=float,
+        default=config.WARMUP_DAYS,
+    )
     parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
     parser.add_argument("--candidate-chunk-size", type=int, default=65_536)
     parser.add_argument("--audit", choices=("full", "periodic", "final"), default="periodic")
@@ -264,6 +318,8 @@ def main() -> None:
         parser.error("at least one seed is required")
     if args.arrival_cutoff <= 0.0:
         parser.error("--arrival-cutoff must be positive")
+    if args.warmup_days < 0.0:
+        parser.error("--warmup-days must be non-negative")
     if args.safety_cap <= 0:
         parser.error("--safety-cap must be positive")
     if args.candidate_chunk_size <= 0:
@@ -272,19 +328,23 @@ def main() -> None:
         parser.error("--audit-interval must be positive")
     repo_root = Path(__file__).resolve().parents[1]
     model_path = resolve_model_path(repo_root, args.model_path)
-    reference_path = (
-        args.reference_report
-        if args.reference_report.is_absolute()
-        else repo_root / args.reference_report
-    ).resolve()
-    reference = _load_reference(reference_path)
-    reference_metadata = reference.get("metadata") or {}
-    if len(reference.get("task_records") or ()) != 2416:
-        parser.error("reference report must contain exactly 2416 task records")
-    if seeds != (reference_metadata.get("seed"),):
-        parser.error("--seeds must exactly match the reference report seed")
+    reference_path = None
+    reference = None
+    reference_metadata = {}
+    if args.warmup_days == 0.0:
+        reference_path = (
+            args.reference_report
+            if args.reference_report.is_absolute()
+            else repo_root / args.reference_report
+        ).resolve()
+        reference = _load_reference(reference_path)
+        reference_metadata = reference.get("metadata") or {}
+        if len(reference.get("task_records") or ()) != 2416:
+            parser.error("reference report must contain exactly 2416 task records")
+        if seeds != (reference_metadata.get("seed"),):
+            parser.error("--seeds must exactly match the reference report seed")
     model_hash = _sha256(model_path)
-    if reference_metadata.get("model_hash") != model_hash:
+    if reference is not None and reference_metadata.get("model_hash") != model_hash:
         parser.error("model hash does not match coordination_v2_seed42")
 
     commands = []
@@ -307,19 +367,26 @@ def main() -> None:
                 audit_interval=args.audit_interval,
                 report_mode=args.report_mode,
                 task_trace_input=task_trace_input,
+                warmup_days=args.warmup_days,
             )))
 
     if args.dry_run:
         print(json.dumps({
             "status": "DRY_RUN",
             "evaluation_count": len(commands),
-            "reference_report": str(reference_path),
-            "reference_task_count": len(reference.get("task_records") or ()),
+            "reference_report": (
+                None if reference_path is None else str(reference_path)
+            ),
+            "reference_task_count": (
+                None if reference is None
+                else len(reference.get("task_records") or ())
+            ),
             "reference_task_trace_hash": reference_metadata.get("task_trace_hash"),
             "commands": [command for _, _, _, command in commands],
         }, ensure_ascii=False, indent=2))
         return
 
+    trace_payloads = {}
     for seed in seeds:
         seed_dir = args.output_dir / f"seed_{seed}"
         trace_payload = _prepare_fixed_task_trace(
@@ -327,8 +394,10 @@ def main() -> None:
             seed=seed,
             arrival_cutoff=args.arrival_cutoff,
             candidate_chunk_size=args.candidate_chunk_size,
+            warmup_days=args.warmup_days,
             reference=reference,
         )
+        trace_payloads[seed] = trace_payload
         print(json.dumps({
             "status": "FIXED_TASK_TRACE_READY",
             "seed": seed,
@@ -344,6 +413,7 @@ def main() -> None:
                 seed=seed,
                 arrival_cutoff=args.arrival_cutoff,
                 model_hash=model_hash,
+                warmup_days=args.warmup_days,
             ):
                 print(json.dumps({
                     "status": "REUSED",
@@ -351,11 +421,13 @@ def main() -> None:
                     "policy": policy,
                     "output": str(output),
                 }, ensure_ascii=False))
-                _validate_against_reference(
-                    output,
-                    reference,
-                    policy=policy,
-                    model_hash=model_hash,
+                if reference is not None:
+                    _validate_against_reference(
+                        output, reference, policy=policy, model_hash=model_hash,
+                    )
+                _validate_against_fixed_trace(
+                    output, trace_payloads[seed],
+                    policy=policy, model_hash=model_hash,
                 )
                 export_policy_artifacts(output, output.parent)
                 continue
@@ -371,11 +443,13 @@ def main() -> None:
             "output": str(output),
         }, ensure_ascii=False), flush=True)
         subprocess.run(command, check=True)
-        _validate_against_reference(
-            output,
-            reference,
-            policy=policy,
-            model_hash=model_hash,
+        if reference is not None:
+            _validate_against_reference(
+                output, reference, policy=policy, model_hash=model_hash,
+            )
+        _validate_against_fixed_trace(
+            output, trace_payloads[seed],
+            policy=policy, model_hash=model_hash,
         )
         export_policy_artifacts(output, output.parent)
 
@@ -384,8 +458,11 @@ def main() -> None:
         "seeds": list(seeds),
         "evaluation_count": len(commands),
         "output_dir": str(args.output_dir),
-        "reference_report": str(reference_path),
-        "reference_task_count": len(reference.get("task_records") or ()),
+        "warmup_days": args.warmup_days,
+        "reference_report": None if reference_path is None else str(reference_path),
+        "reference_task_count": (
+            None if reference is None else len(reference.get("task_records") or ())
+        ),
         "reference_task_trace_hash": reference_metadata.get("task_trace_hash"),
     }
     if not args.no_export:

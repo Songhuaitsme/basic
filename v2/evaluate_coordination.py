@@ -499,6 +499,11 @@ def main() -> None:
         type=float,
         default=config.TRAFFIC_DAY_DURATION_IN_SIM,
     )
+    parser.add_argument(
+        "--warmup-days",
+        type=float,
+        default=config.WARMUP_DAYS,
+    )
     parser.add_argument("--safety-cap", type=int, default=1_000_000)
     parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
     parser.add_argument(
@@ -515,6 +520,8 @@ def main() -> None:
 
     if args.arrival_cutoff <= 0.0:
         parser.error("--arrival-cutoff must be positive")
+    if args.warmup_days < 0.0:
+        parser.error("--warmup-days must be non-negative")
     if args.safety_cap <= 0:
         parser.error("--safety-cap must be positive")
     if args.candidate_chunk_size <= 0:
@@ -541,6 +548,7 @@ def main() -> None:
         "command": [sys.executable, "-m", "v2.evaluate_coordination", *sys.argv[1:]],
         "seed": args.seed,
         "arrival_cutoff": args.arrival_cutoff,
+        "warmup_days": args.warmup_days,
         "model_path": str(model_path),
         "model_sha256": _sha256(model_path),
         "model_training_steps": checkpoint.get("training_steps"),
@@ -571,6 +579,7 @@ def main() -> None:
         system_version="2.0",
         audit_mode=args.audit,
         audit_interval=args.audit_interval,
+        warmup_days=args.warmup_days,
     )
     if report.status.value != "VALID" or report.unsettled_task_ids:
         manifest["status"] = report.status.value
