@@ -1,1 +1,0 @@
-"""Classified automated tests."""
