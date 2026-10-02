@@ -228,6 +228,7 @@ def run_evaluation(
     config_view["V1_SOFT_TARDINESS_WEIGHT"] = soft_weight
     config_view["V1_FLEXIBLE_TARDINESS_WEIGHT"] = flexible_weight
     config_view["SYSTEM_VERSION"] = system_version
+    config_view.update(getattr(runtime, "config_view_overrides", {}))
     package_root = Path(__file__).resolve().parent
     code_files = (
         package_root / "v1_runtime.py",
@@ -243,6 +244,7 @@ def run_evaluation(
         package_root / "learning" / "candidate_dqn.py",
         package_root / "simulation" / "state_machine.py",
     )
+    code_files += tuple(getattr(runtime, "evaluation_code_files", ()))
     code_hash = hashlib.sha256(
         b"".join(path.read_bytes() for path in code_files)
     ).hexdigest()
