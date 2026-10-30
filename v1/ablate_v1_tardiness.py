@@ -1,3 +1,10 @@
+# 文件功能：比较不同 SLA 迟到惩罚权重，汇总配对种子实验结果。
+# 主要内容：_value、_parse_weights、_row、_mean、summarize、run_ablation、main。
+# 模块上游（导入关系）：tests.v1.test_tardiness_ablation_v1。
+# 模块下游（项目依赖）：v1.domain.models、v1.evaluate_v1。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Frozen-trace ablation for Soft/Flexible preferred-start penalties."""
 
 import argparse
@@ -10,10 +17,15 @@ from v1.domain.models import SlaType
 from v1.evaluate_v1 import _jsonable, run_evaluation
 
 
+# 作用：读取指标值并处理缺失。
+# 上游（直接调用）：v1.ablate_v1_tardiness._row。
 def _value(metric):
     return None if metric is None or metric.value is None else float(metric.value)
 
 
+# 作用：解析 SLA 惩罚权重组合。
+# 上游（直接调用）：tests.v1.test_tardiness_ablation_v1.TardinessAblationV1Test.test_weight_parser_requires_non_negative_pair。
+# 下游调用：value.split。
 def _parse_weights(value):
     parts = value.split(",")
     if len(parts) != 2:
@@ -27,6 +39,9 @@ def _parse_weights(value):
     return soft, flexible
 
 
+# 作用：将单次评估或校准结果整理为表格行。
+# 上游（直接调用）：v1.ablate_v1_tardiness.run_ablation。
+# 下游调用：_value。
 def _row(report, soft_weight, flexible_weight):
     metrics = report.metrics
     soft = metrics.sla_metrics[SlaType.SOFT]
@@ -67,11 +82,16 @@ def _row(report, soft_weight, flexible_weight):
     }
 
 
+# 作用：计算有效样本均值。
+# 上游（直接调用）：v1.ablate_v1_tardiness.summarize。
 def _mean(rows, field):
     values = [row[field] for row in rows if row[field] is not None]
     return statistics.fmean(values) if values else None
 
 
+# 作用：汇总样本或实验统计。
+# 上游（直接调用）：v1.ablate_v1_tardiness.run_ablation。
+# 下游调用：_mean。
 def summarize(rows):
     grouped = {}
     for row in rows:
@@ -153,6 +173,9 @@ def summarize(rows):
     }
 
 
+# 作用：按权重和种子执行 SLA 迟到消融。
+# 上游（直接调用）：v1.ablate_v1_tardiness.main。
+# 下游调用：run_evaluation、_jsonable、_row、summarize、target.mkdir 等。
 def run_ablation(seeds, weights, cutoff, safety_cap, output_dir):
     target = Path(output_dir)
     target.mkdir(parents=True, exist_ok=True)
@@ -209,6 +232,9 @@ def run_ablation(seeds, weights, cutoff, safety_cap, output_dir):
     return result
 
 
+# 作用：解析或转发命令行参数，组织本文件执行流程。
+# 调用约定：本文件命令行入口或上层版本入口调用。
+# 下游调用：run_ablation、parser.add_argument、parser.parse_args。
 def main():
     parser = argparse.ArgumentParser(description="Ablate v1 tardiness weights")
     parser.add_argument("--seed", type=int, action="append", required=True)

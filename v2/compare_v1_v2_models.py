@@ -1,3 +1,9 @@
+# 文件功能：核验模型与报告配对，比较 V1/V2 质量、训练速度及评估耗时。
+# 主要内容：_load_json、_checkpoint_summary、_compare_parameters、_metric_value、_completed_tasks、extract_quality_metrics、_runtime_seconds、_validate_pair 等。
+# 模块上游（导入关系）：tests.v2.test_compare_v1_v2_models。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Compare the uniform-tariff V1 and V2 DQN checkpoints on one seed.
 
 The command can either consume existing formal reports or run fresh V1/V2
@@ -46,10 +52,16 @@ DEFAULT_V2_PROFILE = Path(
 )
 
 
+# 作用：读取 JSON 报告或模型摘要。
+# 上游（直接调用）：v2.compare_v1_v2_models._training_speed_figure、v2.compare_v1_v2_models.main。
+# 下游调用：path.read_text。
 def _load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+# 作用：提取检查点参数、版本及训练摘要。
+# 上游（直接调用）：v2.compare_v1_v2_models.main。
+# 下游调用：path.read_bytes。
 def _checkpoint_summary(path: Path) -> tuple[dict, dict]:
     checkpoint = torch.load(path, map_location="cpu", weights_only=False)
     run_config = checkpoint.get("run_config") or {}
@@ -73,6 +85,9 @@ def _checkpoint_summary(path: Path) -> tuple[dict, dict]:
     return summary, state_dict
 
 
+# 作用：比较模型参数是否符合预期关系。
+# 上游（直接调用）：v2.compare_v1_v2_models.main。
+# 下游调用：(left - right).abs().max().item、(left - right).abs().max、(left - right).abs。
 def _compare_parameters(v1_state: dict, v2_state: dict) -> tuple[bool, float]:
     if set(v1_state) != set(v2_state):
         return False, math.inf
@@ -89,6 +104,8 @@ def _compare_parameters(v1_state: dict, v2_state: dict) -> tuple[bool, float]:
     return identical, maximum
 
 
+# 作用：从结构化指标读取有效数值。
+# 上游（直接调用）：v2.compare_v1_v2_models.extract_quality_metrics。
 def _metric_value(value):
     if isinstance(value, dict):
         if value.get("status") not in (None, "VALID"):
@@ -99,6 +116,8 @@ def _metric_value(value):
     return float(value)
 
 
+# 作用：筛选完成任务记录。
+# 上游（直接调用）：v2.compare_v1_v2_models.extract_quality_metrics。
 def _completed_tasks(report: dict) -> list[dict]:
     return [
         item
@@ -107,6 +126,9 @@ def _completed_tasks(report: dict) -> list[dict]:
     ]
 
 
+# 作用：提取完成率、SLA 及成本等质量指标。
+# 上游（直接调用）：v2.compare_v1_v2_models.main。
+# 下游调用：_completed_tasks、_metric_value。
 def extract_quality_metrics(report: dict) -> dict[str, float]:
     if report.get("status") != "VALID":
         raise ValueError(f"evaluation report is not VALID: {report.get('status')}")
@@ -148,6 +170,8 @@ def extract_quality_metrics(report: dict) -> dict[str, float]:
     }
 
 
+# 作用：读取可比较的运行耗时。
+# 上游（直接调用）：v2.compare_v1_v2_models.main。
 def _runtime_seconds(report: dict) -> float | None:
     diagnostics = report.get("diagnostics") or {}
     value = (
@@ -156,6 +180,9 @@ def _runtime_seconds(report: dict) -> float | None:
     return None if value is None else float(value)
 
 
+# 作用：校验种子、轨迹、模型及配置等配对条件。
+# 上游（直接调用）：v2.compare_v1_v2_models.main。
+# 下游调用：', '.join。
 def _validate_pair(v1_report: dict, v2_report: dict, seed: int) -> dict:
     v1_metadata = v1_report.get("metadata") or {}
     v2_metadata = v2_report.get("metadata") or {}
@@ -178,6 +205,8 @@ def _validate_pair(v1_report: dict, v2_report: dict, seed: int) -> dict:
     return {key: v1_metadata.get(key) for key in keys}
 
 
+# 作用：按模型和种子参数执行冻结评估。
+# 上游（直接调用）：v2.compare_v1_v2_models.main。
 def _run_evaluation(
     module: str,
     *,
@@ -213,6 +242,8 @@ def _run_evaluation(
     return command
 
 
+# 作用：设置绘图字体。
+# 上游（直接调用）：v2.compare_v1_v2_models._evaluation_speed_figure、v2.compare_v1_v2_models._quality_figure、v2.compare_v1_v2_models._training_speed_figure。
 def _configure_font() -> None:
     available = {item.name for item in font_manager.fontManager.ttflist}
     for family in ("Microsoft YaHei", "SimHei", "Noto Sans CJK SC", "Arial"):
@@ -222,6 +253,9 @@ def _configure_font() -> None:
     plt.rcParams["axes.unicode_minus"] = False
 
 
+# 作用：为柱图添加数值标签。
+# 上游（直接调用）：v2.compare_v1_v2_models._evaluation_speed_figure、v2.compare_v1_v2_models._quality_figure、v2.compare_v1_v2_models._training_speed_figure。
+# 下游调用：axis.annotate、bar.get_x、bar.get_width、bar.get_height。
 def _annotate_bar(axis, bar, value: float, formatter) -> None:
     axis.annotate(
         formatter(value),
@@ -235,6 +269,9 @@ def _annotate_bar(axis, bar, value: float, formatter) -> None:
     )
 
 
+# 作用：绘制策略质量比较图。
+# 上游（直接调用）：v2.compare_v1_v2_models.main。
+# 下游调用：_configure_font、_annotate_bar、axis.bar、bar.set_hatch、axis.set_ylim 等。
 def _quality_figure(
     values: dict[str, dict[str, float]],
     output: Path,
@@ -325,6 +362,9 @@ def _quality_figure(
     plt.close(figure)
 
 
+# 作用：绘制训练耗时或吞吐比较图。
+# 上游（直接调用）：v2.compare_v1_v2_models.main。
+# 下游调用：_load_json、_configure_font、_annotate_bar、axis.bar、bar.set_hatch 等。
 def _training_speed_figure(
     v1_profile: Path,
     v2_profile: Path,
@@ -395,6 +435,9 @@ def _training_speed_figure(
     }
 
 
+# 作用：绘制评估耗时或吞吐比较图。
+# 上游（直接调用）：v2.compare_v1_v2_models.main。
+# 下游调用：_configure_font、_annotate_bar、axis.bar、bar.set_hatch、axis.set_ylim 等。
 def _evaluation_speed_figure(values: dict[str, float], output: Path) -> dict:
     speedup = values["V1"] / values["V2"]
     _configure_font()
@@ -445,6 +488,9 @@ def _evaluation_speed_figure(values: dict[str, float], output: Path) -> dict:
     return {"v1_seconds": values["V1"], "v2_seconds": values["V2"], "speedup": speedup}
 
 
+# 作用：导出模型比较指标。
+# 上游（直接调用）：v2.compare_v1_v2_models.main。
+# 下游调用：path.open、writer.writeheader、writer.writerow。
 def _write_metrics_csv(path: Path, values: dict[str, dict[str, float]]) -> None:
     fields = ("metric", "v1", "v2", "absolute_delta", "relative_delta")
     with path.open("w", encoding="utf-8-sig", newline="") as handle:
@@ -466,6 +512,9 @@ def _write_metrics_csv(path: Path, values: dict[str, dict[str, float]]) -> None:
             )
 
 
+# 作用：定义并解析命令行选项。
+# 上游（直接调用）：v2.compare_v1_v2_models.main。
+# 下游调用：parser.add_argument、parser.parse_args。
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
@@ -502,6 +551,9 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+# 作用：解析或转发命令行参数，组织本文件执行流程。
+# 调用约定：本文件命令行入口或上层版本入口调用。
+# 下游调用：parse_args、_checkpoint_summary、_compare_parameters、_run_evaluation、_load_json 等。
 def main() -> None:
     args = parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)

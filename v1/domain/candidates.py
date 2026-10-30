@@ -1,3 +1,10 @@
+# 文件功能：定义候选、生成模式及结果，生成确定性候选标识和预留请求。
+# 主要内容：CandidateMode、CandidateGenerationStatus、Candidate、CandidateSetResult、_canonical_json_string、deterministic_candidate_id、deterministic_candidate_id_v1_fields。
+# 模块上游（导入关系）：v1.domain、v1.learning.candidate_dqn、v1.learning.features、v1.scheduler.approximate、v1.scheduler.candidate_generator 等。
+# 模块下游（项目依赖）：v1.domain.reservations。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Immutable v1.0 node-time-path candidate schema."""
 
 from dataclasses import dataclass
@@ -13,6 +20,8 @@ from .reservations import PathSpec, ReservationRequest, TimeInterval
 CANDIDATE_SCHEMA_VERSION = "1.0"
 
 
+# 作用：按规范顺序序列化候选身份。
+# 上游（直接调用）：v1.domain.candidates.deterministic_candidate_id_v1_fields。
 @lru_cache(maxsize=8192)
 def _canonical_json_string(value: str) -> str:
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
@@ -65,6 +74,9 @@ class Candidate:
     projected_path_peak_utilization: float
     capacity_margin: float
 
+    # 作用：把已选候选转换为日历可提交的预留请求。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：TimeInterval、ReservationRequest。
     def to_reservation_request(self) -> ReservationRequest:
         tx_interval = None
         if not self.path.is_local:
@@ -100,6 +112,8 @@ class CandidateSetResult:
     reason: str = ""
 
 
+# 作用：根据候选领域字段生成确定性标识。
+# 上游（直接调用）：tests.v1.test_domain_foundations.DomainFoundationTest.test_specialized_candidate_id_matches_generic_canonical_hash。
 def deterministic_candidate_id(payload: dict) -> str:
     encoded = json.dumps(
         payload,
@@ -110,6 +124,9 @@ def deterministic_candidate_id(payload: dict) -> str:
     return "candidate-" + hashlib.sha256(encoded).hexdigest()
 
 
+# 作用：根据 V1 冻结身份字段生成兼容候选标识。
+# 上游（直接调用）：v1.scheduler.candidate_generator.CandidateGenerator.attach_context_candidate_id、v1.scheduler.candidate_generator.CandidateGenerator.iter_context_candidate_records、v1.scheduler.candidate_generator.CandidateGenerator.sample_context_candidate_records.attach_candidate_id。
+# 下游调用：_canonical_json_string。
 def deterministic_candidate_id_v1_fields(
     *,
     compute_end: float,

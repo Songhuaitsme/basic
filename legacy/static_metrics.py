@@ -1,3 +1,10 @@
+# 文件功能：统计旧版任务静态资源需求和 CPU 工作量，生成资源比例报告。
+# 主要内容：task_cpu_time、analyze_task_resource_ratio、calculate_static_task_metrics、generate_current_static_data、format_task_resource_report、main。
+# 模块上游（导入关系）：legacy.train。
+# 模块下游（项目依赖）：shared.config、legacy.network_env、shared.task_manager。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 import argparse
 import json
 import random
@@ -9,6 +16,8 @@ from legacy.network_env import NetworkEnvironment
 from shared.task_manager import TaskManager
 
 
+# 作用：计算旧版任务 CPU 时间工作量。
+# 上游（直接调用）：legacy.static_metrics.analyze_task_resource_ratio、legacy.static_metrics.calculate_static_task_metrics。
 def task_cpu_time(task):
     """CPU-time work demand of one task."""
     if not task:
@@ -20,6 +29,9 @@ def task_cpu_time(task):
     return max(0.0, float(task.get('cpu_time', 0.0)))
 
 
+# 作用：分析任务算力、网络和时长需求比例。
+# 上游（直接调用）：legacy.static_metrics.generate_current_static_data、legacy.train.train。
+# 下游调用：task_cpu_time。
 def analyze_task_resource_ratio(
     tasks,
     env,
@@ -85,6 +97,9 @@ def analyze_task_resource_ratio(
     }
 
 
+# 作用：汇总静态资源需求。
+# 上游（直接调用）：legacy.static_metrics.generate_current_static_data。
+# 下游调用：task_cpu_time。
 def calculate_static_task_metrics(
     tasks,
     simulation_duration,
@@ -140,6 +155,9 @@ def calculate_static_task_metrics(
     return metrics
 
 
+# 作用：按当前配置生成静态统计数据。
+# 上游（直接调用）：legacy.static_metrics.main。
+# 下游调用：NetworkEnvironment、TaskManager、calculate_static_task_metrics、analyze_task_resource_ratio、task_manager.get_dynamic_task_rate 等。
 def generate_current_static_data(cycles=1000, seed=42):
     random.seed(seed)
     np.random.seed(seed)
@@ -190,6 +208,8 @@ def generate_current_static_data(cycles=1000, seed=42):
     return metrics
 
 
+# 作用：格式化静态资源指标报告。
+# 上游（直接调用）：legacy.static_metrics.main。
 def format_task_resource_report(stats):
     return (
         "\n========== 任务与资源统计 ==========\n"
@@ -211,6 +231,9 @@ def format_task_resource_report(stats):
     )
 
 
+# 作用：解析或转发命令行参数，组织本文件执行流程。
+# 调用约定：本文件命令行入口或上层版本入口调用。
+# 下游调用：generate_current_static_data、format_task_resource_report、parser.add_argument、parser.parse_args。
 def main():
     parser = argparse.ArgumentParser(description='Calculate current static workload metrics.')
     parser.add_argument('--cycles', type=int, default=1000)

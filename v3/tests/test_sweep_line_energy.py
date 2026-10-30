@@ -1,3 +1,10 @@
+# 文件功能：验证 扫描线能源核算 的行为、边界条件和回归约束。
+# 主要内容：SweepLineEnergyAccountingTest。
+# 使用入口：由 unittest 发现并执行，构造依赖后验证断言。
+# 模块下游（项目依赖）：v1.accounting.energy、v1.accounting.forecast、v1.domain.models、v1.domain.reservations、v1.domain.units、v1.scheduler.resource_calendar 等。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Small losslessness checks for the V3 sweep-line accounting path."""
 
 import unittest
@@ -20,6 +27,9 @@ from v3.accounting import SweepLineEnergyAccounting
 
 
 class SweepLineEnergyAccountingTest(unittest.TestCase):
+    # 作用：验证 batch_metrics_match_v1_with_overlapping_allocations 场景，覆盖 扫描线能源核算 的相关约束。
+    # 调用约定：由 unittest 发现并调用，使用本文件的夹具和辅助函数。
+    # 下游调用：PiecewiseConstantForecast.tariff_yuan_per_mwh、PiecewiseConstantForecast.green_power_mw、ExogenousEnergyAccounting、SweepLineEnergyAccounting、build_path_spec 等。
     def test_batch_metrics_match_v1_with_overlapping_allocations(self):
         tariff = PiecewiseConstantForecast.tariff_yuan_per_mwh((
             ForecastSegment(TimeInterval(0.0, 2.0), 100.0),

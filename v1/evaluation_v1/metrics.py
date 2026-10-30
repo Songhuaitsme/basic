@@ -1,3 +1,10 @@
+# 文件功能：从任务结果汇总 SLA、主动等待、完成率及单种子评估指标。
+# 主要内容：ActiveWaitMetrics、TaskOutcome、SlaMetrics、SeedMetrics、ratio_metric、linear_percentile、summarize_active_wait、summarize_sla 等。
+# 模块上游（导入关系）：v1.evaluation_v1、v1.evaluation_v1.diagnostics、v1.evaluation_v1.runner、tests.v1.test_evaluation_v1、tests.v1.test_v1_acceptance。
+# 模块下游（项目依赖）：v1.accounting.energy、v1.domain.models、v1.domain.reservations、v1.domain.units。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Strict v1.0 per-seed metrics with explicit undefined semantics."""
 
 from dataclasses import dataclass
@@ -10,6 +17,9 @@ from v1.domain.reservations import Reservation
 from v1.domain.units import TimeConverter
 
 
+# 作用：构造比率指标并显式处理零分母。
+# 上游（直接调用）：v1.evaluation_v1.metrics.build_seed_metrics、v1.evaluation_v1.metrics.summarize_active_wait、v1.evaluation_v1.metrics.summarize_sla。
+# 下游调用：MetricValue.not_applicable、MetricValue.valid。
 def ratio_metric(numerator: float, denominator: float, reason: str) -> MetricValue:
     if denominator == 0.0:
         return MetricValue.not_applicable(reason)
@@ -20,6 +30,9 @@ def ratio_metric(numerator: float, denominator: float, reason: str) -> MetricVal
     )
 
 
+# 作用：以线性插值计算百分位数。
+# 上游（直接调用）：v1.evaluation_v1.diagnostics._summary、v1.evaluation_v1.metrics.summarize_active_wait、v1.evaluation_v1.metrics.summarize_sla。
+# 下游调用：MetricValue.not_applicable、MetricValue.invalid、MetricValue.valid。
 def linear_percentile(values: Iterable[float], percentile: float) -> MetricValue:
     items = sorted(float(value) for value in values)
     if not items:
@@ -45,6 +58,9 @@ class ActiveWaitMetrics:
     positive_benefit_rate: MetricValue
 
 
+# 作用：汇总主动等待次数、时长及收益。
+# 上游（直接调用）：v1.evaluation_v1.metrics.build_seed_metrics。
+# 下游调用：MetricValue.invalid、MetricValue.not_applicable、MetricValue.valid、linear_percentile、ratio_metric 等。
 def summarize_active_wait(records: Iterable[object]) -> ActiveWaitMetrics:
     """Return conditional active-wait metrics with explicit empty semantics."""
 
@@ -82,6 +98,8 @@ class TaskOutcome:
     final_state: TaskState
     reservation: Optional[Reservation]
 
+    # 作用：计算从到达到计算开始的仿真延迟。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     @property
     def start_delay_sim(self) -> Optional[float]:
         if self.reservation is None:
@@ -105,6 +123,9 @@ class SlaMetrics:
     preferred_start_tardiness_p95: MetricValue
 
 
+# 作用：按 SLA 汇总完成与时限满足情况。
+# 上游（直接调用）：v1.evaluation_v1.metrics.build_seed_metrics。
+# 下游调用：MetricValue.not_applicable、ratio_metric、linear_percentile、SlaMetrics。
 def summarize_sla(outcomes: Iterable[TaskOutcome]) -> Mapping[SlaType, SlaMetrics]:
     items = tuple(outcomes)
     result = {}
@@ -183,6 +204,9 @@ class SeedMetrics:
     active_wait_metrics: ActiveWaitMetrics
 
 
+# 作用：汇总单种子的任务与系统指标。
+# 上游（直接调用）：v1.evaluation_v1.runner.EvaluationRunner.run_frozen_policy。
+# 下游调用：ratio_metric、summarize_sla、summarize_active_wait、item.task.cpu_work_cpu_hours、SeedMetrics。
 def build_seed_metrics(
     outcomes: Iterable[TaskOutcome],
     reserved_ever_task_ids: Iterable[str],

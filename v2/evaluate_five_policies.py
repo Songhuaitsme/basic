@@ -1,3 +1,10 @@
+# 文件功能：用同一轨迹批量评估五策略，检查报告复用条件和配对一致性。
+# 主要内容：evaluation_command、_sha256、_is_reusable_report、_load_reference、_validate_against_reference、_validate_against_fixed_trace、_prepare_fixed_task_trace、main。
+# 模块上游（导入关系）：v2.calibrate_warmup。
+# 模块下游（项目依赖）：shared.config、v1.evaluate_v1、v1.v1_runtime、v2.evaluate_coordination、v2.export_five_policy_metrics。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Run the five frozen V2 policies on identical per-seed workloads."""
 
 from __future__ import annotations
@@ -46,6 +53,8 @@ REFERENCE_FIELDS = (
 )
 
 
+# 作用：构造固定轨迹策略评估命令。
+# 上游（直接调用）：v2.evaluate_five_policies.main。
 def evaluation_command(
     *,
     policy: str,
@@ -97,6 +106,9 @@ def evaluation_command(
     return command
 
 
+# 作用：计算来源文件指纹。
+# 上游（直接调用）：v2.evaluate_five_policies.main。
+# 下游调用：path.open、handle.read、digest.hexdigest。
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -105,6 +117,9 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+# 作用：检查已有报告与当前参数及来源是否一致。
+# 上游（直接调用）：v2.evaluate_five_policies.main。
+# 下游调用：path.read_text。
 def _is_reusable_report(
     path: Path,
     *,
@@ -135,6 +150,9 @@ def _is_reusable_report(
     return reusable
 
 
+# 作用：读取配对检查的参考报告。
+# 上游（直接调用）：v2.evaluate_five_policies.main。
+# 下游调用：path.read_text、EvaluationDataError。
 def _load_reference(path: Path) -> dict:
     try:
         report = json.loads(path.read_text(encoding="utf-8"))
@@ -147,6 +165,9 @@ def _load_reference(path: Path) -> dict:
     return report
 
 
+# 作用：核验当前与参考报告的共同实验条件。
+# 上游（直接调用）：v2.evaluate_five_policies.main。
+# 下游调用：report_path.read_text、EvaluationDataError、', '.join、dict.fromkeys。
 def _validate_against_reference(
     report_path: Path,
     reference: dict,
@@ -180,6 +201,9 @@ def _validate_against_reference(
         )
 
 
+# 作用：检查报告是否使用指定任务轨迹。
+# 上游（直接调用）：v2.evaluate_five_policies.main。
+# 下游调用：report_path.read_text、EvaluationDataError、', '.join。
 def _validate_against_fixed_trace(
     report_path: Path,
     trace_payload: dict,
@@ -210,6 +234,9 @@ def _validate_against_fixed_trace(
         )
 
 
+# 作用：准备并保存五策略共用的固定轨迹。
+# 上游（直接调用）：v2.evaluate_five_policies.main。
+# 下游调用：create_v1_runtime、_generate_trace、_canonical_hash、_jsonable、EvaluationDataError 等。
 def _prepare_fixed_task_trace(
     path: Path,
     *,
@@ -269,6 +296,9 @@ def _prepare_fixed_task_trace(
     return payload
 
 
+# 作用：解析或转发命令行参数，组织本文件执行流程。
+# 调用约定：本文件命令行入口或上层版本入口调用。
+# 下游调用：resolve_model_path、_load_reference、_sha256、evaluation_command、_prepare_fixed_task_trace 等。
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Evaluate all five frozen policies with paired V2 workloads"

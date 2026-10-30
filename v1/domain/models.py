@@ -1,3 +1,10 @@
+# 文件功能：定义任务规格、SLA、状态和指标值，提供旧任务迁移及字段验证。
+# 主要内容：TaskValidationError、TaskValidationResult、SlaType、TaskState、MetricStatus、MetricValue、TaskSpec、TaskRuntime 等。
+# 模块上游（导入关系）：shared.task_manager、v1.ablate_v1_tardiness、v1.accounting.energy、v1.audit_v1、v1.domain 等。
+# 模块下游（项目依赖）：v1.domain.units。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Immutable v1.0 task schema and explicit legacy migration adapters."""
 
 from dataclasses import dataclass
@@ -24,6 +31,10 @@ FLEXIBLE_LATEST_START_MULTIPLIER = 1.5
 class TaskValidationError(ValueError):
     """Field-addressable task validation or migration failure."""
 
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：v1.domain.models.MetricValue.valid、v1.domain.models.SlaType.parse、v1.domain.models.TaskRuntime.__post_init__ 等。
+    # 调用约定：构造实例时由 Python 调用。
+    # 下游调用：super().__init__。
     def __init__(self, field: str, message: str):
         self.field = field
         self.message = message
@@ -44,6 +55,9 @@ class SlaType(str, Enum):
     SOFT = "Soft"
     FLEXIBLE = "Flexible"
 
+    # 作用：将外部取值解析为领域枚举。
+    # 上游（直接调用）：v1.domain.models.TaskSpec.create、v1.domain.models.migrate_legacy_task、v1.scheduler.objectives.ObjectiveScorer.score。
+    # 下游调用：TaskValidationError。
     @classmethod
     def parse(cls, value: Any) -> "SlaType":
         if isinstance(value, cls):
@@ -84,6 +98,9 @@ class MetricValue:
     numerator: Optional[float] = None
     denominator: Optional[float] = None
 
+    # 作用：构造有效数值指标及可选的分子分母。
+    # 上游（直接调用）：v1.accounting.energy.ExogenousEnergyAccounting.candidate_metric_evaluator.evaluate、v1.accounting.energy.ExogenousEnergyAccounting.evaluate_candidate、v1.accounting.energy.ExogenousEnergyAccounting.realize 等。
+    # 下游调用：finite_number、TaskValidationError。
     @classmethod
     def valid(
         cls,
@@ -97,15 +114,22 @@ class MetricValue:
             raise TaskValidationError(exc.field, exc.message)
         return cls(finite_value, MetricStatus.VALID, None, numerator, denominator)
 
+    # 作用：构造不适用指标并保留原因。
+    # 上游（直接调用）：v1.accounting.energy.ExogenousEnergyAccounting.candidate_metric_evaluator.evaluate、v1.accounting.energy.ExogenousEnergyAccounting.evaluate_candidate、v1.accounting.energy.ExogenousEnergyAccounting.realize 等。
     @classmethod
     def not_applicable(cls, reason: str) -> "MetricValue":
         return cls(None, MetricStatus.NOT_APPLICABLE, reason)
 
+    # 作用：构造无效指标并记录原因。
+    # 上游（直接调用）：v1.domain.sla.SlaPolicy.preferred_start_tardiness、v1.evaluation_v1.metrics.linear_percentile、v1.evaluation_v1.metrics.summarize_active_wait 等。
     @classmethod
     def invalid(cls, reason: str) -> "MetricValue":
         return cls(None, MetricStatus.INVALID, reason)
 
 
+# 作用：读取领域字段并验证数值约束。
+# 上游（直接调用）：v1.domain.models.TaskRuntime.__post_init__、v1.domain.models.TaskSpec.__post_init__、v1.domain.models.TaskSpec.create。
+# 下游调用：positive_finite、non_negative_finite、finite_number、TaskValidationError。
 def _field_number(
     field: str,
     value: Any,
@@ -137,6 +161,9 @@ class TaskSpec:
     latest_start_limit_sim: float
     schema_version: str = TASK_SCHEMA_VERSION
 
+    # 作用：在数据类构造后校验字段或建立派生数据。
+    # 调用约定：由 dataclass 生成的构造流程调用。
+    # 下游调用：TaskValidationError、_field_number、self.task_id.strip、self.source_node.strip。
     def __post_init__(self) -> None:
         if not isinstance(self.task_id, str) or not self.task_id.strip():
             raise TaskValidationError("task_id", "must be a non-empty string")
@@ -213,6 +240,9 @@ class TaskSpec:
                 f"must equal {multiplier} * preferred_start_limit_sim",
             )
 
+    # 作用：根据输入构造领域对象或基础设施实例。
+    # 上游（直接调用）：v1.domain.models.TaskSpec.from_mapping、v1.domain.models.migrate_legacy_task。
+    # 下游调用：SlaType.parse、TaskValidationError、_field_number。
     @classmethod
     def create(
         cls,
@@ -283,6 +313,9 @@ class TaskSpec:
             latest_start_limit_sim=derived_latest,
         )
 
+    # 作用：校验外部字段映射并构造任务规格。
+    # 上游（直接调用）：v1.domain.models.validate_task_mapping、v1.evaluate_v1.main、v1.train_v1._load_task_trace。
+    # 下游调用：TaskValidationError、cls.create。
     @classmethod
     def from_mapping(cls, values: Mapping[str, Any]) -> "TaskSpec":
         legacy_fields = (
@@ -332,20 +365,30 @@ class TaskSpec:
             latest_start_limit_sim=values.get("latest_start_limit_sim"),
         )
 
+    # 作用：返回到达时刻加偏好时限得到的绝对偏好开始时刻。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     @property
     def absolute_preferred_start_sim(self) -> Optional[float]:
         if self.preferred_start_limit_sim is None:
             return None
         return self.arrival_time_sim + self.preferred_start_limit_sim
 
+    # 作用：返回到达时刻加最晚时限得到的绝对最晚开始时刻。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     @property
     def absolute_latest_start_sim(self) -> float:
         return self.arrival_time_sim + self.latest_start_limit_sim
 
+    # 作用：计算 CPU 需求与仿真执行时长的乘积。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：cpu_work_sim_units。
     @property
     def cpu_work_sim_units(self) -> float:
         return cpu_work_sim_units(self.cpu_demand, self.execution_duration_sim)
 
+    # 作用：把 CPU 工作量换算为 CPU 小时。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：cpu_work_cpu_hours。
     def cpu_work_cpu_hours(self, converter: TimeConverter) -> float:
         return cpu_work_cpu_hours(
             self.cpu_demand,
@@ -368,6 +411,9 @@ class TaskRuntime:
     terminal_reason: Optional[str] = None
     reservation_id: Optional[str] = None
 
+    # 作用：在数据类构造后校验字段或建立派生数据。
+    # 调用约定：由 dataclass 生成的构造流程调用。
+    # 下游调用：TaskValidationError、_field_number、self.task_id.strip。
     def __post_init__(self) -> None:
         if not isinstance(self.task_id, str) or not self.task_id.strip():
             raise TaskValidationError("task_id", "must be a non-empty string")
@@ -388,6 +434,9 @@ class TaskRuntime:
                 raise TaskValidationError(field, "must be a non-negative integer")
 
 
+# 作用：读取旧版任务兼容字段。
+# 上游（直接调用）：v1.domain.models.migrate_legacy_task。
+# 下游调用：TaskValidationError。
 def _legacy_value(values: Mapping[str, Any], canonical: str, legacy: str) -> Any:
     if canonical in values:
         return values[canonical]
@@ -396,6 +445,9 @@ def _legacy_value(values: Mapping[str, Any], canonical: str, legacy: str) -> Any
     raise TaskValidationError(canonical, f"is required (legacy alias: {legacy})")
 
 
+# 作用：把旧版任务迁移为带单位和 SLA 的任务规格。
+# 上游（直接调用）：shared.task_manager.TaskManager.generate_task_specs、shared.task_manager.TaskManager.generate_tasks、v1.domain.models.validate_task_mapping。
+# 下游调用：TaskValidationError、SlaType.parse、_legacy_value、TaskSpec.create、str(raw_task_id).strip。
 def migrate_legacy_task(values: Mapping[str, Any]) -> TaskSpec:
     """Migrate one legacy task dict into a validated immutable TaskSpec.
 
@@ -457,6 +509,9 @@ def migrate_legacy_task(values: Mapping[str, Any]) -> TaskSpec:
     )
 
 
+# 作用：验证任务字段映射并返回验证结果。
+# 上游（直接调用）：tests.v1.test_v1_acceptance.V1AcceptanceContractTest.test_validation_and_sla_are_pure_and_field_addressable。
+# 下游调用：migrate_legacy_task、TaskSpec.from_mapping、TaskValidationResult。
 def validate_task_mapping(values: Mapping[str, Any], legacy: bool = False) -> TaskValidationResult:
     """Pure validation boundary used before admission/state registration."""
 
@@ -472,6 +527,8 @@ def validate_task_mapping(values: Mapping[str, Any], legacy: bool = False) -> Ta
         )
 
 
+# 作用：把任务规格转换为旧环境使用的字典。
+# 上游（直接调用）：shared.task_manager.TaskManager.generate_tasks。
 def to_legacy_task_dict(
     task_spec: TaskSpec,
     original: Optional[Mapping[str, Any]] = None,

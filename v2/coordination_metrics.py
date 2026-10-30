@@ -1,3 +1,10 @@
+# 文件功能：识别任务时空调整，汇总算电协同、绿电收益和 SLA 分组指标。
+# 主要内容：_present、_as_float、_as_bool、_ratio、_values、_mean、_sum、node_region_map 等。
+# 模块上游（导入关系）：v2.evaluate_coordination、v2.export_five_policy_metrics、v2.recompute_coordination_metrics、tests.v2.test_coordination_evaluation。
+# 模块下游（项目依赖）：shared.data_loader。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Pure metric helpers for Selected-vs-Earliest coordination analysis.
 
 The comparison is per decision: both candidates come from the same candidate
@@ -64,14 +71,22 @@ SLA_METRIC_FIELDS = (
 )
 
 
+# 作用：判断字段是否具有有效值。
+# 上游（直接调用）：v2.coordination_metrics._as_float、v2.coordination_metrics._values、v2.coordination_metrics.enrich_adjustments 等。
 def _present(value) -> bool:
     return value is not None and value != ""
 
 
+# 作用：将外部字段解析为浮点值或缺省值。
+# 上游（直接调用）：v2.coordination_metrics.enrich_adjustments。
+# 下游调用：_present。
 def _as_float(value):
     return float(value) if _present(value) else None
 
 
+# 作用：将外部字段解析为布尔标记。
+# 上游（直接调用）：v2.coordination_metrics._group_metrics、v2.coordination_metrics.build_adjustment_metrics、v2.coordination_metrics.build_mutually_exclusive_coordination_groups.key 等。
+# 下游调用：str(value).strip().lower、str(value).strip。
 def _as_bool(value) -> bool:
     if isinstance(value, bool):
         return value
@@ -80,10 +95,15 @@ def _as_bool(value) -> bool:
     return str(value).strip().lower() in {"true", "1", "yes"}
 
 
+# 作用：计算比率并处理零分母。
+# 上游（直接调用）：v2.coordination_metrics._group_metrics、v2.coordination_metrics.build_adjustment_metrics、v2.coordination_metrics.build_green_coverage_gain_distribution 等。
 def _ratio(numerator: int, denominator: int):
     return numerator / denominator if denominator else None
 
 
+# 作用：提取指定字段的有效值集合。
+# 上游（直接调用）：v2.coordination_metrics._mean、v2.coordination_metrics._sum、v2.coordination_metrics.build_green_coverage_gain_distribution。
+# 下游调用：_present。
 def _values(rows: Iterable[Mapping], field: str) -> list[float]:
     return [
         float(row[field])
@@ -92,15 +112,24 @@ def _values(rows: Iterable[Mapping], field: str) -> list[float]:
     ]
 
 
+# 作用：计算有效样本均值。
+# 上游（直接调用）：v2.coordination_metrics._group_metrics、v2.coordination_metrics.build_sla_type_metrics。
+# 下游调用：_values。
 def _mean(rows: Iterable[Mapping], field: str):
     values = _values(rows, field)
     return statistics.fmean(values) if values else None
 
 
+# 作用：累计数值或记录集合。
+# 上游（直接调用）：v2.coordination_metrics._group_metrics、v2.coordination_metrics.build_sla_type_metrics。
+# 下游调用：_values。
 def _sum(rows: Iterable[Mapping], field: str) -> float:
     return math.fsum(_values(rows, field))
 
 
+# 作用：建立节点到区域映射。
+# 上游（直接调用）：v2.coordination_metrics.enrich_adjustments。
+# 下游调用：DataLoader.load_network_topology、topology.nodes。
 def node_region_map() -> dict[str, str]:
     topology = DataLoader.load_network_topology()
     return {
@@ -109,6 +138,9 @@ def node_region_map() -> dict[str, str]:
     }
 
 
+# 作用：补充相对最早反事实的时间、节点和区域调整。
+# 上游（直接调用）：v2.evaluate_coordination.build_task_rows、v2.export_five_policy_metrics._candidate_coordination_rows、v2.recompute_coordination_metrics.main。
+# 下游调用：node_region_map、_present、_as_float、', '.join。
 def enrich_adjustments(
     rows: Sequence[Mapping],
     *,
@@ -181,10 +213,16 @@ def enrich_adjustments(
     return enriched
 
 
+# 作用：筛选成功排程任务。
+# 上游（直接调用）：v2.coordination_metrics.build_adjustment_metrics、v2.coordination_metrics.build_green_coverage_gain_distribution、v2.coordination_metrics.build_mutually_exclusive_coordination_groups 等。
+# 下游调用：_present。
 def scheduled_rows(rows: Sequence[Mapping]) -> list[Mapping]:
     return [row for row in rows if _present(row.get("selected_start"))]
 
 
+# 作用：汇总时间移动、节点移动和重叠协同指标。
+# 上游（直接调用）：v2.evaluate_coordination.build_system_metrics、v2.export_five_policy_metrics.export_policy_artifacts、v2.recompute_coordination_metrics.main。
+# 下游调用：scheduled_rows、_as_bool、_ratio。
 def build_adjustment_metrics(rows: Sequence[Mapping]) -> dict:
     scheduled = scheduled_rows(rows)
     denominator = len(scheduled)
@@ -214,6 +252,9 @@ def build_adjustment_metrics(rows: Sequence[Mapping]) -> dict:
     return metrics
 
 
+# 作用：汇总分组成本、绿电及等待统计。
+# 上游（直接调用）：v2.coordination_metrics.build_mutually_exclusive_coordination_groups、v2.coordination_metrics.build_requested_coordination_groups。
+# 下游调用：_as_bool、_ratio、_mean、_sum。
 def _group_metrics(
     coordination_type: str,
     definition: str,
@@ -236,6 +277,9 @@ def _group_metrics(
     }
 
 
+# 作用：按指定条件汇总可重叠协同分组。
+# 上游（直接调用）：v2.evaluate_coordination.main、v2.export_five_policy_metrics.export_policy_artifacts、v2.recompute_coordination_metrics.main。
+# 下游调用：scheduled_rows、_as_bool、_group_metrics。
 def build_requested_coordination_groups(rows: Sequence[Mapping]) -> list[dict]:
     """Return the five requested views; cross-region includes its joint subset."""
 
@@ -283,6 +327,9 @@ def build_requested_coordination_groups(rows: Sequence[Mapping]) -> list[dict]:
     ]
 
 
+# 作用：按互斥时空调整类别汇总。
+# 上游（直接调用）：v2.evaluate_coordination.main、v2.export_five_policy_metrics.export_policy_artifacts、v2.recompute_coordination_metrics.main。
+# 下游调用：scheduled_rows、key、_group_metrics。
 def build_mutually_exclusive_coordination_groups(
     rows: Sequence[Mapping],
 ) -> list[dict]:
@@ -290,6 +337,9 @@ def build_mutually_exclusive_coordination_groups(
 
     scheduled = scheduled_rows(rows)
 
+    # 作用：生成局部排序或分组键。
+    # 上游（直接调用）：v2.coordination_metrics.build_mutually_exclusive_coordination_groups。
+    # 下游调用：_as_bool。
     def key(row: Mapping) -> str:
         node = _as_bool(row["node_adjustment"])
         region = _as_bool(row["region_adjustment"])
@@ -347,6 +397,8 @@ def build_mutually_exclusive_coordination_groups(
     return groups
 
 
+# 作用：计算指定分位点。
+# 上游（直接调用）：v2.coordination_metrics.build_green_coverage_gain_distribution。
 def _quantile(sorted_values: Sequence[float], probability: float):
     if not sorted_values:
         return None
@@ -362,6 +414,9 @@ def _quantile(sorted_values: Sequence[float], probability: float):
     )
 
 
+# 作用：统计相对反事实的绿电覆盖收益分布。
+# 上游（直接调用）：v2.evaluate_coordination.main、v2.export_five_policy_metrics.export_policy_artifacts、v2.recompute_coordination_metrics.main。
+# 下游调用：scheduled_rows、_values、_ratio、_quantile。
 def build_green_coverage_gain_distribution(
     rows: Sequence[Mapping],
     *,
@@ -394,6 +449,9 @@ def build_green_coverage_gain_distribution(
     }
 
 
+# 作用：按 SLA 汇总协同表现。
+# 上游（直接调用）：v2.evaluate_coordination.main、v2.export_five_policy_metrics.export_policy_artifacts、v2.recompute_coordination_metrics.main。
+# 下游调用：scheduled_rows、_as_bool、_ratio、_mean、_sum。
 def build_sla_type_metrics(rows: Sequence[Mapping]) -> list[dict]:
     scheduled = scheduled_rows(rows)
     order = ("Flexible", "Soft", "Hard")

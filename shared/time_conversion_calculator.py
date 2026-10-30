@@ -1,3 +1,10 @@
+# 文件功能：计算仿真与物理时间的换算，输出调度周期和时刻说明。
+# 主要内容：TimeConversion、calculate_time_conversion、sim_hour_at_cycle、print_report、parse_args、main。
+# 使用入口：命令行执行，或由其他脚本导入后调用。
+# 模块下游（项目依赖）：shared.config、v1.domain.units。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 import argparse
 import json
 from dataclasses import asdict, dataclass
@@ -30,6 +37,9 @@ class TimeConversion:
     raw_lambda_per_cycle: float
 
 
+# 作用：计算流量日、仿真周期与物理时间映射。
+# 上游（直接调用）：shared.time_conversion_calculator.main。
+# 下游调用：positive_finite、non_negative_finite、TimeConverter.from_traffic_day_duration、converter.scheduling_cycle_seconds、TimeConversion。
 def calculate_time_conversion(
     scheduling_cycle: float,
     traffic_day_duration_in_sim: float,
@@ -78,6 +88,9 @@ def calculate_time_conversion(
     )
 
 
+# 作用：计算调度周期对应的流量日小时位置。
+# 上游（直接调用）：shared.time_conversion_calculator.main、shared.time_conversion_calculator.print_report。
+# 下游调用：positive_finite。
 def sim_hour_at_cycle(cycle: int, scheduling_cycle: float, traffic_day_duration_in_sim: float) -> float:
     if isinstance(cycle, bool) or not isinstance(cycle, int) or cycle < 0:
         raise ValueError("cycle must be a non-negative integer")
@@ -91,6 +104,9 @@ def sim_hour_at_cycle(cycle: int, scheduling_cycle: float, traffic_day_duration_
     return day_progress * 24.0
 
 
+# 作用：输出时间换算及周期说明。
+# 上游（直接调用）：shared.time_conversion_calculator.main。
+# 下游调用：sim_hour_at_cycle。
 def print_report(result: TimeConversion, cycle: Optional[int] = None) -> None:
     print("=== Time Conversion ===")
     print(f"SCHEDULING_CYCLE              = {result.scheduling_cycle:g}")
@@ -136,6 +152,9 @@ def print_report(result: TimeConversion, cycle: Optional[int] = None) -> None:
         print(f"sim_hr                       = {hour:.6f}")
 
 
+# 作用：定义并解析命令行选项。
+# 上游（直接调用）：shared.time_conversion_calculator.main。
+# 下游调用：parser.add_argument、parser.parse_args。
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Calculate time conversion values for the DQN simulation.",
@@ -178,6 +197,9 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+# 作用：解析或转发命令行参数，组织本文件执行流程。
+# 调用约定：本文件命令行入口或上层版本入口调用。
+# 下游调用：parse_args、calculate_time_conversion、sim_hour_at_cycle、print_report。
 def main() -> None:
     args = parse_args()
     result = calculate_time_conversion(

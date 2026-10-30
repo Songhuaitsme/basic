@@ -1,3 +1,10 @@
+# 文件功能：扫描调度资源与任务状态不变量，判定评估质量门槛。
+# 主要内容：InvariantViolation、GateStatus、QualityGateResult、scan_scheduler_invariants、evaluate_quality_gate。
+# 模块上游（导入关系）：v1.evaluation_v1.runner、v1.train_v1、tests.v1.test_v1_acceptance。
+# 模块下游（项目依赖）：v1.domain.models、v1.scheduler.resource_calendar。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Runtime invariant scanning and frozen quality-gate decisions."""
 
 from dataclasses import dataclass
@@ -15,6 +22,9 @@ class InvariantViolation:
     detail: str
 
 
+# 作用：检查任务状态、预留及资源占用不变量。
+# 上游（直接调用）：v1.evaluation_v1.runner.EvaluationRunner._assert_invariants、v1.train_v1._assert_scheduler_invariants。
+# 下游调用：ReservationCalendar.peak_usage、scheduler.state_machine.count_by_state、InvariantViolation、scheduler.calendar.snapshot、scheduler.calendar.active_reservations 等。
 def scan_scheduler_invariants(scheduler, cycle_result=None) -> Tuple[InvariantViolation, ...]:
     violations = []
     counts = scheduler.state_machine.count_by_state()
@@ -123,6 +133,9 @@ class QualityGateResult:
     reasons: Tuple[str, ...]
 
 
+# 作用：按阈值判定评估是否通过验收。
+# 上游（直接调用）：tests.v1.test_v1_acceptance.V1AcceptanceContractTest.test_formal_quality_gate_and_power_rules。
+# 下游调用：QualityGateResult。
 def evaluate_quality_gate(
     *,
     seed_count: int,

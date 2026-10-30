@@ -1,3 +1,9 @@
+# 文件功能：记录旧版训练指标，绘制曲线并导出历史数据及最终报告。
+# 主要内容：TrainingVisualizer。
+# 模块上游（导入关系）：legacy.train。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 import datetime
 import csv
 import os
@@ -143,6 +149,10 @@ TENSORBOARD_SCALAR_GROUPS = {
 
 
 class TrainingVisualizer:
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：legacy.train.train。
+    # 调用约定：构造实例时由 Python 调用。
+    # 下游调用：datetime.datetime.now().strftime、datetime.datetime.now。
     def __init__(self, log_dir='logs/tensorboard/'):
         current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         self.train_log_dir = os.path.join(log_dir, current_time)
@@ -255,6 +265,9 @@ class TrainingVisualizer:
             'region_cpu': {},
         }
 
+    # 作用：记录训练步的奖励和资源指标。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self.writer.as_default、self.writer.flush。
     def log_step(self, step, metrics: dict, tier_counts: dict = None, region_usage: dict = None):
         prior_steps = len(self.history['step'])
         special_keys = {'step', 'region_cpu', 'tier1_ratio', 'tier2_ratio', 'tier3_ratio'}
@@ -302,6 +315,9 @@ class TrainingVisualizer:
 
         self.history['step'].append(step)
 
+    # 作用：绘制训练指标时间序列。
+    # 上游（直接调用）：legacy.visualizer.TrainingVisualizer.generate_final_report。
+    # 下游调用：ax.plot、ax.set_title、ax.grid、ax.set_ylim、ax.legend。
     def _plot_series(self, ax, keys, title, ylim=None):
         for key in keys:
             values = self.history.get(key, [])
@@ -314,6 +330,9 @@ class TrainingVisualizer:
         if len(keys) > 1:
             ax.legend(fontsize=8)
 
+    # 作用：绘制绿电供给和消纳比例曲线。
+    # 上游（直接调用）：legacy.visualizer.TrainingVisualizer.generate_final_report。
+    # 下游调用：ax.plot、ax.set_title、ax.set_ylim、ax.grid、ax.set_ylabel 等。
     def _plot_green_ratios(self, ax):
         left_keys = [
             'system_green_absorption_ratio',
@@ -345,6 +364,9 @@ class TrainingVisualizer:
         right_lines, right_labels = right_ax.get_legend_handles_labels()
         ax.legend(left_lines + right_lines, left_labels + right_labels, fontsize=8)
 
+    # 作用：根据训练历史生成最终图表报告。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self._plot_series、self._plot_green_ratios、axes.ravel、fig.suptitle。
     def generate_final_report(self, save_path='training_evaluation.png', show=False):
         fig, axes = plt.subplots(4, 3, figsize=(20, 20))
         axes = axes.ravel()
@@ -393,6 +415,9 @@ class TrainingVisualizer:
         else:
             plt.close(fig)
 
+    # 作用：导出训练指标历史 CSV。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：writer.writeheader、writer.writerow。
     def export_history_csv(self, save_path='training_metrics.csv'):
         if not self.history or not self.history.get('step'):
             return

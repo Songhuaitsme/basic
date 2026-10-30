@@ -1,3 +1,10 @@
+# 文件功能：定义并应用候选、奖励、特征和 DQN 等消融实验配置。
+# 主要内容：AblationVariant、variant_names、apply_ablation_variant。
+# 模块上游（导入关系）：v1.evaluate_v1、v1.train_v1、tests.v1.test_ablation_settings_v1。
+# 模块下游（项目依赖）：shared.config。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Small, ordered ablation registry shared by training and evaluation."""
 
 from contextlib import contextmanager
@@ -109,10 +116,14 @@ ABLATION_VARIANTS = {
 }
 
 
+# 作用：返回支持的消融变体名称。
+# 上游（直接调用）：v1.evaluate_v1.main、v1.train_v1.main。
 def variant_names():
     return tuple(ABLATION_VARIANTS)
 
 
+# 作用：应用消融配置并返回变更信息。
+# 上游（直接调用）：v1.evaluate_v1.run_evaluation、v1.train_v1.main。
 @contextmanager
 def apply_ablation_variant(name):
     if name is None:

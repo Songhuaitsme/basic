@@ -1,3 +1,10 @@
+# 文件功能：组织候选 DQN 训练，包含预热、奖励归因、经验回放、检查点恢复及固定轨迹验证。
+# 主要内容：V1TrainingLoop、_empty_reward_components、_preserve_rng_state、_positive_int、_optional_positive_int、_resolve_device、_metadata、_training_config_view 等。
+# 模块上游（导入关系）：v2.train_v2、v3._entrypoint、v3.train_v3、v4._entrypoint、v4.train_v4 等。
+# 模块下游（项目依赖）：shared.config、v1.ablation_settings、v1.audit_v1、v1.domain.models、v1.learning.candidate_dqn、v1.learning.replay 等。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Production-oriented v1.0 candidate-DQN training entry point."""
 
 import argparse
@@ -52,10 +59,14 @@ REWARD_COMPONENT_FIELDS = (
 )
 
 
+# 作用：建立各奖励分量的零值累加器。
+# 上游（直接调用）：v1.train_v1.V1TrainingLoop.__init__、v1.train_v1.V1TrainingLoop._record_transition_reward、v1.train_v1.V1TrainingLoop.consume_monitoring_interval 等。
 def _empty_reward_components():
     return {field: 0.0 for field in REWARD_COMPONENT_FIELDS}
 
 
+# 作用：保存并恢复随机数状态，避免验证影响训练采样。
+# 上游（直接调用）：v1.train_v1._generate_fixed_validation_trace、v1.train_v1._run_fixed_validation。
 @contextmanager
 def _preserve_rng_state():
     """Keep validation and trace generation invisible to training RNG streams."""
@@ -76,18 +87,25 @@ def _preserve_rng_state():
             torch.cuda.set_rng_state_all(cuda_state)
 
 
+# 作用：验证参数为严格正整数。
+# 上游（直接调用）：v1.train_v1.V1TrainingLoop.__init__、v1.train_v1.V1TrainingLoop.ensure_monitoring_state、v1.train_v1.V1TrainingLoop.set_candidate_chunk_size 等。
 def _positive_int(name, value):
     if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
         raise ValueError(f"{name} must be a positive integer")
     return value
 
 
+# 作用：允许空值，否则验证严格正整数。
+# 上游（直接调用）：v1.train_v1.V1TrainingLoop.__init__、v1.train_v1.V1TrainingLoop.set_bootstrap_candidate_limit、v1.train_v1.preflight_training 等。
+# 下游调用：_positive_int。
 def _optional_positive_int(name, value):
     if value is None:
         return None
     return _positive_int(name, value)
 
 
+# 作用：解析 CPU/CUDA 自动选择并验证可用性。
+# 上游（直接调用）：v1.train_v1.V1TrainingLoop.__init__、v1.train_v1.V1TrainingLoop.to_device、v1.train_v1.run_training。
 def _resolve_device(device):
     if device == "auto":
         return "cuda" if torch.cuda.is_available() else "cpu"
@@ -98,6 +116,9 @@ def _resolve_device(device):
     return device
 
 
+# 作用：组织版本、配置及来源元数据。
+# 上游（直接调用）：v1.train_v1._model_artifact_payload、v1.train_v1._save_checkpoint。
+# 下游调用：CandidateDqnMetadata。
 def _metadata(runtime):
     architecture = "shared_candidate_q_v1"
     if not config.V1_DQN_USE_GLOBAL_STATE or not config.V1_DQN_DOUBLE_DQN:
@@ -116,6 +137,8 @@ def _metadata(runtime):
     )
 
 
+# 作用：提取影响训练与恢复兼容性的配置。
+# 上游（直接调用）：v1.train_v1.run_training。
 def _training_config_view(**overrides):
     names = (
         "SYSTEM_VERSION", "REQUIREMENTS_VERSION", "ALGORITHM_VERSION", "CANDIDATE_MODE",
@@ -144,6 +167,8 @@ def _training_config_view(**overrides):
     return values
 
 
+# 作用：对规范化数据计算稳定哈希。
+# 上游（直接调用）：v1.train_v1._model_artifact_payload、v1.train_v1._resume_config_compatible、v1.train_v1._save_checkpoint。
 def _canonical_hash(value):
     payload = json.dumps(
         value, sort_keys=True, separators=(",", ":"), default=str
@@ -151,6 +176,9 @@ def _canonical_hash(value):
     return hashlib.sha256(payload).hexdigest()
 
 
+# 作用：检查当前与检查点配置是否满足恢复约定。
+# 上游（直接调用）：v1.train_v1._load_checkpoint。
+# 下游调用：_canonical_hash。
 def _resume_config_compatible(saved, requested):
     if not isinstance(saved, dict) or not isinstance(requested, dict):
         return False
@@ -196,6 +224,9 @@ def _resume_config_compatible(saved, requested):
     )
 
 
+# 作用：执行操作并记录训练阶段耗时。
+# 上游（直接调用）：v1.train_v1._run_training_warmup、v1.train_v1._settle、v1.train_v1.run_training。
+# 下游调用：profiler.nested_stage_seconds、profiler.increment。
 def _run_profiled_operation(profiler, counter_key, operation):
     if profiler is None:
         return operation()
@@ -209,6 +240,9 @@ def _run_profiled_operation(profiler, counter_key, operation):
     return result
 
 
+# 作用：检查任务和资源不变量，违反时中止。
+# 上游（直接调用）：v1.train_v1.V1TrainingLoop.process_cycle、v1.train_v1._load_checkpoint、v1.train_v1._run_training_warmup 等。
+# 下游调用：scan_scheduler_invariants、'; '.join。
 def _assert_scheduler_invariants(scheduler, cycle_result=None):
     violations = scan_scheduler_invariants(scheduler, cycle_result)
     if violations:
@@ -218,6 +252,8 @@ def _assert_scheduler_invariants(scheduler, cycle_result=None):
         raise RuntimeError(f"v1.0 invariant gate failed: {detail}")
 
 
+# 作用：判断是否到达完整不变量检查间隔。
+# 上游（直接调用）：v1.train_v1.run_training。
 def _should_run_invariant_check(
     completed_cycle,
     *,
@@ -232,6 +268,9 @@ def _should_run_invariant_check(
     )
 
 
+# 作用：写出性能统计摘要和明细。
+# 上游（直接调用）：v1.train_v1.run_training。
+# 下游调用：profiler.summary、target.parent.mkdir、target.write_text、target.with_suffix、csv_path.open 等。
 def _write_profile_outputs(profiler, total_wall_seconds, json_path):
     summary = profiler.summary(total_wall_seconds)
     target = Path(json_path)
@@ -256,6 +295,10 @@ def _write_profile_outputs(profiler, total_wall_seconds, json_path):
 
 
 class V1TrainingLoop:
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：v1.train_v1.run_training。
+    # 调用约定：构造实例时由 Python 调用。
+    # 下游调用：_resolve_device、_positive_int、_optional_positive_int、CandidateDQNTrainer、CandidateReplayBuffer 等。
     def __init__(
         self,
         runtime,
@@ -355,6 +398,9 @@ class V1TrainingLoop:
         self.policy.profiler = profiler
         self.trainer.profiler = profiler
 
+    # 作用：补齐新建或恢复会话的监控状态。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：_positive_int、_empty_reward_components。
     def ensure_monitoring_state(self, reward_rolling_window=None):
         """Add monitoring state when resuming checkpoints made by older code."""
 
@@ -380,6 +426,9 @@ class V1TrainingLoop:
         if not hasattr(self.trainer, "last_td_errors"):
             self.trainer.last_td_errors = ()
 
+    # 作用：取出当前窗口统计并准备下一窗口。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：_empty_reward_components。
     def consume_monitoring_interval(self):
         rewards = tuple(self.rewards_since_log)
         q_summaries = tuple(self.q_summaries)
@@ -401,6 +450,9 @@ class V1TrainingLoop:
             "td_errors": td_errors,
         }
 
+    # 作用：分批生成下一状态特征供自举估值。
+    # 上游（直接调用）：v1.train_v1.V1TrainingLoop._close_pending。
+    # 下游调用：self.runtime.accounting.candidate_metric_evaluator、self.runtime.scheduler.candidate_generator.feature_chunks_from_context。
     def _next_candidate_feature_chunks(self, context):
         evaluator = self.runtime.accounting.candidate_metric_evaluator(
             context.reservation_snapshot
@@ -415,6 +467,9 @@ class V1TrainingLoop:
             chunk_size=chunk_size,
         )
 
+    # 作用：把网络与相关张量迁移到指定设备。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：_resolve_device、self.trainer.online.to、self.trainer.target.to、self.policy.network.to、value.to。
     def to_device(self, device):
         self.device = _resolve_device(device)
         self.trainer.device = torch.device(self.device)
@@ -427,6 +482,9 @@ class V1TrainingLoop:
                 if torch.is_tensor(value):
                     state[key] = value.to(self.trainer.device)
 
+    # 作用：更新特征处理批大小。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：_positive_int。
     def set_candidate_chunk_size(self, candidate_chunk_size):
         chunk_size = _positive_int(
             "candidate_chunk_size", candidate_chunk_size
@@ -435,6 +493,9 @@ class V1TrainingLoop:
         self.policy.candidate_chunk_size = chunk_size
         self.trainer.candidate_chunk_size = chunk_size
 
+    # 作用：设置下一状态自举候选数量限制。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：_optional_positive_int、self.trainer.clear_next_feature_cache。
     def set_bootstrap_candidate_limit(self, bootstrap_candidate_limit):
         limit = _optional_positive_int(
             "bootstrap_candidate_limit", bootstrap_candidate_limit
@@ -443,6 +504,9 @@ class V1TrainingLoop:
         self.trainer.bootstrap_candidate_limit = limit
         self.trainer.clear_next_feature_cache()
 
+    # 作用：处理单周期决策和事件，完成奖励归因和经验训练。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：_assert_scheduler_invariants、self._buffer_completion、self._credit_decision_id、self._close_pending、self.reward_assembler.buffer_event 等。
     def process_cycle(self, result, *, check_invariants=True):
         if check_invariants:
             _assert_scheduler_invariants(self.runtime.scheduler, result)
@@ -510,6 +574,8 @@ class V1TrainingLoop:
                     (trace.q_min, trace.q_max, trace.q_mean)
                 )
 
+    # 作用：按决策标识把奖励计入对应记录。
+    # 上游（直接调用）：v1.train_v1.V1TrainingLoop.process_cycle。
     def _credit_decision_id(self, task_id):
         linked = self.decision_by_task.get(task_id)
         if linked is not None:
@@ -518,6 +584,9 @@ class V1TrainingLoop:
             return self.pending["record"].decision_id
         return "system-event"
 
+    # 作用：暂存完成奖励及实际结算修正。
+    # 上游（直接调用）：v1.train_v1.V1TrainingLoop.process_cycle。
+    # 下游调用：self.runtime.calendar.get_reservation、self.runtime.scheduler.state_machine.runtime、self.runtime.calendar.reservations_overlapping_node、self.runtime.accounting.realize、self.runtime.scheduler.state_machine.task_spec 等。
     def _buffer_completion(self, task_id, event_time_sim):
         linked = self.decision_by_task.get(task_id)
         if linked is None:
@@ -574,6 +643,9 @@ class V1TrainingLoop:
             event_time_sim, correction, record.decision_id, "TASK_COMPLETED"
         ))
 
+    # 作用：把经验奖励分量计入监控。
+    # 上游（直接调用）：v1.train_v1.V1TrainingLoop._close_pending。
+    # 下游调用：_empty_reward_components、self.reward_assembler.clock.elapsed_seconds、self.reward_assembler.clock.discount。
     def _record_transition_reward(self, data, transition):
         components = _empty_reward_components()
         components["immediate_reward"] = float(data["immediate_reward"])
@@ -609,6 +681,9 @@ class V1TrainingLoop:
         for field, value in components.items():
             self.reward_components_since_log[field] += value
 
+    # 作用：封闭待完成决策区间并形成经验。
+    # 上游（直接调用）：v1.train_v1.V1TrainingLoop.finalize、v1.train_v1.V1TrainingLoop.process_cycle。
+    # 下游调用：self._next_candidate_feature_chunks、self._record_transition_reward、self.reward_assembler.build_transition、self.replay.sample、self.trainer.train_batch 等。
     def _close_pending(self, *, next_state, next_context, next_time, terminal):
         data = self.pending
         cache_started = time.perf_counter()
@@ -676,6 +751,9 @@ class V1TrainingLoop:
                     self.trainer.update_target()
         self.pending = None
 
+    # 作用：关闭未封闭的训练记录并收尾。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self._close_pending、self.runtime.global_state。
     def finalize(self, final_time):
         if self.pending is not None:
             self._close_pending(
@@ -686,6 +764,9 @@ class V1TrainingLoop:
             )
 
 
+# 作用：推进调度和事件直到所有任务终止。
+# 上游（直接调用）：v1.train_v1.run_training。
+# 下游调用：ensure_v1_runtime_forecasts_for_tasks、_run_profiled_operation、runtime.scheduler.state_machine.task_ids_in_states、runtime.scheduler.state_machine.task_spec、runtime.scheduler.queue_manager.next_uncommitted_deadline_sim 等。
 def _settle(runtime, loop, current_time, safety_cap=1000000, profiler=None):
     iterations = 0
     unresolved = {
@@ -738,6 +819,9 @@ def _settle(runtime, loop, current_time, safety_cap=1000000, profiler=None):
     return current_time
 
 
+# 作用：生成当前仿真时刻的到达任务。
+# 上游（直接调用）：v1.train_v1._run_training_warmup、v1.train_v1.preflight_training、v1.train_v1.run_training。
+# 下游调用：runtime.task_manager.get_dynamic_task_rate、runtime.task_manager.generate_task_specs。
 def _generate_arrivals(runtime, current, cycle, total_capacity):
     lam, _ = runtime.task_manager.get_dynamic_task_rate(current)
     return runtime.task_manager.generate_task_specs(
@@ -752,6 +836,9 @@ def _generate_arrivals(runtime, current, cycle, total_capacity):
     )
 
 
+# 作用：正式学习前运行预热以建立背景负载。
+# 上游（直接调用）：v1.train_v1.run_training。
+# 下游调用：v1_runtime_forecast_end、_generate_arrivals、ensure_v1_runtime_forecasts_for_tasks、_run_profiled_operation、_assert_scheduler_invariants 等。
 def _run_training_warmup(
     runtime,
     loop,
@@ -823,6 +910,9 @@ def _run_training_warmup(
     return current, warmup_cycle
 
 
+# 作用：估计候选槽位及预计访问工作量。
+# 上游（直接调用）：v1.train_v1.preflight_training。
+# 下游调用：_positive_int。
 def _estimate_candidate_work(
     task_count,
     total_slots,
@@ -883,6 +973,9 @@ def _estimate_candidate_work(
     }
 
 
+# 作用：训练前估计规模并检查候选工作量限制。
+# 上游（直接调用）：v1.train_v1.main、v1.train_v1.run_training。
+# 下游调用：create_v1_runtime、_generate_arrivals、_optional_positive_int、_estimate_candidate_work、runtime.calendar.node_capacity 等。
 def preflight_training(
     steps,
     seed,
@@ -982,6 +1075,8 @@ def preflight_training(
     }
 
 
+# 作用：提取监控窗口内奖励、损失和状态指标。
+# 上游（直接调用）：v1.train_v1.run_training。
 def _training_monitoring_values(interval):
     rewards = interval["rewards"]
     rolling = interval["rolling_rewards"]
@@ -1012,6 +1107,9 @@ def _training_monitoring_values(interval):
     return values
 
 
+# 作用：按节点容量汇总 CPU 利用率。
+# 上游（直接调用）：v1.train_v1.run_training。
+# 下游调用：runtime.calendar.node_capacity、runtime.calendar.snapshot、allocation.interval_sim.contains。
 def _overall_cpu_utilization(runtime, time_sim):
     """Return current system-wide reserved CPU divided by total CPU capacity."""
 
@@ -1031,10 +1129,16 @@ def _overall_cpu_utilization(runtime, time_sim):
     return float(used_cpu / total_capacity)
 
 
+# 作用：根据输出位置与步数构造检查点路径。
+# 上游（直接调用）：v1.train_v1.run_training。
+# 下游调用：output.with_name。
 def _checkpoint_path(output):
     return output.with_name(output.stem + ".last.pt")
 
 
+# 作用：组织推理模型参数及元数据。
+# 上游（直接调用）：v1.train_v1._save_model_artifact。
+# 下游调用：_metadata、_canonical_hash、runtime.candidate_q_network.state_dict、loop.target.state_dict、loop.trainer.optimizer.state_dict。
 def _model_artifact_payload(runtime, loop, *, cycle, seed, device, run_config):
     metadata = _metadata(runtime)
     return {
@@ -1056,6 +1160,9 @@ def _model_artifact_payload(runtime, loop, *, cycle, seed, device, run_config):
     }
 
 
+# 作用：保存冻结推理使用的模型。
+# 上游（直接调用）：v1.train_v1.run_training、v1.train_v1.run_training.run_validation_checkpoint。
+# 下游调用：_model_artifact_payload、path.parent.mkdir、path.with_suffix。
 def _save_model_artifact(
     path, runtime, loop, *, cycle, seed, device, run_config
 ):
@@ -1077,6 +1184,9 @@ def _save_model_artifact(
     return path
 
 
+# 作用：读取并验证固定任务轨迹。
+# 上游（直接调用）：v1.train_v1.run_training。
+# 下游调用：TaskSpec.from_mapping、Path(path).read_text。
 def _load_task_trace(path):
     payload = json.loads(Path(path).read_text(encoding="utf-8"))
     rows = payload.get("tasks") if isinstance(payload, dict) else payload
@@ -1085,6 +1195,9 @@ def _load_task_trace(path):
     return tuple(TaskSpec.from_mapping(row) for row in rows)
 
 
+# 作用：在独立随机状态下生成固定验证轨迹。
+# 上游（直接调用）：v1.train_v1.run_training。
+# 下游调用：_preserve_rng_state、create_v1_runtime、_generate_trace。
 def _generate_fixed_validation_trace(cutoff, seed):
     from v1.evaluate_v1 import _generate_trace
 
@@ -1098,6 +1211,9 @@ def _generate_fixed_validation_trace(cutoff, seed):
         return _generate_trace(runtime, cutoff, seed)
 
 
+# 作用：保存固定验证轨迹及上下文。
+# 上游（直接调用）：v1.train_v1.run_training。
+# 下游调用：path.parent.mkdir、path.write_text。
 def _write_validation_trace(path, trace, *, cutoff, seed):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -1119,10 +1235,15 @@ def _write_validation_trace(path, trace, *, cutoff, seed):
     return path
 
 
+# 作用：从结构化指标读取有效数值。
+# 上游（直接调用）：v1.train_v1._validation_metrics_row。
 def _metric_value(metric):
     return "" if metric is None or metric.value is None else float(metric.value)
 
 
+# 作用：将验证报告整理为日志指标行。
+# 上游（直接调用）：v1.train_v1._run_fixed_validation。
+# 下游调用：_metric_value。
 def _validation_metrics_row(
     report,
     *,
@@ -1192,6 +1313,9 @@ def _validation_metrics_row(
     }
 
 
+# 作用：在固定轨迹评估当前模型并记录结果。
+# 上游（直接调用）：v1.train_v1.run_training.run_validation_checkpoint。
+# 下游调用：_preserve_rng_state、run_evaluation、_validation_metrics_row、report_path.parent.mkdir、report_path.write_text。
 def _run_fixed_validation(
     *,
     snapshot_path,
@@ -1250,6 +1374,9 @@ def _run_fixed_validation(
     return row
 
 
+# 作用：保存供断点恢复使用的完整训练状态。
+# 上游（直接调用）：v1.train_v1.run_training。
+# 下游调用：_metadata、_canonical_hash、path.parent.mkdir、path.with_suffix。
 def _save_checkpoint(path, runtime, loop, *, cycle, current_time, seed, run_config):
     metadata = _metadata(runtime)
     payload = {
@@ -1277,6 +1404,9 @@ def _save_checkpoint(path, runtime, loop, *, cycle, current_time, seed, run_conf
     os.replace(temporary, path)
 
 
+# 作用：读取检查点并验证恢复条件。
+# 上游（直接调用）：v1.train_v1.run_training。
+# 下游调用：_resume_config_compatible、extend_v1_runtime_forecasts、ensure_v1_runtime_forecasts_for_tasks、validate_checkpoint_metadata、_assert_scheduler_invariants 等。
 def _load_checkpoint(
     path,
     *,
@@ -1352,6 +1482,9 @@ def _load_checkpoint(
     return runtime, loop, int(checkpoint["cycle"]), float(checkpoint["current_time_sim"])
 
 
+# 作用：追加当前训练监控记录。
+# 上游（直接调用）：v1.train_v1.run_training、v1.train_v1.run_training.run_validation_checkpoint。
+# 下游调用：path.parent.mkdir、path.exists、path.stat、path.open、writer.writeheader 等。
 def _append_log(path, row):
     path.parent.mkdir(parents=True, exist_ok=True)
     exists = path.exists() and path.stat().st_size > 0
@@ -1382,6 +1515,10 @@ def _append_log(path, row):
         writer.writerow(row)
 
 
+# 作用：执行运行时构建或恢复、预热、周期训练、监控、验证和保存。
+# 上游（直接调用）：v1.train_v1.main。
+# 调用上下文：V1/V2 直接复用；V3–V6 在适配上下文内替换本模块的 create_v1_runtime 引用。
+# 下游调用：_resolve_device、_positive_int、_optional_positive_int、TrainingPerformanceProfiler、_training_config_view 等。
 def run_training(
     steps,
     seed,
@@ -1643,6 +1780,9 @@ def run_training(
             seed=validation_seed,
         )
 
+    # 作用：为当前检查点执行验证并保存结果。
+    # 上游（直接调用）：v1.train_v1.run_training。
+    # 下游调用：_save_model_artifact、_run_fixed_validation、_append_log。
     def run_validation_checkpoint(cycle, time_sim):
         snapshot_path = validation_checkpoint_dir / f"step_{cycle:09d}.pt"
         report_path = validation_report_dir / f"step_{cycle:09d}.json"
@@ -1863,6 +2003,9 @@ def run_training(
     return output
 
 
+# 作用：解析或转发命令行参数，组织本文件执行流程。
+# 上游（直接调用）：v2.train_v2.main、v3.train_v3.main、v4.train_v4.main 等。
+# 下游调用：variant_names、apply_ablation_variant、preflight_training、run_training、parser.add_argument 等。
 def main(
     *,
     system_version=None,

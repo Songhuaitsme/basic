@@ -1,3 +1,10 @@
+# 文件功能：从共享基础设施组装 V1 运行时，连接任务、预测、能源核算、候选策略和调度器。
+# 主要内容：V1Runtime、_build_forecast_segments、extend_v1_runtime_forecasts、v1_runtime_forecast_end、ensure_v1_runtime_forecasts_for_tasks、_v1_node_bill_rate_model、create_v1_runtime。
+# 模块上游（导入关系）：v1.calibrate_v1_objective、v1.evaluate_v1、v1.train_v1、v2.calibrate_warmup、v2.evaluate_five_policies 等。
+# 模块下游（项目依赖）：shared.config、shared.infrastructure、shared.task_manager、v1.accounting.energy、v1.accounting.forecast、v1.accounting.ledger 等。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Composition root that builds the frozen v1.0 scheduler from project data."""
 
 from dataclasses import dataclass
@@ -51,6 +58,9 @@ class V1Runtime:
     candidate_feature_encoder: CandidateFeatureEncoder
     candidate_q_network: Optional[SharedCandidateQNetwork] = None
 
+    # 作用：编码时间相位、SLA、任务需求、队列状态和节点利用率作为 DQN 全局状态。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self.scheduler.state_machine.count_by_state、self.calendar.snapshot、self.calendar.node_capacity、item.interval_sim.contains、list(SlaType).index 等。
     def global_state(self, task: Optional[TaskSpec] = None) -> np.ndarray:
         counts = self.scheduler.state_machine.count_by_state()
         now = self.scheduler.event_engine.current_time_sim
@@ -102,6 +112,9 @@ class V1Runtime:
         return state
 
 
+# 作用：按固定步长采样供给函数，建立分段常量预测。
+# 上游（直接调用）：v1.v1_runtime.create_v1_runtime、v1.v1_runtime.extend_v1_runtime_forecasts。
+# 下游调用：ForecastSegment、TimeInterval。
 def _build_forecast_segments(start_sim, end_sim, step_sim, value_provider):
     segments = []
     cursor = start_sim
@@ -115,6 +128,9 @@ def _build_forecast_segments(start_sim, end_sim, step_sim, value_provider):
     return tuple(segments)
 
 
+# 作用：延长电价与绿电预测覆盖范围并清理失效索引。
+# 上游（直接调用）：v1.train_v1._load_checkpoint、v1.v1_runtime.ensure_v1_runtime_forecasts_for_tasks。
+# 下游调用：positive_finite、_build_forecast_segments、PiecewiseConstantForecast.tariff_yuan_per_mwh、PiecewiseConstantForecast.green_power_mw、pricing.get_external_tariff_yuan_per_mwh 等。
 def extend_v1_runtime_forecasts(
     runtime: V1Runtime,
     forecast_end_sim: float,
@@ -178,6 +194,8 @@ def extend_v1_runtime_forecasts(
     return extended_nodes
 
 
+# 作用：返回各节点电价与绿电预测共同可用的结束时刻。
+# 上游（直接调用）：v1.train_v1._run_training_warmup、v1.train_v1.run_training、v1.v1_runtime.ensure_v1_runtime_forecasts_for_tasks。
 def v1_runtime_forecast_end(runtime: V1Runtime) -> float:
     """Return the common usable end of every tariff and green forecast."""
 
@@ -197,6 +215,9 @@ def v1_runtime_forecast_end(runtime: V1Runtime) -> float:
     return min(ends)
 
 
+# 作用：确保预测覆盖任务最晚可能执行的区间。
+# 上游（直接调用）：v1.evaluate_v1.run_evaluation、v1.train_v1._load_checkpoint、v1.train_v1._run_training_warmup 等。
+# 下游调用：v1_runtime_forecast_end、positive_finite、extend_v1_runtime_forecasts。
 def ensure_v1_runtime_forecasts_for_tasks(
     runtime: V1Runtime,
     tasks: Iterable[TaskSpec],
@@ -223,6 +244,8 @@ def ensure_v1_runtime_forecasts_for_tasks(
     return current_end
 
 
+# 作用：提供 V1 核算使用的节点电费速率模型。
+# 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
 def _v1_node_bill_rate_model(
     *, node, time_sim, total_task_power_mw,
     tariff_yuan_per_mwh, green_power_mw,
@@ -243,6 +266,10 @@ def _v1_node_bill_rate_model(
     return tariff_yuan_per_mwh * power * multiplier
 
 
+# 作用：装配基础设施、任务、预测、核算、候选生成、策略和调度器。
+# 上游（直接调用）：v1.calibrate_v1_objective.run_multi_seed_calibration、v1.evaluate_v1.run_evaluation、v1.train_v1._generate_fixed_validation_trace 等。
+# 调用上下文：由 V1/V2 训练评估调用，也是 V3–V6 工厂链的基础装配入口。
+# 下游调用：validate_scheduling_grid、TimeConverter.from_traffic_day_duration、InfrastructureContext.create、ReservationCalendar、StaticPathProvider 等。
 def create_v1_runtime(
     *,
     policy_name: str = "earliest_feasible",

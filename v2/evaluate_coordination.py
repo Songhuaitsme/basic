@@ -1,3 +1,10 @@
+# 文件功能：执行策略评估，导出任务、系统及代表案例的算电协同数据。
+# 主要内容：_sha256、_load_policy_checkpoint、discover_v2_policy_model、resolve_model_path、_json_cell、_write_csv、_write_json、_difference 等。
+# 模块上游（导入关系）：v2.evaluate_five_policies、tests.v2.test_coordination_evaluation。
+# 模块下游（项目依赖）：shared.config、v1.evaluate_v1、v2.coordination_metrics。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Single-model V2 evaluation focused on compute-electricity coordination.
 
 This entry point runs only Candidate DQN.  Its Earliest Feasible comparison is
@@ -76,6 +83,9 @@ TASK_FIELDS = (
 )
 
 
+# 作用：计算来源文件指纹。
+# 上游（直接调用）：v2.evaluate_coordination.main。
+# 下游调用：path.open、handle.read、digest.hexdigest。
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -84,6 +94,8 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+# 作用：读取策略检查点及元数据。
+# 上游（直接调用）：v2.evaluate_coordination.discover_v2_policy_model、v2.evaluate_coordination.main、v2.evaluate_coordination.resolve_model_path。
 def _load_policy_checkpoint(path: Path) -> dict:
     checkpoint = torch.load(path, map_location="cpu", weights_only=False)
     if not isinstance(checkpoint, Mapping):
@@ -95,6 +107,9 @@ def _load_policy_checkpoint(path: Path) -> dict:
     return dict(checkpoint)
 
 
+# 作用：在默认目录查找 V2 策略模型。
+# 上游（直接调用）：v2.evaluate_coordination.resolve_model_path。
+# 下游调用：_load_policy_checkpoint、formal_dir.glob、path.is_file、path.name.endswith、path.stat 等。
 def discover_v2_policy_model(repo_root: Path) -> Path:
     """Select the highest-step formal regional-pricing policy checkpoint."""
 
@@ -131,6 +146,9 @@ def discover_v2_policy_model(repo_root: Path) -> Path:
     return max(ranked)[-1].resolve()
 
 
+# 作用：综合显式参数和默认位置确定模型路径。
+# 上游（直接调用）：v2.evaluate_coordination.main、v2.evaluate_five_policies.main。
+# 下游调用：discover_v2_policy_model、_load_policy_checkpoint、model_path.is_absolute、path.is_file、path.name.endswith。
 def resolve_model_path(repo_root: Path, model_path: Path | None) -> Path:
     path = (
         discover_v2_policy_model(repo_root)
@@ -151,12 +169,17 @@ def resolve_model_path(repo_root: Path, model_path: Path | None) -> Path:
     return path
 
 
+# 作用：把嵌套字段转为 CSV 单元格 JSON。
+# 上游（直接调用）：v2.evaluate_coordination._write_csv。
 def _json_cell(value):
     if isinstance(value, (dict, list, tuple)):
         return json.dumps(value, ensure_ascii=False, sort_keys=True)
     return value
 
 
+# 作用：按字段顺序保存 CSV。
+# 上游（直接调用）：v2.evaluate_coordination.main。
+# 下游调用：_json_cell、path.open、writer.writeheader、writer.writerows。
 def _write_csv(path: Path, rows: Sequence[Mapping], fields: Sequence[str]) -> None:
     extras = sorted({key for row in rows for key in row if key not in fields})
     fieldnames = tuple(fields) + tuple(extras)
@@ -169,6 +192,9 @@ def _write_csv(path: Path, rows: Sequence[Mapping], fields: Sequence[str]) -> No
         )
 
 
+# 作用：保存结构化 JSON 结果。
+# 上游（直接调用）：v2.evaluate_coordination.main。
+# 下游调用：path.write_text。
 def _write_json(path: Path, value) -> None:
     path.write_text(
         json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False),
@@ -176,12 +202,17 @@ def _write_json(path: Path, value) -> None:
     )
 
 
+# 作用：在两侧有效时计算指标差值。
+# 上游（直接调用）：v2.evaluate_coordination.build_task_rows。
 def _difference(selected, earliest):
     if selected is None or earliest is None:
         return None
     return float(selected) - float(earliest)
 
 
+# 作用：整理逐任务算电协同分析行。
+# 上游（直接调用）：v2.evaluate_coordination.main。
+# 下游调用：_difference、enrich_adjustments。
 def build_task_rows(report) -> list[dict]:
     rows = []
     for record in report.task_records:
@@ -258,21 +289,30 @@ def build_task_rows(report) -> list[dict]:
     return enrich_adjustments(rows)
 
 
+# 作用：计算有效样本均值。
+# 上游（直接调用）：v2.evaluate_coordination.build_system_metrics。
 def _mean(rows: Iterable[Mapping], field: str):
     values = [float(row[field]) for row in rows if row.get(field) is not None]
     return statistics.fmean(values) if values else None
 
 
+# 作用：计算比率并处理零分母。
+# 上游（直接调用）：v2.evaluate_coordination.build_system_metrics。
 def _ratio(numerator: int, denominator: int):
     return numerator / denominator if denominator else None
 
 
+# 作用：从结构化指标读取有效数值。
+# 上游（直接调用）：v2.evaluate_coordination.build_system_metrics。
 def _metric_value(metric):
     if metric is None:
         return None
     return metric.value
 
 
+# 作用：汇总任务分析与系统核算指标。
+# 上游（直接调用）：v2.evaluate_coordination.main。
+# 下游调用：_ratio、_metric_value、_mean、build_adjustment_metrics。
 def build_system_metrics(report, task_rows: Sequence[Mapping]) -> dict:
     total = len(task_rows)
     completed = sum(row["final_state"] == "Completed" for row in task_rows)
@@ -364,9 +404,13 @@ def build_system_metrics(report, task_rows: Sequence[Mapping]) -> dict:
     return metrics
 
 
+# 作用：按类别和收益选择代表任务。
+# 上游（直接调用）：v2.evaluate_coordination.main。
 def select_representative_tasks(rows: Sequence[Mapping], limit: int = 5) -> list[dict]:
     scheduled = [row for row in rows if row.get("selected_start") is not None]
 
+    # 作用：计算当前策略或目标配置下的评分。
+    # 调用约定：由外层 v2.evaluate_coordination.select_representative_tasks 创建，作为局部辅助或回调使用。
     def score(row):
         return (
             int(row["region_temporal_adjustment"]),
@@ -383,18 +427,25 @@ def select_representative_tasks(rows: Sequence[Mapping], limit: int = 5) -> list
     return [dict(row) for row in sorted(scheduled, key=score, reverse=True)[:limit]]
 
 
+# 作用：格式化可选数值。
+# 上游（直接调用）：v2.evaluate_coordination.print_summary。
 def _format_number(value, digits=6):
     if value is None:
         return "N/A"
     return f"{float(value):.{digits}f}"
 
 
+# 作用：把比率格式化为百分比。
+# 上游（直接调用）：v2.evaluate_coordination.print_summary。
 def _format_percent(value):
     if value is None:
         return "N/A"
     return f"{100.0 * float(value):.2f}%"
 
 
+# 作用：输出主要评估指标。
+# 上游（直接调用）：v2.evaluate_coordination.main。
+# 下游调用：_format_percent、_format_number。
 def print_summary(metrics: Mapping, representatives: Sequence[Mapping]) -> None:
     table = (
         ("Total Tasks", metrics["total_tasks"], "count"),
@@ -469,6 +520,9 @@ def print_summary(metrics: Mapping, representatives: Sequence[Mapping]) -> None:
         print(f"Coordination Type: {coordination}")
 
 
+# 作用：提取评估配置快照。
+# 上游（直接调用）：v2.evaluate_coordination.main。
+# 下游调用：_jsonable、name.isupper。
 def _config_snapshot() -> dict:
     return {
         name: _jsonable(getattr(config, name))
@@ -481,6 +535,9 @@ def _config_snapshot() -> dict:
     }
 
 
+# 作用：按策略和参数选择默认输出目录。
+# 上游（直接调用）：v2.evaluate_coordination.main。
+# 下游调用：datetime.now().astimezone().strftime、datetime.now().astimezone、datetime.now。
 def _default_output_dir(seed: int) -> Path:
     timestamp = datetime.now().astimezone().strftime("%Y%m%d_%H%M%S")
     return Path("artifacts/v2/evaluation") / (
@@ -488,6 +545,9 @@ def _default_output_dir(seed: int) -> Path:
     )
 
 
+# 作用：解析或转发命令行参数，组织本文件执行流程。
+# 调用约定：本文件命令行入口或上层版本入口调用。
+# 下游调用：resolve_model_path、_load_policy_checkpoint、_default_output_dir、_jsonable、_sha256 等。
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Evaluate the formal V2 Candidate DQN for compute-electricity coordination"

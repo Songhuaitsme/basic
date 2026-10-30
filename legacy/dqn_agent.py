@@ -1,3 +1,10 @@
+# 文件功能：实现旧版 DQN、优先经验回放、目标网络同步及模型保存加载。
+# 主要内容：PrioritizedReplayBuffer、DQNAgent、_parse_major_minor、_ensure_runtime_compatibility。
+# 模块上游（导入关系）：legacy.evaluate、legacy.gnn_agent、legacy.train。
+# 模块下游（项目依赖）：shared.config。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 import os
 os.environ.setdefault('TF_CPP_MIN_LOG_LEVEL', '3')
 os.environ.setdefault('PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION', 'python')
@@ -12,6 +19,9 @@ from google.protobuf import __version__ as PROTOBUF_VERSION
 from shared import config
 
 
+# 作用：从版本字符串提取主次版本。
+# 上游（直接调用）：legacy.dqn_agent._ensure_runtime_compatibility。
+# 下游调用：version.split、char.isdigit、''.join。
 def _parse_major_minor(version: str):
     parts = []
     for token in version.split('.'):
@@ -31,6 +41,9 @@ def _parse_major_minor(version: str):
     return tuple(parts[:2])
 
 
+# 作用：检查旧版训练依赖的运行时兼容性。
+# 上游（直接调用）：legacy.dqn_agent.DQNAgent.__init__、legacy.gnn_agent.GNNAgent.__init__。
+# 下游调用：_parse_major_minor。
 def _ensure_runtime_compatibility():
     if _parse_major_minor(tf.__version__) < (2, 11) and _parse_major_minor(PROTOBUF_VERSION)[0] >= 4:
         raise RuntimeError(
@@ -42,6 +55,9 @@ def _ensure_runtime_compatibility():
 class PrioritizedReplayBuffer:
     """Proportional prioritized replay with lightweight numpy sampling."""
 
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：legacy.dqn_agent.DQNAgent.__init__。
+    # 调用约定：构造实例时由 Python 调用。
     def __init__(self, capacity, alpha=0.6, epsilon=1e-5):
         self.capacity = int(capacity)
         self.alpha = float(alpha)
@@ -50,9 +66,13 @@ class PrioritizedReplayBuffer:
         self.priorities = np.zeros(self.capacity, dtype=np.float32)
         self.position = 0
 
+    # 作用：返回当前保存的记录数量。
+    # 调用约定：由 len() 或容器协议调用。
     def __len__(self):
         return len(self.buffer)
 
+    # 作用：向缓冲区或统计容器追加记录。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     def add(self, experience, priority=None):
         if priority is None:
             current = self.priorities[:len(self.buffer)]
@@ -67,6 +87,9 @@ class PrioritizedReplayBuffer:
         self.priorities[self.position] = priority
         self.position = (self.position + 1) % self.capacity
 
+    # 作用：从经验缓冲区随机采样训练批次。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：weights.astype。
     def sample(self, batch_size, beta):
         size = len(self.buffer)
         priorities = self.priorities[:size]
@@ -79,12 +102,18 @@ class PrioritizedReplayBuffer:
         weights = weights / np.max(weights)
         return samples, indices, weights.astype(np.float32)
 
+    # 作用：按 TD 误差更新经验采样优先级。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     def update_priorities(self, indices, priorities):
         for idx, priority in zip(indices, priorities):
             self.priorities[idx] = max(float(priority), self.epsilon)
 
 
 class DQNAgent:
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：legacy.evaluate.create_agent、legacy.train.train。
+    # 调用约定：构造实例时由 Python 调用。
+    # 下游调用：_ensure_runtime_compatibility、PrioritizedReplayBuffer、self._build_model、self.update_target_model。
     def __init__(self, state_dim=None, action_dim=None):
         _ensure_runtime_compatibility()
         self.state_dim = state_dim if state_dim is not None else config.INPUT_DIM
@@ -107,6 +136,9 @@ class DQNAgent:
         self.target_model = self._build_model()
         self.update_target_model()
 
+    # 作用：构建旧版 DQN 网络。
+    # 上游（直接调用）：legacy.dqn_agent.DQNAgent.__init__。
+    # 下游调用：model.compile。
     def _build_model(self):
         inputs = tf.keras.Input(shape=(self.state_dim,), name='state')
         x = tf.keras.layers.Dense(256, activation='relu', kernel_initializer='he_uniform')(inputs)
@@ -143,9 +175,15 @@ class DQNAgent:
         )
         return model
 
+    # 作用：将在线模型参数同步到目标模型。
+    # 上游（直接调用）：legacy.dqn_agent.DQNAgent.__init__、legacy.dqn_agent.DQNAgent.load。
+    # 下游调用：self.target_model.set_weights、self.model.get_weights。
     def update_target_model(self):
         self.target_model.set_weights(self.model.get_weights())
 
+    # 作用：根据状态执行探索或按价值选择有效动作。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self._mask_q_values、self.model(state_tensor, training=False).numpy、self.model。
     def act(self, state, valid_actions=None):
         if np.random.rand() <= self.epsilon:
             if valid_actions is not None and len(valid_actions) > 0:
@@ -157,6 +195,8 @@ class DQNAgent:
         q_values = self._mask_q_values(q_values[None, :], [valid_actions])[0]
         return int(np.argmax(q_values))
 
+    # 作用：计算新经验的初始回放优先级。
+    # 上游（直接调用）：legacy.dqn_agent.DQNAgent.remember。
     def _initial_priority(self, reward, info):
         priority = abs(float(reward)) + 1.0
         if not isinstance(info, dict):
@@ -185,6 +225,9 @@ class DQNAgent:
 
         return priority
 
+    # 作用：把状态、动作、奖励及下一状态保存到回放。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self._initial_priority。
     def remember(self, state, action, reward, next_state, done,
                  valid_actions=None, next_valid_actions=None, info=None):
         experience = (
@@ -202,6 +245,8 @@ class DQNAgent:
         else:
             self.memory.append(experience)
 
+    # 作用：屏蔽不可行动作的价值。
+    # 上游（直接调用）：legacy.dqn_agent.DQNAgent.act、legacy.dqn_agent.DQNAgent.replay。
     @staticmethod
     def _mask_q_values(q_values, valid_actions_batch):
         masked = np.array(q_values, copy=True)
@@ -219,12 +264,17 @@ class DQNAgent:
             masked[row, mask] = -np.inf
         return masked
 
+    # 作用：按训练进度计算重要性采样修正系数。
+    # 上游（直接调用）：legacy.dqn_agent.DQNAgent.replay。
     def _current_beta(self):
         beta_start = getattr(config, 'PER_BETA_START', 0.4)
         beta_frames = max(1, getattr(config, 'PER_BETA_FRAMES', 120000))
         progress = min(1.0, self.replay_steps / beta_frames)
         return beta_start + progress * (1.0 - beta_start)
 
+    # 作用：采样经验，更新网络及经验优先级。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self._current_beta、self._mask_q_values、self.memory.sample、self.model(states_tensor, training=False).numpy、self.model 等。
     def replay(self):
         if len(self.memory) < config.BATCH_SIZE:
             return None
@@ -277,10 +327,16 @@ class DQNAgent:
 
         return loss[0] if isinstance(loss, list) else float(loss)
 
+    # 作用：保存模型参数及相关状态。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self.model.save。
     def save(self, filepath):
         self.model.save(filepath)
         print(f"Model saved to: {filepath}")
 
+    # 作用：加载模型参数及相关状态。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self.update_target_model、self.model.compile、self.target_model.compile。
     def load(self, filepath):
         if os.path.exists(filepath):
             try:

@@ -1,3 +1,10 @@
+# 文件功能：生成风光绿电供给、外部电价及节点动态资源价格，供预测和计费使用。
+# 主要内容：PricingManager。
+# 模块上游（导入关系）：legacy.network_env、shared.infrastructure、tests.shared.test_pricing_ablation、tests.v1.test_ablation_settings_v1。
+# 模块下游（项目依赖）：shared.config、v1.domain.units。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 import math
 import numpy as np
 from shared import config
@@ -5,6 +12,10 @@ from v1.domain.units import TariffConverter
 
 
 class PricingManager:
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：legacy.network_env.NetworkEnvironment.__init__、shared.infrastructure.InfrastructureContext.create。
+    # 调用约定：构造实例时由 Python 调用。
+    # 下游调用：self._initialize_smooth_price_lut、self._initialize_green_profiles。
     def __init__(self, G=None):
         self.G = G
         # 预计算电价查找表 (LUT)
@@ -14,6 +25,9 @@ class PricingManager:
         # 预定义各节点的绿电装机画像 (单位: MW)
         self.node_green_profiles = self._initialize_green_profiles()
 
+    # 作用：初始化节点太阳能和风能曲线参数。
+    # 上游（直接调用）：shared.pricing_manager.PricingManager.__init__。
+    # 下游调用：self.G.nodes。
     def _initialize_green_profiles(self):
         """为网络节点注入异构的物理装机容量"""
         profiles = {}
@@ -49,12 +63,16 @@ class PricingManager:
                 }
         return profiles
 
+    # 作用：预计算平滑资源价格查找表。
+    # 上游（直接调用）：shared.pricing_manager.PricingManager.__init__。
     def _initialize_smooth_price_lut(self, resolution: int = 144) -> np.ndarray:
         hours = np.array(getattr(config, 'TOU_PRICE_HOURS', [0.0, 8.0, 18.0, 22.0, 24.0]))
         prices = np.array(getattr(config, 'TOU_PRICE_MULTIPLIERS', [0.6, 1.0, 1.5, 0.8, 0.6]))
         x_query = np.linspace(0, 24, resolution, endpoint=False)
         return np.interp(x_query, hours, prices)
 
+    # 作用：按节点区域或层级读取静态 CPU 价格。
+    # 上游（直接调用）：shared.pricing_manager.PricingManager.get_dynamic_price。
     @staticmethod
     def _get_static_cpu_price() -> float:
         """Return the fixed CPU price used when dynamic pricing is disabled."""
@@ -62,11 +80,15 @@ class PricingManager:
         cpu_power_mw = getattr(config, 'CPU_POWER_UNIT_MW', 0.01)
         return max(getattr(config, 'MIN_CPU_PRICE', 1e-6), baseline_price * cpu_power_mw)
 
+    # 作用：根据时刻和节点参数计算光伏输出。
+    # 上游（直接调用）：shared.pricing_manager.PricingManager.get_node_power_profile。
     def _calculate_solar_output(self, capacity: float, sim_hr: float) -> float:
         """光伏出力模型：高斯分布，峰值在 13:00，标准差 2.5 小时"""
         if capacity <= 0: return 0.0
         return capacity * math.exp(-0.5 * ((sim_hr - 13.0) / 2.5) ** 2)
 
+    # 作用：根据时刻和节点参数计算风电输出。
+    # 上游（直接调用）：shared.pricing_manager.PricingManager.get_node_power_profile。
     def _calculate_wind_output(self, capacity: float, sim_hr: float) -> float:
         """风电出力模型：反调峰特性，正弦波动，峰值在凌晨 04:00"""
         if capacity <= 0: return 0.0
@@ -75,6 +97,8 @@ class PricingManager:
         fluctuation = capacity * 0.7 * 0.5 * (math.sin(math.pi * (sim_hr - 22.0) / 12.0) + 1.0)
         return base + fluctuation
 
+    # 作用：按时变模型计算当前外部电价。
+    # 上游（直接调用）：shared.pricing_manager.PricingManager.get_dynamic_price、shared.pricing_manager.PricingManager.get_external_tariff_yuan_per_mwh。
     def _fetch_realtime_electricity_price(self, node_data: dict, global_time: float) -> float:
         day_duration = getattr(config, 'TRAFFIC_DAY_DURATION_IN_SIM', 86400)
         progress = (global_time % day_duration) / day_duration
@@ -109,6 +133,9 @@ class PricingManager:
         region_base_price = self.region_base_price_map.get(region, fallback_base_price)
         return region_base_price * tou_multiplier
 
+    # 作用：查询节点当前外部电价，单位元每兆瓦时。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self._fetch_realtime_electricity_price、TariffConverter.yuan_per_kwh_to_yuan_per_mwh。
     def get_external_tariff_yuan_per_mwh(
         self,
         node_id: str,
@@ -159,6 +186,9 @@ class PricingManager:
             yuan_per_kwh = base * multiplier
         return TariffConverter.yuan_per_kwh_to_yuan_per_mwh(yuan_per_kwh)
 
+    # 作用：查询节点当前绿电供给功率。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self.get_node_power_profile。
     def get_green_supply_mw(self, node_id: str, global_time: float) -> float:
         """v1.0 exogenous green-power forecast, independent of task load."""
 
@@ -168,6 +198,8 @@ class PricingManager:
             global_time,
         )["green_supply_mw"])
 
+    # 作用：估计任务加入后的资源占用。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     @staticmethod
     def get_projected_resource_usage(resource_usage: dict, cpu_delta: float = 0.0) -> dict:
         """返回加入候选任务后的资源占用视图，用于计算边际电价。"""
@@ -175,6 +207,9 @@ class PricingManager:
         used_cpu = max(0.0, resource_usage.get('used', 0.0) + cpu_delta)
         return {'total': total_cpu, 'used': used_cpu}
 
+    # 作用：返回节点负载和绿电供给的功率视图。
+    # 上游（直接调用）：shared.pricing_manager.PricingManager.get_dynamic_price、shared.pricing_manager.PricingManager.get_green_supply_mw。
+    # 下游调用：self._calculate_solar_output、self._calculate_wind_output。
     def get_node_power_profile(self, node_id: str, resource_usage: dict, global_time: float = 0.0) -> dict:
         """返回节点在指定时刻的算力负荷、绿电供给和绿电匹配度。"""
         day_duration = getattr(config, 'TRAFFIC_DAY_DURATION_IN_SIM', 86400)
@@ -201,6 +236,9 @@ class PricingManager:
             "green_absorption_ratio": green_absorption_ratio
         }
 
+    # 作用：结合负载、绿电与计价规则计算资源动态价格。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self._get_static_cpu_price、self.get_node_power_profile、self._fetch_realtime_electricity_price、str(node_id).endswith。
     def get_dynamic_price(self, node_id: str, node_data: dict, resource_usage: dict, global_time: float = 0.0) -> float:
         """计算每 CPU 每单位执行时长的边际价格。"""
         if str(node_id).endswith('0'):

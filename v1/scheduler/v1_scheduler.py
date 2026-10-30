@@ -1,3 +1,10 @@
+# 文件功能：编排周期内事件推进、任务入队、候选选择、资源提交和指标结算。
+# 主要内容：SchedulingDecision、SchedulingCycleResult、V1Scheduler。
+# 模块上游（导入关系）：v1.evaluation_v1.runner、v1.scheduler、v1.v1_runtime、v4.scheduler、tests.v1.test_accounting_v1 等。
+# 模块下游（项目依赖）：v1.domain.candidates、v1.domain.models、v1.simulation.event_engine、v1.simulation.state_machine、v1.scheduler.candidate_generator、v1.scheduler.policies 等。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Online per-task v1.0 scheduler orchestration."""
 
 from dataclasses import dataclass, field, replace
@@ -58,6 +65,10 @@ class SchedulingCycleResult:
 
 
 class V1Scheduler:
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：v1.v1_runtime.create_v1_runtime。
+    # 调用约定：构造实例时由 Python 调用。
+    # 下游调用：TaskStateMachine、EventEngine、TaskQueueManager、ReservationManager、EarliestFeasiblePolicy。
     def __init__(
         self,
         calendar: ReservationCalendar,
@@ -98,6 +109,9 @@ class V1Scheduler:
         # scheduler's public construction contract or formal scheduling logic.
         self.profiler = None
 
+    # 作用：按到达时刻和任务标识排序，检查静态可服务性后入队。
+    # 上游（直接调用）：v1.scheduler.v1_scheduler.V1Scheduler.run_cycle。
+    # 下游调用：self.queue_manager.enqueue_new、self.candidate_generator.is_statically_serviceable。
     def submit_arrivals(self, tasks: Iterable[TaskSpec]) -> Tuple[StateTransition, ...]:
         transitions = []
         for task in sorted(tasks, key=lambda item: (item.arrival_time_sim, item.task_id)):
@@ -109,6 +123,9 @@ class V1Scheduler:
             ))
         return tuple(transitions)
 
+    # 作用：推进事件、结算完成任务、唤醒队列并逐任务选择和提交候选。
+    # 调用上下文：由训练循环和冻结评估循环驱动；事件引擎、候选生成器及预留管理器在此衔接。
+    # 下游调用：self.submit_arrivals、self._schedule_one、self.event_engine.advance_to、self.calendar.get_reservation、self.metrics_ledger.record_completed_reservation 等。
     def run_cycle(
         self,
         now_sim: float,
@@ -189,6 +206,9 @@ class V1Scheduler:
             state_counts=self.state_machine.count_by_state(),
         )
 
+    # 作用：确认任务全部终止后完成能源和成本结算。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self.state_machine.count_by_state、self.metrics_ledger.finalize_after_full_settlement。
     def finalize_metrics_after_full_settlement(self, accounting_interval=None):
         if self.metrics_ledger is None:
             raise RuntimeError("V1Scheduler has no metrics ledger")
@@ -213,6 +233,10 @@ class V1Scheduler:
             accounting_interval=accounting_interval
         )
 
+    # 作用：为单任务准备候选、执行策略选择并处理预留提交结果。
+    # 上游（直接调用）：v1.scheduler.v1_scheduler.V1Scheduler.run_cycle、v4.scheduler.V4Scheduler._schedule_one。
+    # 调用上下文：run_cycle 为每个可调度任务调用；按当前候选模式和策略接口选择，再提交资源。
+    # 下游调用：self._decision_record、self.state_machine.reset_commit_attempts、self.calendar.snapshot、self.candidate_generator.prepare_stream、self.profiler.increment 等。
     def _schedule_one(
         self,
         task: TaskSpec,
@@ -362,14 +386,21 @@ class V1Scheduler:
                 commit_status=commit.status.value,
             ), ()
 
+    # 作用：查询任务已提交的候选。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     def committed_candidate(self, task_id: str):
         return self._committed_candidates.get(task_id)
 
+    # 作用：查询提交决策对应的最早可行反事实候选。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     def committed_earliest_candidate(self, task_id: str):
         """Return the same-snapshot earliest feasible counterfactual."""
 
         return getattr(self, "_committed_earliest_candidates", {}).get(task_id)
 
+    # 作用：构造保存候选、预留及上下文的调度审计记录。
+    # 上游（直接调用）：v1.scheduler.v1_scheduler.V1Scheduler._schedule_one、v4.scheduler.V4Scheduler._decision_record。
+    # 下游调用：SchedulingDecision。
     @staticmethod
     def _decision_record(
         task_id,

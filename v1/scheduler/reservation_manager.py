@@ -1,3 +1,10 @@
+# 文件功能：协调候选提交、版本冲突重试、任务状态变化及事件注册。
+# 主要内容：CommitDecisionStatus、CommitDecisionResult、ReservationManager。
+# 模块上游（导入关系）：v1.scheduler、v1.scheduler.v1_scheduler、tests.v1.test_candidate_queue。
+# 模块下游（项目依赖）：v1.domain.candidates、v1.domain.reservations、v1.simulation.event_engine、v1.simulation.state_machine、v1.scheduler.resource_calendar。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Candidate-to-calendar commit coordination with bounded conflict attempts."""
 
 from dataclasses import dataclass
@@ -28,6 +35,9 @@ class CommitDecisionResult:
 
 
 class ReservationManager:
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：v1.scheduler.v1_scheduler.V1Scheduler.__init__。
+    # 调用约定：构造实例时由 Python 调用。
     def __init__(
         self,
         calendar: ReservationCalendar,
@@ -46,6 +56,9 @@ class ReservationManager:
         self.event_engine = event_engine
         self.max_commit_attempts = max_commit_attempts_per_decision
 
+    # 作用：提交选中候选，协调冲突重试、状态变更及事件注册。
+    # 调用上下文：由调度器单任务流程调用；成功后由事件引擎继续处理已注册预留。
+    # 下游调用：candidate.to_reservation_request、self.calendar.try_commit、self.event_engine.register_reservation、self.state_machine.runtime、CommitDecisionResult 等。
     def commit_selected(self, candidate: Candidate) -> CommitDecisionResult:
         request = candidate.to_reservation_request()
         result = self.calendar.try_commit(

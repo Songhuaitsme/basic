@@ -1,3 +1,9 @@
+# 文件功能：审计仓库需求、实现及验证材料的可追溯关系。
+# 主要内容：TraceabilityReport、_read、_duplicates、audit_repository。
+# 模块上游（导入关系）：tests.v1.test_v1_acceptance。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Executable v1.0 requirement, invariant, and acceptance-ID audit."""
 
 from dataclasses import dataclass
@@ -23,6 +29,8 @@ class TraceabilityReport:
     implemented_invariant_ids: FrozenSet[str]
     missing_invariant_ids: Tuple[str, ...]
 
+    # 作用：返回审计通过状态。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     @property
     def passed(self) -> bool:
         return (
@@ -35,10 +43,15 @@ class TraceabilityReport:
         )
 
 
+# 作用：读取可追溯审计需要的文本。
+# 上游（直接调用）：v1.traceability_audit.audit_repository。
+# 下游调用：path.read_text。
 def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+# 作用：找出重复标识。
+# 上游（直接调用）：v1.traceability_audit.audit_repository。
 def _duplicates(values: Iterable[str]) -> Tuple[str, ...]:
     counts = {}
     for value in values:
@@ -46,6 +59,9 @@ def _duplicates(values: Iterable[str]) -> Tuple[str, ...]:
     return tuple(sorted(value for value, count in counts.items() if count > 1))
 
 
+# 作用：扫描需求、实现与测试，生成可追溯审计。
+# 上游（直接调用）：tests.v1.test_v1_acceptance.V1TraceabilityAuditTest.test_frozen_traceability_counts_and_coverage。
+# 下游调用：_read、_duplicates、Path(root).resolve、(candidate / '文档' / '验收测试规格_v1.0.md').exists、TEST_ID_PATTERN.findall 等。
 def audit_repository(root: Path) -> TraceabilityReport:
     start = Path(root).resolve()
     repository_root = next(

@@ -1,3 +1,10 @@
+# 文件功能：定义时间区间、路径、资源分配和预留契约，统一链路标识及预留哈希。
+# 主要内容：ReservationValidationError、TimeInterval、PathSpec、ReservationRequest、Reservation、CommitStatus、ReleaseStatus、canonical_edge 等。
+# 模块上游（导入关系）：v1.accounting.energy、v1.accounting.forecast、v1.accounting.ledger、v1.domain、v1.domain.candidates 等。
+# 模块下游（项目依赖）：v1.domain.units。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Immutable path and reservation contracts for the v1.0 scheduler."""
 
 from dataclasses import dataclass
@@ -13,6 +20,9 @@ from .units import UnitValidationError, finite_number, non_negative_finite, posi
 Edge = Tuple[str, str]
 
 
+# 作用：统一无向链路的端点顺序作为资源键。
+# 上游（直接调用）：v1.domain.reservations.PathSpec.resource_edges、v1.evaluation_v1.diagnostics.build_evaluation_diagnostics、v1.evaluation_v1.runner.EvaluationRunner._warmup_snapshot 等。
+# 下游调用：ReservationValidationError。
 def canonical_edge(edge: Edge) -> Edge:
     if len(edge) != 2:
         raise ReservationValidationError("edge", "must contain two node ids")
@@ -23,12 +33,19 @@ def canonical_edge(edge: Edge) -> Edge:
 
 
 class ReservationValidationError(ValueError):
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：v1.domain.reservations.PathSpec.__post_init__、v1.domain.reservations.ReservationRequest.__post_init__、v1.domain.reservations.TimeInterval.__post_init__ 等。
+    # 调用约定：构造实例时由 Python 调用。
+    # 下游调用：super().__init__。
     def __init__(self, field: str, message: str):
         self.field = field
         self.message = message
         super().__init__(f"{field}: {message}")
 
 
+# 作用：解析并验证当前上下文的数值。
+# 上游（直接调用）：v1.domain.reservations.PathSpec.__post_init__、v1.domain.reservations.ReservationRequest.__post_init__、v1.domain.reservations.TimeInterval.__post_init__ 等。
+# 下游调用：positive_finite、non_negative_finite、finite_number、ReservationValidationError。
 def _number(field: str, value, *, positive=False, non_negative=False) -> float:
     try:
         if positive:
@@ -45,6 +62,9 @@ class TimeInterval:
     start_sim: float
     end_sim: float
 
+    # 作用：在数据类构造后校验字段或建立派生数据。
+    # 调用约定：由 dataclass 生成的构造流程调用。
+    # 下游调用：_number、ReservationValidationError。
     def __post_init__(self) -> None:
         start = _number("interval.start_sim", self.start_sim)
         end = _number("interval.end_sim", self.end_sim)
@@ -56,13 +76,20 @@ class TimeInterval:
         object.__setattr__(self, "start_sim", start)
         object.__setattr__(self, "end_sim", end)
 
+    # 作用：返回区间的仿真时长。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     @property
     def duration_sim(self) -> float:
         return self.end_sim - self.start_sim
 
+    # 作用：判断两时间区间是否重叠。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     def overlaps(self, other: "TimeInterval") -> bool:
         return self.start_sim < other.end_sim and other.start_sim < self.end_sim
 
+    # 作用：判断时刻是否落在当前时间区间。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：_number。
     def contains(self, time_sim: float) -> bool:
         time_value = _number("time_sim", time_sim)
         return self.start_sim <= time_value < self.end_sim
@@ -79,6 +106,9 @@ class PathSpec:
     static_bottleneck_mbps: float
     route_cost: float
 
+    # 作用：在数据类构造后校验字段或建立派生数据。
+    # 调用约定：由 dataclass 生成的构造流程调用。
+    # 下游调用：ReservationValidationError、_number。
     def __post_init__(self) -> None:
         if not isinstance(self.path_id, str) or not self.path_id:
             raise ReservationValidationError("path_id", "must be non-empty")
@@ -128,10 +158,15 @@ class PathSpec:
             _number("route_cost", self.route_cost, non_negative=True),
         )
 
+    # 作用：判断路径是否无需网络传输。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     @property
     def is_local(self) -> bool:
         return self.source_node == self.target_node
 
+    # 作用：返回路径占用的规范链路资源。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：canonical_edge。
     @property
     def resource_edges(self) -> Tuple[Edge, ...]:
         return tuple(canonical_edge(edge) for edge in self.ordered_edges)
@@ -150,6 +185,9 @@ class ReservationRequest:
     bandwidth_amount_mbps: float
     cpu_amount: float
 
+    # 作用：在数据类构造后校验字段或建立派生数据。
+    # 调用约定：由 dataclass 生成的构造流程调用。
+    # 下游调用：ReservationValidationError、_number。
     def __post_init__(self) -> None:
         for field in ("task_id", "committed_candidate_id", "target_node"):
             if not isinstance(getattr(self, field), str) or not getattr(self, field):
@@ -250,6 +288,8 @@ class ReleaseStatus(str, Enum):
     TOO_EARLY = "TOO_EARLY"
 
 
+# 作用：提取预留身份计算使用的规范字段。
+# 上游（直接调用）：v1.domain.reservations.deterministic_reservation_hash。
 def reservation_identity_payload(request: ReservationRequest, version: int) -> dict:
     tx = request.transmission_interval_sim
     return {
@@ -270,6 +310,9 @@ def reservation_identity_payload(request: ReservationRequest, version: int) -> d
     }
 
 
+# 作用：由规范字段计算可重复的预留哈希。
+# 上游（直接调用）：v1.scheduler.resource_calendar.ReservationCalendar.try_commit。
+# 下游调用：reservation_identity_payload。
 def deterministic_reservation_hash(request: ReservationRequest, version: int) -> str:
     encoded = json.dumps(
         reservation_identity_payload(request, version),

@@ -1,3 +1,9 @@
+# 文件功能：汇总 V3/V4 配对评估和任务记录，生成跨版本比较快照。
+# 主要内容：metric_value、pct、safe_change、sha256、source、definition、load_reports、completed_records 等。
+# 使用入口：命令行执行，或由其他脚本导入后调用。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Build reviewed data for the full V3 versus V4 Candidate DQN dashboard."""
 
 from __future__ import annotations
@@ -18,24 +24,35 @@ SOURCES = {
 }
 
 
+# 作用：从结构化指标读取有效数值。
+# 上游（直接调用）：v4.build_v3_v4_dashboard_snapshot.build_snapshot。
 def metric_value(value):
     return value.get("value") if isinstance(value, dict) else value
 
 
+# 作用：将比率转换为百分数展示。
+# 上游（直接调用）：v4.build_v3_v4_dashboard_snapshot.build_snapshot。
 def pct(value):
     return None if value is None else 100.0 * value
 
 
+# 作用：计算指标变化并处理零基准。
+# 上游（直接调用）：v4.build_v3_v4_dashboard_snapshot.aggregate_pairs、v4.build_v3_v4_dashboard_snapshot.build_snapshot。
 def safe_change(current, baseline):
     if baseline in (None, 0) or current is None:
         return None
     return 100.0 * (current - baseline) / baseline
 
 
+# 作用：计算来源文件 SHA-256 指纹。
+# 上游（直接调用）：v4.build_v3_v4_dashboard_snapshot.build_snapshot。
+# 下游调用：path.read_bytes。
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+# 作用：定义快照数据来源。
+# 上游（直接调用）：v4.build_v3_v4_dashboard_snapshot.build_snapshot。
 def source(label, files, definitions=()):
     return {
         "label": label,
@@ -54,6 +71,8 @@ def source(label, files, definitions=()):
     }
 
 
+# 作用：定义指标口径、单位及解释。
+# 上游（直接调用）：v4.build_v3_v4_dashboard_snapshot.build_snapshot。
 def definition(field, label, text, component_ids, files):
     return {
         "field": field,
@@ -64,6 +83,9 @@ def definition(field, label, text, component_ids, files):
     }
 
 
+# 作用：读取跨版本或跨策略报告。
+# 上游（直接调用）：v4.build_v3_v4_dashboard_snapshot.build_snapshot。
+# 下游调用：path.read_text。
 def load_reports():
     reports = {}
     for version, path in SOURCES.items():
@@ -74,6 +96,8 @@ def load_reports():
     return reports
 
 
+# 作用：筛选已完成任务记录。
+# 上游（直接调用）：v4.build_v3_v4_dashboard_snapshot.build_snapshot。
 def completed_records(report):
     return {
         row["task_id"]: row
@@ -82,6 +106,9 @@ def completed_records(report):
     }
 
 
+# 作用：按共同条件聚合配对报告。
+# 上游（直接调用）：v4.build_v3_v4_dashboard_snapshot.build_snapshot。
+# 下游调用：safe_change。
 def aggregate_pairs(rows, key_field):
     grouped = {}
     for row in rows:
@@ -115,6 +142,9 @@ def aggregate_pairs(rows, key_field):
     return list(grouped.values())
 
 
+# 作用：汇集指标、图表和来源并写出仪表盘快照。
+# 上游（直接调用）：v4.build_v3_v4_dashboard_snapshot.main。
+# 下游调用：load_reports、pct、metric_value、safe_change、completed_records 等。
 def build_snapshot():
     reports = load_reports()
     v3 = reports["V3"]
@@ -428,6 +458,9 @@ def build_snapshot():
     }
 
 
+# 作用：解析或转发命令行参数，组织本文件执行流程。
+# 调用约定：本文件命令行入口或上层版本入口调用。
+# 下游调用：build_snapshot、OUTPUT.write_text、OUTPUT.relative_to。
 def main():
     snapshot = build_snapshot()
     OUTPUT.write_text(json.dumps(snapshot, ensure_ascii=False, indent=2), encoding="utf-8")

@@ -1,3 +1,10 @@
+# 文件功能：构建 V1 运行时后替换 V3 候选生成器和扫描线能源核算器，并重接账本。
+# 主要内容：create_v3_runtime。
+# 模块上游（导入关系）：v3、v3._entrypoint、v4.v4_runtime。
+# 模块下游（项目依赖）：v1.accounting.ledger、v1.v1_runtime、v3.accounting.energy、v3.scheduler.candidate_generator。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Composition adapter for the isolated V3 candidate-generation runtime."""
 
 from v1.accounting import MetricsLedger
@@ -7,6 +14,10 @@ from .accounting import SweepLineEnergyAccounting
 from .scheduler import V3CandidateGenerator
 
 
+# 作用：构建 V1 后替换扫描线核算器、V3 候选生成器及关联账本。
+# 上游（直接调用）：v4.v4_runtime.create_v4_runtime。
+# 调用上下文：由 V3 适配上下文注入 V1 入口；V4 工厂继续调用本函数叠加门控。
+# 下游调用：create_v1_runtime、SweepLineEnergyAccounting、MetricsLedger、V3CandidateGenerator。
 def create_v3_runtime(**kwargs) -> V1Runtime:
     """Build a V1-compatible runtime with V3 candidate internals.
 

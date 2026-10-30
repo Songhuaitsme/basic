@@ -1,3 +1,10 @@
+# 文件功能：按潮汐流量和容量约束生成任务，并转换为带 SLA 的领域任务规格。
+# 主要内容：TaskManager。
+# 模块上游（导入关系）：legacy.evaluate、legacy.static_metrics、legacy.train、v1.v1_runtime、tests.v1.test_domain_foundations 等。
+# 模块下游（项目依赖）：shared.config、v1.domain.models、v1.domain.units。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 import random
 import numpy as np
 import math
@@ -7,6 +14,10 @@ from v1.domain.units import TimeConverter, validate_scheduling_grid
 
 
 class TaskManager:
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：legacy.evaluate.build_task_trace、legacy.evaluate.evaluate_seed、legacy.static_metrics.generate_current_static_data 等。
+    # 调用约定：构造实例时由 Python 调用。
+    # 下游调用：TimeConverter.from_traffic_day_duration、validate_scheduling_grid。
     def __init__(self, source_nodes, total_compute_capacity=None):
         self.source_nodes = list(source_nodes)
         self.total_compute_capacity = float(total_compute_capacity or 0.0)
@@ -79,12 +90,19 @@ class TaskManager:
     # 核心计算逻辑模块
     # ==========================================
 
+    # 作用：按时段计算潮汐到达倍率。
+    # 上游（直接调用）：shared.task_manager.TaskManager._get_type_probabilities、shared.task_manager.TaskManager.generate_tasks。
+    # 下游调用：gaussian、sigmoid。
     def _get_tidal_multiplier(self, task_type, sim_hr):
         """高斯混合模型与 Sigmoid 联合模拟平滑潮汐波动"""
 
+        # 作用：计算任务分布所需的高斯形状因子。
+        # 上游（直接调用）：shared.task_manager.TaskManager._get_tidal_multiplier。
         def gaussian(x, mu, sigma):
             return math.exp(-0.5 * ((x - mu) / sigma) ** 2)
 
+        # 作用：计算任务分布所需的 S 形变换。
+        # 上游（直接调用）：shared.task_manager.TaskManager._get_tidal_multiplier。
         def sigmoid(x, k=3.3):
             """
             S型平滑函数。
@@ -137,6 +155,9 @@ class TaskManager:
         # elif random.random() < self.p_recover['West']:
         #     self.burst_states['West'] = 0
 
+    # 作用：计算当前时段不同类型任务的概率。
+    # 上游（直接调用）：shared.task_manager.TaskManager._estimate_expected_task_work。
+    # 下游调用：self._get_tidal_multiplier。
     def _get_type_probabilities(self, sim_hr, region_choice=None):
         types = list(self.task_templates.keys())
         base_ratios = getattr(config, 'TASK_TYPE_BASE_RATIO', {})
@@ -159,6 +180,8 @@ class TaskManager:
 
         return types, np.array(type_weights, dtype=float) / total_weight
 
+    # 作用：估计任务模板的 CPU 工作量。
+    # 上游（直接调用）：shared.task_manager.TaskManager._estimate_expected_task_work。
     @staticmethod
     def _estimate_template_work(tmpl):
         latent_sigma = tmpl["lognormal_sigma"]
@@ -167,6 +190,9 @@ class TaskManager:
         dur_noise_mean = math.exp(0.5 * 0.3 * 0.3)
         return tmpl["base_cpu"] * tmpl["base_dur"] * latent_second_moment * cpu_noise_mean * dur_noise_mean
 
+    # 作用：按类型分布估计平均任务工作量。
+    # 上游（直接调用）：shared.task_manager.TaskManager._cap_lambda_by_capacity。
+    # 下游调用：self._get_type_probabilities、self._estimate_template_work。
     def _estimate_expected_task_work(self, sim_hr):
         # MMPP burst weighting disabled; use stable regional base weights.
         # region_weights = {
@@ -194,11 +220,17 @@ class TaskManager:
 
         return max(1.0, expected_work)
 
+    # 作用：返回任务生成周期的物理秒数。
+    # 上游（直接调用）：shared.task_manager.TaskManager.get_dynamic_task_rate。
+    # 下游调用：self.time_converter.scheduling_cycle_seconds。
     def _scheduling_cycle_seconds(self):
         """Return the scheduling cycle in seconds via the v1.0 unit boundary."""
 
         return self.time_converter.scheduling_cycle_seconds(config.SCHEDULING_CYCLE)
 
+    # 作用：根据系统容量限制任务到达强度。
+    # 上游（直接调用）：shared.task_manager.TaskManager.get_dynamic_task_rate。
+    # 下游调用：self._estimate_expected_task_work。
     def _cap_lambda_by_capacity(self, raw_lambda, sim_hr):
         if not getattr(config, 'ENABLE_CAPACITY_AWARE_TASK_GENERATION', True):
             return raw_lambda
@@ -211,6 +243,9 @@ class TaskManager:
         capacity_lambda = capacity_work_per_cycle / expected_work  *2.5
         return min(raw_lambda, capacity_lambda)
 
+    # 作用：结合潮汐和容量计算到达率。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self._scheduling_cycle_seconds、self._cap_lambda_by_capacity。
     def get_dynamic_task_rate(self, global_time):
         """计算当前时刻全网的总流量预期"""
         # MMPP burst-state update disabled.
@@ -237,6 +272,8 @@ class TaskManager:
         total_lambda = self._cap_lambda_by_capacity(raw_lambda, sim_hr)
         return total_lambda, sim_hr
 
+    # 作用：联合采样 CPU、执行时长及数据量等关联属性。
+    # 上游（直接调用）：shared.task_manager.TaskManager.generate_tasks。
     def _generate_coupled_attributes(self, tmpl):
         """[微观层] 使用对数正态分布 (Log-Normal) 替换帕累托分布生成高度耦合的资源需求矩阵"""
         # 1. 生成基于对数正态分布的共享潜变量
@@ -255,6 +292,9 @@ class TaskManager:
 
         return data_size, cpu_demand, duration, cpu_time_demand
 
+    # 作用：根据当前到达率生成旧格式任务。
+    # 上游（直接调用）：shared.task_manager.TaskManager.generate_task_specs。
+    # 下游调用：self._get_tidal_multiplier、self._generate_coupled_attributes、migrate_legacy_task、to_legacy_task_dict。
     def generate_tasks(self, num_tasks, global_time, cycle, cpu_budget=None):
         new_tasks = []
         if num_tasks <= 0: return new_tasks
@@ -346,6 +386,9 @@ class TaskManager:
 
         return new_tasks
 
+    # 作用：将生成任务转换为 V1 领域规格。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：migrate_legacy_task、self.generate_tasks。
     def generate_task_specs(self, num_tasks, global_time, cycle, cpu_budget=None):
         """Canonical v1.0 generation API; legacy dictionaries never leave adapter."""
 
@@ -359,6 +402,8 @@ class TaskManager:
             )
         ]
 
+    # 作用：按属性及时限计算任务优先级。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     @staticmethod
     def calculate_priority(task, current_time):
         rem = (task['generated_time'] + task['latency_limit']) - current_time

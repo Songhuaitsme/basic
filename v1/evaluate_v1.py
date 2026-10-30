@@ -1,3 +1,10 @@
+# 文件功能：组织冻结策略评估，生成固定任务轨迹、配置指纹及结构化报告。
+# 主要内容：_canonical_hash、_jsonable、_generate_trace、run_evaluation、main。
+# 模块上游（导入关系）：v1.ablate_v1_tardiness、v1.calibrate_v1_objective、v1.train_v1、v2.calibrate_warmup、v2.evaluate_coordination 等。
+# 模块下游（项目依赖）：shared.config、v1.ablation_settings、v1.domain.models、v1.evaluation_v1.runner、v1.evaluation_v1.diagnostics、v1.learning.candidate_dqn 等。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Executable formal v1.0 frozen-policy evaluation entry point."""
 
 import argparse
@@ -27,6 +34,9 @@ from v1.v1_runtime import (
 )
 
 
+# 作用：对规范化数据计算稳定哈希。
+# 上游（直接调用）：v1.evaluate_v1.run_evaluation、v2.calibrate_warmup.main、v2.evaluate_five_policies._prepare_fixed_task_trace。
+# 下游调用：payload.encode。
 def _canonical_hash(value) -> str:
     payload = json.dumps(
         value,
@@ -38,6 +48,9 @@ def _canonical_hash(value) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
+# 作用：递归将配置及报告值转换为可序列化的 JSON 基础类型。
+# 上游（直接调用）：v1.ablate_v1_tardiness.run_ablation、v1.evaluate_v1.main、v2.evaluate_coordination._config_snapshot 等。
+# 下游调用：_jsonable。
 def _jsonable(value):
     if is_dataclass(value):
         return _jsonable(asdict(value))
@@ -55,6 +68,9 @@ def _jsonable(value):
     return value
 
 
+# 作用：在固定随机种子和到达窗口内生成评估任务轨迹。
+# 上游（直接调用）：v1.calibrate_v1_objective.run_multi_seed_calibration、v1.evaluate_v1.run_evaluation、v1.train_v1._generate_fixed_validation_trace 等。
+# 下游调用：runtime.calendar.node_capacity、runtime.task_manager.get_dynamic_task_rate、runtime.task_manager.generate_task_specs。
 def _generate_trace(runtime, cutoff, seed):
     random.seed(seed)
     np.random.seed(seed)
@@ -82,6 +98,10 @@ def _generate_trace(runtime, cutoff, seed):
     return tuple(task for task in tasks if task.arrival_time_sim < cutoff)
 
 
+# 作用：构建冻结策略运行时，评估并输出配置及来源报告。
+# 上游（直接调用）：v1.ablate_v1_tardiness.run_ablation、v1.evaluate_v1.main、v1.train_v1._run_fixed_validation 等。
+# 调用上下文：各版本入口复用本流程；实际工厂由相应 _entrypoint 上下文决定。
+# 下游调用：apply_ablation_variant、run_evaluation、create_v1_runtime、_canonical_hash、validate_checkpoint_metadata 等。
 def run_evaluation(
     policy,
     cutoff,
@@ -99,6 +119,8 @@ def run_evaluation(
     audit_interval=500,
     task_trace=None,
     warmup_days=None,
+    candidate_profile_detail=False,
+    path_search_cache=None,
 ):
     system_version = str(
         config.SYSTEM_VERSION if system_version is None else system_version
@@ -120,6 +142,8 @@ def run_evaluation(
                 audit_interval=audit_interval,
                 task_trace=task_trace,
                 warmup_days=warmup_days,
+                candidate_profile_detail=candidate_profile_detail,
+                path_search_cache=path_search_cache,
             )
     warmup_days = (
         config.WARMUP_DAYS
@@ -161,6 +185,11 @@ def run_evaluation(
     np.random.seed(seed)
     torch.manual_seed(seed)
     horizon = measurement_end + config.V1_MAX_FORECAST_LOOKAHEAD_SIM
+    runtime_options = {}
+    if path_search_cache is not None:
+        if system_version != "7.0":
+            raise ValueError("path-search cache override currently requires V7")
+        runtime_options["path_search_cache"] = bool(path_search_cache)
     runtime = create_v1_runtime(
         policy_name=policy,
         forecast_end_sim=horizon,
@@ -168,6 +197,7 @@ def run_evaluation(
         device=device,
         candidate_chunk_size=candidate_chunk_size,
         objective_config=objective,
+        **runtime_options,
     )
     model_hash = _canonical_hash({"policy": policy})
     if policy == "candidate_dqn":
@@ -241,6 +271,7 @@ def run_evaluation(
         package_root / "evaluation_v1" / "runner.py",
         package_root / "evaluation_v1" / "diagnostics.py",
         package_root / "profiling.py",
+        package_root / "candidate_profiling.py",
         package_root / "learning" / "candidate_dqn.py",
         package_root / "simulation" / "state_machine.py",
     )
@@ -280,6 +311,10 @@ def run_evaluation(
         audit_interval=audit_interval,
     )
     profiler = TrainingPerformanceProfiler()
+    if candidate_profile_detail:
+        if runtime.scheduler.candidate_generator.candidate_mode.value != "layered_pool":
+            raise ValueError("detailed candidate profiling currently requires layered_pool mode")
+        profiler.enable_candidate_detail()
     runtime.scheduler.profiler = profiler
     runtime.scheduler.candidate_generator.profiler = profiler
     if hasattr(runtime.scheduler.policy, "profiler"):
@@ -302,18 +337,27 @@ def run_evaluation(
         for edge in graph.edges
         if runtime.calendar.link_capacity(tuple(edge)) is not None
     }
+    profiler_summary = profiler.summary(evaluation_wall_seconds)
+    generator = runtime.scheduler.candidate_generator
+    profiler_summary["path_search_cache"] = (
+        generator.path_search_statistics() if hasattr(generator, "path_search_statistics")
+        else {"enabled": False}
+    )
     diagnostics = build_evaluation_diagnostics(
         report,
         reservations=runtime.calendar.reservations(),
         node_capacities=node_capacities,
         link_capacities=link_capacities,
         time_converter=runtime.time_converter,
-        profiler_summary=profiler.summary(evaluation_wall_seconds),
+        profiler_summary=profiler_summary,
         energy_accounting=runtime.accounting,
     )
     return replace(report, diagnostics=diagnostics)
 
 
+# 作用：解析或转发命令行参数，组织本文件执行流程。
+# 上游（直接调用）：v2.evaluate_v2.main、v3.evaluate_v3.main、v4.evaluate_v4.main 等。
+# 下游调用：variant_names、TaskSpec.from_mapping、run_evaluation、_jsonable、parser.add_argument 等。
 def main(
     *,
     system_version=None,
@@ -374,6 +418,14 @@ def main(
     )
     parser.add_argument("--output", default=default_output)
     parser.add_argument(
+        "--candidate-profile-detail", action="store_true",
+        help="Collect nested candidate wall times and write a sibling candidate_detail CSV",
+    )
+    parser.add_argument(
+        "--disable-path-search-cache", action="store_true",
+        help="V7 reference run: disable new path and task-static grid caches",
+    )
+    parser.add_argument(
         "--audit",
         choices=("full", "periodic", "final"),
         default=default_audit_mode,
@@ -419,6 +471,8 @@ def main(
         audit_interval=args.audit_interval,
         task_trace=task_trace,
         warmup_days=args.warmup_days,
+        candidate_profile_detail=args.candidate_profile_detail,
+        path_search_cache=False if args.disable_path_search_cache else None,
     )
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -435,6 +489,12 @@ def main(
         ),
         encoding="utf-8",
     )
+    if args.candidate_profile_detail:
+        from v1.candidate_profiling import write_candidate_detail_csv
+        write_candidate_detail_csv(
+            payload["diagnostics"]["runtime_summary"]["candidate_detail"],
+            output.with_suffix(".candidate_detail.csv"),
+        )
     print(json.dumps(
         {"status": report.status.value, "output": str(output)},
         ensure_ascii=False,

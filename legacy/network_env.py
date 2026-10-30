@@ -1,3 +1,10 @@
+# 文件功能：实现旧版网络调度环境、资源占用、等待机会评估及奖励计算。
+# 主要内容：NetworkEnvironment、get_max_retries_for_task、estimate_wait_penalty_detail、_candidate_times_for_task、evaluate_schedule_candidates、estimate_wait_opportunity。
+# 模块上游（导入关系）：legacy.evaluate、legacy.static_metrics、legacy.train、tests.legacy.test_cpu_occupancy_model。
+# 模块下游（项目依赖）：shared.config、shared.topology_manager、shared.pricing_manager。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 import numpy as np
 import math
 from shared import config
@@ -5,6 +12,8 @@ from shared.topology_manager import TopologyManager
 from shared.pricing_manager import PricingManager
 
 
+# 作用：根据任务类型及时限确定重试上限。
+# 上游（直接调用）：legacy.evaluate.run_frozen_policy、legacy.network_env.estimate_wait_penalty_detail、legacy.train.build_wait_decision_detail 等。
 def get_max_retries_for_task(task):
     sla_type = task.get("sla_type", "Soft") if task else "Soft"
     return getattr(config, "MAX_RETRIES_BY_SLA", {}).get(
@@ -13,6 +22,9 @@ def get_max_retries_for_task(task):
     )
 
 
+# 作用：计算等待惩罚及可解释分量。
+# 上游（直接调用）：legacy.network_env.NetworkEnvironment._build_wait_detail、legacy.train.build_wait_decision_detail。
+# 下游调用：get_max_retries_for_task、env._clip。
 def estimate_wait_penalty_detail(env, task, wait_queue, next_queue_delay, sla_type):
     max_retries = get_max_retries_for_task(task)
     wait_params = getattr(config, "WAIT_PENALTY_PARAMS", {})
@@ -74,6 +86,8 @@ def estimate_wait_penalty_detail(env, task, wait_queue, next_queue_delay, sla_ty
     }
 
 
+# 作用：生成任务可尝试的调度时刻。
+# 上游（直接调用）：legacy.network_env.estimate_wait_opportunity、legacy.network_env.evaluate_schedule_candidates。
 def _candidate_times_for_task(task, global_time, include_future=True, include_current=True):
     scheduling_cycle = max(float(getattr(config, "SCHEDULING_CYCLE", 0.0)), 1e-8)
     generated_time = task.get('generated_time', global_time)
@@ -117,6 +131,9 @@ def _candidate_times_for_task(task, global_time, include_future=True, include_cu
     }
 
 
+# 作用：评估旧环境节点时间组合的成本及绿电收益。
+# 上游（直接调用）：legacy.evaluate.run_frozen_policy、legacy.network_env.estimate_wait_opportunity、legacy.train.build_transition_next_state 等。
+# 下游调用：_candidate_times_for_task、env.get_task_cpu_demand、env.estimate_execution_duration、env.get_reserved_link_usage、env.get_reserved_cpu_usage 等。
 def evaluate_schedule_candidates(
     env,
     task,
@@ -260,6 +277,9 @@ def evaluate_schedule_candidates(
     return candidates
 
 
+# 作用：比较立即与延迟执行的预期收益。
+# 上游（直接调用）：legacy.network_env.NetworkEnvironment._build_wait_detail、legacy.train.build_wait_decision_detail。
+# 下游调用：evaluate_schedule_candidates、_candidate_times_for_task。
 def estimate_wait_opportunity(env, task, wait_queue, global_time, candidates=None):
     if candidates is None:
         candidates = evaluate_schedule_candidates(env, task, wait_queue, global_time)
@@ -295,6 +315,10 @@ def estimate_wait_opportunity(env, task, wait_queue, global_time, candidates=Non
 
 
 class NetworkEnvironment:
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：legacy.evaluate.evaluate_seed、legacy.static_metrics.generate_current_static_data、legacy.train.train。
+    # 调用约定：构造实例时由 Python 调用。
+    # 下游调用：TopologyManager、PricingManager、self._build_normalized_adjacency、self.topo_manager.graph.nodes、str(n).endswith 等。
     def __init__(self):
         self.topo_manager = TopologyManager()
         self.pricing_manager = PricingManager(self.topo_manager.graph)
@@ -335,6 +359,9 @@ class NetworkEnvironment:
         self.compute_node_indices = np.array([self.node_to_index[node] for node in self.compute_nodes], dtype=np.int32)
         self.normalized_adjacency = self._build_normalized_adjacency()
 
+    # 作用：为图网络建立归一化邻接矩阵。
+    # 上游（直接调用）：legacy.network_env.NetworkEnvironment.__init__。
+    # 下游调用：self.topo_manager.graph.edges、(adjacency * inv_sqrt_degree[:, None] * inv_sqrt_degree[None, :]).astype。
     def _build_normalized_adjacency(self) -> np.ndarray:
         """构造带自环的对称归一化邻接矩阵，供 GCN 使用。"""
         node_count = len(self.all_nodes)
@@ -348,10 +375,15 @@ class NetworkEnvironment:
         inv_sqrt_degree = np.power(np.maximum(degree, 1e-8), -0.5)
         return (adjacency * inv_sqrt_degree[:, None] * inv_sqrt_degree[None, :]).astype(np.float32)
 
+    # 作用：统一链路端点为资源索引键。
+    # 上游（直接调用）：legacy.network_env.NetworkEnvironment.add_scheduled_allocation、legacy.network_env.NetworkEnvironment.allocate_path_bandwidth、legacy.network_env.NetworkEnvironment.get_reserved_link_usage 等。
     @staticmethod
     def _edge_key(u, v):
         return tuple(sorted((u, v)))
 
+    # 作用：增加路径链路的带宽占用。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self._edge_key。
     def allocate_path_bandwidth(self, path: list, bw_demand: float):
         """按路径锁定链路带宽资源。"""
         if not path or len(path) < 2 or bw_demand <= 0:
@@ -360,6 +392,9 @@ class NetworkEnvironment:
             key = self._edge_key(path[i], path[i + 1])
             self.link_usage[key] = self.link_usage.get(key, 0.0) + bw_demand
 
+    # 作用：释放任务占用的路径带宽。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self._edge_key。
     def release_path_bandwidth(self, path: list, bw_demand: float):
         """任务结束后释放链路带宽资源。"""
         if not path or len(path) < 2 or bw_demand <= 0:
@@ -368,10 +403,14 @@ class NetworkEnvironment:
             key = self._edge_key(path[i], path[i + 1])
             self.link_usage[key] = max(0.0, self.link_usage.get(key, 0.0) - bw_demand)
 
+    # 作用：判断资源占用区间是否重叠。
+    # 上游（直接调用）：legacy.network_env.NetworkEnvironment.get_reserved_cpu_usage、legacy.network_env.NetworkEnvironment.get_reserved_link_usage。
     @staticmethod
     def _intervals_overlap(start_a: float, end_a: float, start_b: float, end_b: float) -> bool:
         return start_a < end_b and start_b < end_a
 
+    # 作用：根据已排程任务重建资源预留索引。
+    # 上游（直接调用）：legacy.network_env.NetworkEnvironment._ensure_scheduled_allocation_index。
     def rebuild_scheduled_allocation_index(self):
         self.scheduled_allocations_by_node = {
             node: []
@@ -382,10 +421,16 @@ class NetworkEnvironment:
             self.scheduled_allocations_by_node.setdefault(node, []).append(item)
         self._scheduled_allocation_index_size = len(self.scheduled_allocations)
 
+    # 作用：在索引缺失或失效时重建。
+    # 上游（直接调用）：legacy.network_env.NetworkEnvironment.get_reserved_cpu_usage、legacy.network_env.NetworkEnvironment.get_reserved_link_usage。
+    # 下游调用：self.rebuild_scheduled_allocation_index。
     def _ensure_scheduled_allocation_index(self):
         if self._scheduled_allocation_index_size != len(self.scheduled_allocations):
             self.rebuild_scheduled_allocation_index()
 
+    # 作用：登记已排程任务资源占用。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self._edge_key。
     def add_scheduled_allocation(self, allocation: dict):
         path = allocation.get('path')
         if path and len(path) >= 2 and '_edge_keys' not in allocation:
@@ -398,6 +443,9 @@ class NetworkEnvironment:
         self.scheduled_allocations_by_node.setdefault(node, []).append(allocation)
         self._scheduled_allocation_index_size = len(self.scheduled_allocations)
 
+    # 作用：移除已排程任务资源占用。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self.scheduled_allocations.remove、node_allocations.remove。
     def remove_scheduled_allocation(self, allocation: dict):
         if allocation in self.scheduled_allocations:
             self.scheduled_allocations.remove(allocation)
@@ -407,6 +455,8 @@ class NetworkEnvironment:
             node_allocations.remove(allocation)
         self._scheduled_allocation_index_size = len(self.scheduled_allocations)
 
+    # 作用：计算任务 CPU 时间工作量。
+    # 上游（直接调用）：legacy.network_env.NetworkEnvironment.estimate_execution_duration、legacy.network_env.NetworkEnvironment.step。
     @staticmethod
     def get_task_cpu_time_demand(task: dict) -> float:
         """Return task work in CPU-time units."""
@@ -418,6 +468,8 @@ class NetworkEnvironment:
             return cpu * duration
         return max(0.0, float(task.get('cpu_time', 0.0)))
 
+    # 作用：取得任务并发 CPU 需求。
+    # 上游（直接调用）：legacy.network_env.NetworkEnvironment.estimate_execution_duration、legacy.network_env.NetworkEnvironment.get_global_state、legacy.network_env.NetworkEnvironment.get_graph_state 等。
     @staticmethod
     def get_task_cpu_demand(task: dict) -> float:
         """Return instantaneous CPU occupied by a task while it runs."""
@@ -425,10 +477,16 @@ class NetworkEnvironment:
             return 0.0
         return max(0.0, float(task.get('cpu', 0.0)))
 
+    # 作用：计算目标节点给任务的 CPU 供给。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self.get_task_cpu_demand。
     def get_task_cpu_supply(self, node_id, task: dict = None) -> float:
         """Compatibility wrapper: task CPU demand, not node total capacity."""
         return self.get_task_cpu_demand(task)
 
+    # 作用：按需求与供给估计执行时长。
+    # 上游（直接调用）：legacy.network_env.NetworkEnvironment.get_global_state、legacy.network_env.NetworkEnvironment.get_graph_state、legacy.network_env.NetworkEnvironment.step。
+    # 下游调用：self.get_task_cpu_time_demand、self.get_task_cpu_demand。
     def estimate_execution_duration(self, node_id, task: dict) -> float:
         if not task:
             return 0.0
@@ -441,6 +499,9 @@ class NetworkEnvironment:
             return 0.0
         return cpu_time_demand / cpu_demand
 
+    # 作用：查询区间内已预留 CPU 占用。
+    # 上游（直接调用）：legacy.network_env.NetworkEnvironment.get_dynamic_cpu_price、legacy.network_env.NetworkEnvironment.get_global_state、legacy.network_env.NetworkEnvironment.get_graph_state 等。
+    # 下游调用：self._ensure_scheduled_allocation_index、self._intervals_overlap。
     def get_reserved_cpu_usage(self, node_id, start_time: float, finish_time: float) -> float:
         """统计某个时间区间内已经预约/运行的 CPU 占用。"""
         self._ensure_scheduled_allocation_index()
@@ -450,12 +511,18 @@ class NetworkEnvironment:
                 used += item.get('cpu', 0.0)
         return used
 
+    # 作用：检查计算区间内节点容量约束。
+    # 上游（直接调用）：legacy.network_env.NetworkEnvironment.step。
+    # 下游调用：self.get_reserved_cpu_usage。
     def has_node_capacity_for_interval(self, node_id, cpu_demand: float, start_time: float, finish_time: float) -> bool:
         """判断指定时间区间内节点是否还有足够 CPU 容量。"""
         node_res = self.node_resources[node_id]
         reserved_cpu = self.get_reserved_cpu_usage(node_id, start_time, finish_time)
         return reserved_cpu + cpu_demand <= node_res['total']
 
+    # 作用：查询区间内已预留链路带宽。
+    # 上游（直接调用）：legacy.network_env.NetworkEnvironment.step。
+    # 下游调用：self._ensure_scheduled_allocation_index、self._intervals_overlap、self._edge_key。
     def get_reserved_link_usage(self, start_time: float, finish_time: float) -> dict:
         """统计指定时间区间内已经预约/运行的链路带宽占用。"""
         self._ensure_scheduled_allocation_index()
@@ -478,6 +545,9 @@ class NetworkEnvironment:
                 usage[key] = usage.get(key, 0.0) + bw
         return usage
 
+    # 作用：根据当前负载查询动态 CPU 单价。
+    # 上游（直接调用）：legacy.network_env.NetworkEnvironment.get_global_state、legacy.network_env.NetworkEnvironment.get_graph_state、legacy.network_env.NetworkEnvironment.step。
+    # 下游调用：self.get_reserved_cpu_usage、self.pricing_manager.get_projected_resource_usage、self.pricing_manager.get_dynamic_price。
     def get_dynamic_cpu_price(self, node_id, global_time: float = 0.0, cpu_delta: float = 0.0,
                               interval_start: float = None, interval_end: float = None) -> float:
         """获取节点的实时动态价格；cpu_delta 用于估算候选任务加入后的边际价格。"""
@@ -491,6 +561,9 @@ class NetworkEnvironment:
         projected_usage = self.pricing_manager.get_projected_resource_usage(resource_usage, cpu_delta)
         return self.pricing_manager.get_dynamic_price(node_id, node_data, projected_usage, global_time)
 
+    # 作用：构造旧版全局状态向量。
+    # 上游（直接调用）：legacy.network_env.NetworkEnvironment.step。
+    # 下游调用：self.get_task_cpu_demand、self.estimate_execution_duration、self.get_dynamic_cpu_price、self.get_reserved_cpu_usage、self.pricing_manager.get_node_power_profile。
     def get_global_state(self, task: dict = None, wait_queue: list = None) -> np.ndarray:
         """构建全局状态向量"""
         if task:
@@ -599,6 +672,8 @@ class NetworkEnvironment:
             green_supply_demand_ratios,  # N
         )).astype(np.float32)
 
+    # 作用：将 SLA 转换为独热编码。
+    # 上游（直接调用）：legacy.network_env.NetworkEnvironment.get_graph_state。
     def _get_sla_one_hot(self, sla_type: str):
         if sla_type == 'Hard':
             return [1.0, 0.0, 0.0]
@@ -606,6 +681,9 @@ class NetworkEnvironment:
             return [0.0, 0.0, 1.0]
         return [0.0, 1.0, 0.0]
 
+    # 作用：构造节点特征、邻接信息与任务特征组成的图状态。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self.get_task_cpu_demand、self.estimate_execution_duration、self._get_sla_one_hot、self.get_reserved_cpu_usage、self.get_dynamic_cpu_price 等。
     def get_graph_state(self, task: dict = None, wait_queue: list = None) -> dict:
         """构建 GNN-RL 使用的图状态。
 
@@ -720,6 +798,8 @@ class NetworkEnvironment:
             "wait_action_index": len(self.compute_nodes)
         }
 
+    # 作用：计算并拆分动作奖励来源。
+    # 上游（直接调用）：legacy.network_env.NetworkEnvironment._step_info、legacy.network_env.NetworkEnvironment.step。
     @staticmethod
     def _reward_components(**updates):
         components = {
@@ -733,10 +813,14 @@ class NetworkEnvironment:
         components.update({k: float(v) for k, v in updates.items()})
         return components
 
+    # 作用：按权重组合总奖励。
+    # 上游（直接调用）：legacy.network_env.NetworkEnvironment.step。
     @staticmethod
     def _reward_total(reward_components):
         return float(sum(reward_components.values()))
 
+    # 作用：计算动作造成的约束代价。
+    # 上游（直接调用）：legacy.network_env.NetworkEnvironment._step_info、legacy.network_env.NetworkEnvironment.step。
     @staticmethod
     def _constraint_costs(**updates):
         costs = {
@@ -748,10 +832,15 @@ class NetworkEnvironment:
         costs.update({k: float(v) for k, v in updates.items()})
         return costs
 
+    # 作用：将输入限制在指定边界内。
+    # 上游（直接调用）：legacy.network_env.NetworkEnvironment._compute_system_green_reward。
     @staticmethod
     def _clip(value: float, low: float, high: float) -> float:
         return max(low, min(high, float(value)))
 
+    # 作用：按系统绿电消纳变化计算奖励。
+    # 上游（直接调用）：legacy.network_env.NetworkEnvironment.step。
+    # 下游调用：self._clip。
     def _compute_system_green_reward(
         self,
         system_before: dict,
@@ -810,6 +899,8 @@ class NetworkEnvironment:
         }
         return r_green_total, detail
 
+    # 作用：计算相对参考价格的成本突增惩罚。
+    # 上游（直接调用）：legacy.network_env.NetworkEnvironment.step。
     def _compute_cost_spike_penalty(
         self,
         raw_cost: float,
@@ -848,6 +939,9 @@ class NetworkEnvironment:
         }
         return penalty, detail
 
+    # 作用：整理环境单步诊断。
+    # 上游（直接调用）：legacy.network_env.NetworkEnvironment.step。
+    # 下游调用：self._reward_components、self._constraint_costs。
     def _step_info(self, status: str, reward_components=None, constraint_costs=None, **extra):
         info = {
             "status": status,
@@ -857,6 +951,9 @@ class NetworkEnvironment:
         info.update(extra)
         return info
 
+    # 作用：整理等待决策收益、代价及原因。
+    # 上游（直接调用）：legacy.network_env.NetworkEnvironment.step。
+    # 下游调用：estimate_wait_penalty_detail、estimate_wait_opportunity。
     def _build_wait_detail(self, task: dict, wait_queue: list, next_queue_delay: float, sla_type: str, candidates=None):
         current_schedule_time = task.get('current_time_context', 0.0)
         wait_detail = {
@@ -887,6 +984,9 @@ class NetworkEnvironment:
         })
         return wait_detail
 
+    # 作用：执行一次调度动作，更新资源并返回奖励和诊断。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self._build_wait_detail、self._reward_components、self._reward_total、self.get_global_state、self._step_info 等。
     def step(self, action_index: int, task: dict, wait_queue: list = None, candidates=None):
         """执行调度动作并返回奖励 (深度重构的异构 SLA 奖励机制)"""
         current_schedule_time = task.get('current_time_context', 0.0)
@@ -1287,6 +1387,8 @@ class NetworkEnvironment:
             finish_time=finish_time
         )
 
+    # 作用：按区域汇总 CPU 占用。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     def get_region_cpu_usage(self):
         """统计各地区的 CPU 平均利用率"""
         res_map = {}
@@ -1297,6 +1399,9 @@ class NetworkEnvironment:
             res_map[reg][1] += self.node_resources[node]['total']
         return {k: v[0] / v[1] if v[1] > 0 else 0 for k, v in res_map.items()}
 
+    # 作用：统计当前系统绿电消纳。
+    # 上游（直接调用）：legacy.network_env.NetworkEnvironment.step。
+    # 下游调用：self.pricing_manager.get_node_power_profile。
     def get_system_green_absorption(
         self,
         global_time: float = 0.0,
@@ -1358,6 +1463,8 @@ class NetworkEnvironment:
             "green_supply_demand_ratio": green_supply_demand_ratio,
         }
 
+    # 作用：按拓扑层级汇总 CPU 占用。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     def get_tier_cpu_usage(self):
         """统计各电价档位的 CPU 平均利用率"""
         res_map = {1: [0.0, 0.0], 2: [0.0, 0.0], 3: [0.0, 0.0]}

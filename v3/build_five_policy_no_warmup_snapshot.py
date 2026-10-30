@@ -1,3 +1,9 @@
+# 文件功能：构建无预热五策略仪表盘快照及来源信息。
+# 主要内容：value、ratio_fields、build_snapshot、main。
+# 使用入口：命令行执行，或由其他脚本导入后调用。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Build reviewed report data from five V3 no-warmup 600k evaluations."""
 
 from __future__ import annotations
@@ -24,10 +30,14 @@ PAIRED_FIELDS = (
 )
 
 
+# 作用：从报告中读取可展示指标。
+# 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
 def value(metric):
     return metric.get("value") if isinstance(metric, dict) else metric
 
 
+# 作用：提取比率数值、分子及分母。
+# 上游（直接调用）：v3.build_five_policy_no_warmup_snapshot.build_snapshot。
 def ratio_fields(metric, prefix):
     if not isinstance(metric, dict):
         return {prefix: metric, f"{prefix}_numerator": None, f"{prefix}_denominator": None}
@@ -39,6 +49,9 @@ def ratio_fields(metric, prefix):
     }
 
 
+# 作用：汇集指标、图表和来源并写出仪表盘快照。
+# 上游（直接调用）：v3.build_five_policy_no_warmup_snapshot.main。
+# 下游调用：ratio_fields、query、path.read_text、path.relative_to(root).as_posix、path.relative_to 等。
 def build_snapshot(root: Path) -> dict:
     base = root / "artifacts" / "v3" / "evaluation" / "no_warmup_600k"
     reports = {}
@@ -133,6 +146,8 @@ def build_snapshot(root: Path) -> dict:
         ],
     }
 
+    # 作用：执行局部快照查询。
+    # 上游（直接调用）：v3.build_five_policy_no_warmup_snapshot.build_snapshot。
     def query(label, rows, method):
         return {"label": label, "reportingField": "policy", "rows": rows,
                 "methods": [{"language": "python", "code": method}], "source": source}
@@ -153,6 +168,9 @@ def build_snapshot(root: Path) -> dict:
     }
 
 
+# 作用：解析或转发命令行参数，组织本文件执行流程。
+# 调用约定：本文件命令行入口或上层版本入口调用。
+# 下游调用：build_snapshot、parser.add_argument、parser.parse_args、Path(__file__).resolve、args.output.parent.mkdir 等。
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True)

@@ -1,3 +1,10 @@
+# 文件功能：在固定任务轨迹上评估旧版冻结策略，汇总多种子结果并导出报告。
+# 主要内容：EvaluationMetrics、set_random_seed、percentile、mean、safe_ratio、existing_model_file、default_model_path、create_agent 等。
+# 模块上游（导入关系）：tests.legacy.test_evaluate。
+# 模块下游（项目依赖）：shared.config、legacy.dqn_agent、legacy.gnn_agent、legacy.network_env、shared.task_manager、legacy.train。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Evaluate a frozen scheduling policy on reproducible task traces."""
 
 from __future__ import annotations
@@ -52,24 +59,35 @@ CONSTRAINT_KEYS = (
 )
 
 
+# 作用：固定训练与数值库随机种子。
+# 上游（直接调用）：legacy.evaluate.build_task_trace、legacy.evaluate.evaluate_seed。
 def set_random_seed(seed: int) -> None:
     random.seed(seed)
     np.random.seed(seed)
     tf.random.set_seed(seed)
 
 
+# 作用：计算样本百分位数。
+# 上游（直接调用）：legacy.evaluate.EvaluationMetrics.summary。
 def percentile(values: list[float], q: float) -> float:
     return float(np.percentile(values, q)) if values else 0.0
 
 
+# 作用：计算有效样本均值。
+# 上游（直接调用）：legacy.evaluate.EvaluationMetrics.sample_system、legacy.evaluate.EvaluationMetrics.summary。
 def mean(values: list[float]) -> float:
     return float(np.mean(values)) if values else 0.0
 
 
+# 作用：分母可用时计算比率，否则返回约定缺省值。
+# 上游（直接调用）：legacy.evaluate.EvaluationMetrics.record_success、legacy.evaluate.EvaluationMetrics.summary。
 def safe_ratio(numerator: float, denominator: float) -> float:
     return float(numerator) / max(float(denominator), 1e-8)
 
 
+# 作用：检查模型路径是否存在。
+# 上游（直接调用）：legacy.evaluate.main。
+# 下游调用：candidate.exists、candidate.resolve。
 def existing_model_file(path: str | Path) -> Path:
     path = Path(path)
     candidates = (path, Path(f"{path}.weights.h5"))
@@ -79,6 +97,9 @@ def existing_model_file(path: str | Path) -> Path:
     raise FileNotFoundError(f"Model file not found: {path}")
 
 
+# 作用：按策略类型给出默认模型位置。
+# 上游（直接调用）：legacy.evaluate.main。
+# 下游调用：get_checkpoint_paths、model_path_exists。
 def default_model_path() -> str:
     _, checkpoint_path, final_model_path = get_checkpoint_paths()
     if model_path_exists(final_model_path):
@@ -90,6 +111,9 @@ def default_model_path() -> str:
     )
 
 
+# 作用：根据策略和状态维度创建旧版代理。
+# 上游（直接调用）：legacy.evaluate.evaluate_seed。
+# 下游调用：GNNAgent、DQNAgent、env.get_graph_state、agent.load。
 def create_agent(env, model_path: str):
     if config.USE_GNN_AGENT:
         agent = GNNAgent(
@@ -121,6 +145,9 @@ def create_agent(env, model_path: str):
     return agent
 
 
+# 作用：固定种子生成多策略共用的任务轨迹。
+# 上游（直接调用）：legacy.evaluate.evaluate_seed。
+# 下游调用：set_random_seed、TaskManager、task_manager.get_dynamic_task_rate、task_manager.generate_tasks。
 def build_task_trace(
     seed: int,
     source_nodes: Iterable[str],
@@ -183,15 +210,21 @@ class EvaluationMetrics:
     )
     cpu_usage_samples: list[float] = field(default_factory=list)
 
+    # 作用：记录队列容量不足导致的丢弃。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     def record_queue_overflow(self) -> None:
         self.dropped += 1
         self.queue_overflow_drops += 1
 
+    # 作用：记录无可行动作导致的丢弃。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     def record_no_action_drop(self) -> None:
         self.dropped += 1
         for key in CONSTRAINT_KEYS:
             self.constraint_values[key].append(1.0 if key == "drop" else 0.0)
 
+    # 作用：累计环境一步执行的指标和事件。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     def record_step(self, reward: float, info: dict[str, Any]) -> None:
         self.rewards.append(float(reward))
         constraints = info.get("constraint_costs", {})
@@ -200,6 +233,9 @@ class EvaluationMetrics:
         for key, value in info.get("reward_components", {}).items():
             self.reward_components[key].append(float(value))
 
+    # 作用：记录成功调度任务的统计。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：safe_ratio、env.get_task_cpu_time_demand。
     def record_success(self, env, task: dict[str, Any], info: dict[str, Any]) -> None:
         self.succeeded += 1
         coordination = info.get("coordination", {})
@@ -227,6 +263,9 @@ class EvaluationMetrics:
         region = env.topo_manager.graph.nodes[target].get("region", "Unknown")
         self.target_regions.append(str(region))
 
+    # 作用：采样节点、链路和绿电状态。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：mean、env.get_system_green_absorption。
     def sample_system(self, env, global_time: float) -> None:
         green = env.get_system_green_absorption(global_time)
         for key in (
@@ -248,6 +287,9 @@ class EvaluationMetrics:
         ]
         self.cpu_usage_samples.append(mean(usages))
 
+    # 作用：生成当前统计对象的汇总。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：safe_ratio、mean、percentile。
     def summary(
         self,
         seed: int,
@@ -308,6 +350,9 @@ class EvaluationMetrics:
         return result
 
 
+# 作用：在固定轨迹运行冻结策略，处理预热、测量及排空。
+# 上游（直接调用）：legacy.evaluate.evaluate_seed。
+# 下游调用：update_active_tasks、evaluate_schedule_candidates、compute_valid_actions、build_state、add_success_allocation 等。
 def run_frozen_policy(
     seed: int,
     env,
@@ -412,6 +457,9 @@ def run_frozen_policy(
     )
 
 
+# 作用：对单个种子运行冻结评估并汇总。
+# 上游（直接调用）：legacy.evaluate.main。
+# 下游调用：set_random_seed、NetworkEnvironment、TaskManager、create_agent、warmup_environment 等。
 def evaluate_seed(
     model_path: str,
     seed: int,
@@ -464,6 +512,9 @@ def evaluate_seed(
     return result
 
 
+# 作用：提取可写入报告的配置。
+# 上游（直接调用）：legacy.evaluate.main。
+# 下游调用：item.isupper。
 def serializable_config() -> dict[str, Any]:
     snapshot: dict[str, Any] = {}
     for name in sorted(item for item in dir(config) if item.isupper()):
@@ -476,6 +527,9 @@ def serializable_config() -> dict[str, Any]:
     return snapshot
 
 
+# 作用：计算文件 SHA-256 指纹。
+# 上游（直接调用）：legacy.evaluate.main。
+# 下游调用：path.open、model_file.read、digest.hexdigest。
 def file_sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as model_file:
@@ -484,6 +538,9 @@ def file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+# 作用：将行记录按约定字段写入 CSV。
+# 上游（直接调用）：legacy.evaluate.main。
+# 下游调用：path.parent.mkdir、path.open、writer.writeheader、writer.writerows。
 def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
     if not rows:
         return
@@ -495,6 +552,8 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
         writer.writerows(rows)
 
 
+# 作用：汇总多个种子或策略的结果。
+# 上游（直接调用）：legacy.evaluate.main。
 def summarize_results(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
     summary = []
     for metric in results[0]:
@@ -511,6 +570,8 @@ def summarize_results(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return summary
 
 
+# 作用：输出主要评估指标。
+# 上游（直接调用）：legacy.evaluate.main。
 def print_summary(summary: list[dict[str, Any]]) -> None:
     focus = {
         row["metric"]: row
@@ -533,6 +594,9 @@ def print_summary(summary: list[dict[str, Any]]) -> None:
         print(f"{metric:42s} {row['mean']:.6f} +/- {row['std']:.6f}")
 
 
+# 作用：定义并解析命令行选项。
+# 上游（直接调用）：legacy.evaluate.main。
+# 下游调用：parser.add_argument、parser.parse_args。
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Evaluate a frozen DQN/GNN scheduler on reproducible task traces."
@@ -569,6 +633,9 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+# 作用：解析或转发命令行参数，组织本文件执行流程。
+# 调用约定：本文件命令行入口或上层版本入口调用。
+# 下游调用：parse_args、default_model_path、existing_model_file、evaluate_seed、summarize_results 等。
 def main() -> None:
     args = parse_args()
     if args.days <= 0:

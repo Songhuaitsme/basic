@@ -1,3 +1,10 @@
+# 文件功能：枚举节点、时间和路径候选，支持完整候选流、分层候选池及批量特征生成。
+# 主要内容：CandidateGenerationContext、CandidateRecord、CandidateFeatureRecordChunk、CompleteCandidateStream、CandidateGenerator、_grid_tick_ceil、_grid_tick_floor、_time_grid_tick_bounds 等。
+# 模块上游（导入关系）：v1.scheduler、v1.scheduler.v1_scheduler、v1.v1_runtime、v3.scheduler.candidate_generator、tests.v1.test_ablation_settings_v1 等。
+# 模块下游（项目依赖）：v1.domain.candidates、v1.domain.models、v1.domain.reservations、v1.domain.units、v1.scheduler.path_provider、v1.scheduler.resource_calendar 等。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Complete v1.0 node-time-path candidate enumeration.
 
 The compatibility ``generate_complete`` API materializes the result for tests
@@ -13,6 +20,8 @@ import time
 from typing import Callable, Dict, Iterable, Iterator, Mapping, NamedTuple, Optional
 
 import numpy as np
+
+from v1.candidate_profiling import candidate_count, candidate_scope, candidate_stage
 
 from v1.domain.candidates import (
     CANDIDATE_SCHEMA_VERSION,
@@ -35,6 +44,8 @@ MetricEvaluator = Callable[..., Dict[str, float]]
 PREPARE_FEASIBILITY_CHUNK_SIZE = 65536
 
 
+# 作用：在容差内对齐时间网格，否则向上取整刻度。
+# 上游（直接调用）：v1.scheduler.candidate_generator._time_grid_tick_bounds。
 def _grid_tick_ceil(value: float, cycle: float, tolerance: float) -> int:
     quotient = value / cycle
     nearest = round(quotient)
@@ -43,6 +54,8 @@ def _grid_tick_ceil(value: float, cycle: float, tolerance: float) -> int:
     return int(math.ceil(quotient))
 
 
+# 作用：在容差内对齐时间网格，否则向下取整刻度。
+# 上游（直接调用）：v1.scheduler.candidate_generator.CandidateGenerator._adaptive_ticks、v1.scheduler.candidate_generator.CandidateGenerator.prepare_complete_stream、v1.scheduler.candidate_generator._time_grid_tick_bounds。
 def _grid_tick_floor(value: float, cycle: float, tolerance: float) -> int:
     quotient = value / cycle
     nearest = round(quotient)
@@ -51,6 +64,9 @@ def _grid_tick_floor(value: float, cycle: float, tolerance: float) -> int:
     return int(math.floor(quotient))
 
 
+# 作用：计算最早和最晚时刻对应的网格刻度边界。
+# 上游（直接调用）：v1.scheduler.candidate_generator.CandidateGenerator._declared_path_grids、v1.scheduler.candidate_generator.complete_time_grid。
+# 下游调用：_grid_tick_ceil、_grid_tick_floor。
 def _time_grid_tick_bounds(earliest, latest, cycle, tolerance):
     return (
         _grid_tick_ceil(earliest, cycle, tolerance),
@@ -58,6 +74,9 @@ def _time_grid_tick_bounds(earliest, latest, cycle, tolerance):
     )
 
 
+# 作用：校验时限和周期，生成完整可枚举开始时刻。
+# 上游（直接调用）：tests.v1.test_candidate_queue.CandidateAndQueueTest.test_cand_012_016_complete_grid_matches_exhaustive_reference、tests.v1.test_candidate_queue.CandidateAndQueueTest.test_cand_018_non_aligned_bounds_only_emit_global_grid。
+# 下游调用：finite_number、positive_finite、_time_grid_tick_bounds。
 def complete_time_grid(
     earliest_start_sim: float,
     latest_start_sim: float,
@@ -129,14 +148,21 @@ class CompleteCandidateStream:
     reason: str = ""
     metric_evaluator: Optional[MetricEvaluator] = None
 
+    # 作用：返回当前候选生成模式。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     @property
     def candidate_mode(self):
         return self.context.candidate_mode
 
+    # 作用：返回候选流中最早可行的计算开始时刻。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     @property
     def earliest_compute_start_sim(self):
         return self.context.earliest_compute_start_sim
 
+    # 作用：逐个产出候选对象。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self.generator.iter_context_candidates。
     def iter_candidates(self) -> Iterator[Candidate]:
         if self.status is not CandidateGenerationStatus.OK:
             return iter(())
@@ -145,11 +171,17 @@ class CompleteCandidateStream:
             metric_evaluator=self.metric_evaluator,
         )
 
+    # 作用：逐个产出候选轻量记录。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self.generator.iter_context_candidate_records。
     def iter_candidate_records(self) -> Iterator[CandidateRecord]:
         if self.status is not CandidateGenerationStatus.OK:
             return iter(())
         return self.generator.iter_context_candidate_records(self.context)
 
+    # 作用：将轻量记录补齐为领域候选。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self.generator.materialize_context_candidate。
     def materialize_record(self, record: CandidateRecord) -> Candidate:
         return self.generator.materialize_context_candidate(
             self.context,
@@ -159,6 +191,10 @@ class CompleteCandidateStream:
 
 
 class CandidateGenerator:
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：v1.v1_runtime.create_v1_runtime。
+    # 调用约定：构造实例时由 Python 调用。
+    # 下游调用：positive_finite、self._pool_limits、CandidateMode。
     def __init__(
         self,
         compute_nodes: Iterable[str],
@@ -212,6 +248,8 @@ class CandidateGenerator:
         )
         self.profiler = None
 
+    # 作用：读取 SLA 对应的候选数、节点数和时间采样上限。
+    # 上游（直接调用）：v1.scheduler.candidate_generator.CandidateGenerator.__init__。
     @staticmethod
     def _pool_limits(name, values):
         required = {item.value for item in SlaType}
@@ -224,6 +262,9 @@ class CandidateGenerator:
             result[key] = value
         return result
 
+    # 作用：检查任务是否能被至少一个节点的静态 CPU 容量服务。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self.calendar.node_capacity、self.path_provider.candidate_paths。
     def is_statically_serviceable(self, task: TaskSpec) -> bool:
         for target_node in self.compute_nodes:
             capacity = self.calendar.node_capacity(target_node)
@@ -235,6 +276,9 @@ class CandidateGenerator:
                 return True
         return False
 
+    # 作用：生成目标节点与路径上允许的开始时间网格。
+    # 上游（直接调用）：v1.scheduler.candidate_generator.CandidateGenerator.feature_chunks_from_context、v1.scheduler.candidate_generator.CandidateGenerator.iter_context_candidate_records、v1.scheduler.candidate_generator.CandidateGenerator.prepare_complete_stream 等。
+    # 下游调用：_time_grid_tick_bounds、self.path_provider.candidate_paths、self.transmission_model.duration。
     def _declared_path_grids(self, task, decision_time):
         for target_node in self.compute_nodes:
             paths = self.path_provider.candidate_paths(
@@ -256,6 +300,9 @@ class CandidateGenerator:
                     last = first
                 yield target_node, path, duration, first, last
 
+    # 作用：计算理论节点时间路径槽位数。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：finite_number、self._declared_path_grids。
     def theoretical_slot_count(self, task, decision_time_sim):
         decision_time = finite_number("decision_time_sim", decision_time_sim)
         return sum(
@@ -263,6 +310,10 @@ class CandidateGenerator:
             for _, _, _, first, last in self._declared_path_grids(task, decision_time)
         )
 
+    # 作用：检查节点路径时间组合的传输和 CPU 可行性。
+    # 上游（直接调用）：v1.scheduler.candidate_generator.CandidateGenerator._record_at_tick、v1.scheduler.candidate_generator.CandidateGenerator.iter_context_candidate_records。
+    # 下游调用：TimeInterval、self.calendar.resources_unallocated、self.calendar.node_capacity、self.calendar.cpu_feasible、self.calendar.path_feasible。
+    @candidate_stage("feasibility", feasibility=True)
     def _feasible_item(
         self,
         context,
@@ -296,11 +347,12 @@ class CandidateGenerator:
                 time.perf_counter() - schedule_started,
             )
         if resources_unallocated is None:
-            resources_unallocated = self.calendar.resources_unallocated(
-                context.reservation_snapshot,
-                target_node,
-                path,
-            )
+            with candidate_scope(self.profiler, "resource_occupancy"):
+                resources_unallocated = self.calendar.resources_unallocated(
+                    context.reservation_snapshot,
+                    target_node,
+                    path,
+                )
         if resources_unallocated:
             capacity = (
                 self.calendar.node_capacity(target_node)
@@ -405,11 +457,18 @@ class CandidateGenerator:
             )
         return result, None
 
+    # 作用：按配置选择完整流或分层候选池准备流程。
+    # 调用上下文：由单任务调度发起；依据候选模式转入完整流或分层候选池。
+    # 下游调用：self.prepare_layered_pool_stream、self.prepare_complete_stream。
     def prepare_stream(self, *args, **kwargs):
         if self.candidate_mode is CandidateMode.LAYERED_POOL:
             return self.prepare_layered_pool_stream(*args, **kwargs)
         return self.prepare_complete_stream(*args, **kwargs)
 
+    # 作用：在窗口中选取覆盖边界与内部的自适应采样刻度。
+    # 上游（直接调用）：v1.scheduler.candidate_generator.CandidateGenerator.prepare_layered_pool_stream。
+    # 下游调用：_grid_tick_floor。
+    @candidate_stage("time_sampling")
     def _adaptive_ticks(self, task, first, last, count):
         if first > last:
             return ()
@@ -439,6 +498,9 @@ class CandidateGenerator:
                 break
         return tuple(sorted(ticks))
 
+    # 作用：检查指定刻度可行性并生成轻量候选记录。
+    # 上游（直接调用）：v1.scheduler.candidate_generator.CandidateGenerator.prepare_layered_pool_stream。
+    # 下游调用：self._feasible_item、self.attach_context_candidate_id、CandidateRecord。
     def _record_at_tick(self, context, target_node, path, duration, tick):
         compute_start = tick * self.scheduling_cycle_sim
         item, _ = self._feasible_item(
@@ -465,6 +527,8 @@ class CandidateGenerator:
         )
         return self.attach_context_candidate_id(context, record)
 
+    # 作用：轮流从多组候选取样，按身份去重。
+    # 上游（直接调用）：v1.scheduler.candidate_generator.CandidateGenerator.prepare_layered_pool_stream。
     @staticmethod
     def _round_robin_unique(rankings, limit):
         selected = []
@@ -487,8 +551,13 @@ class CandidateGenerator:
             position += 1
         return tuple(selected)
 
+    # 作用：筛选目标维度上未被支配的 Pareto 候选。
+    # 上游（直接调用）：v1.scheduler.candidate_generator.CandidateGenerator._select_layered_pool。
+    # 下游调用：vector。
     @staticmethod
     def _pareto_candidates(candidates):
+        # 作用：提取候选目标向量。
+        # 上游（直接调用）：v1.scheduler.candidate_generator.CandidateGenerator._pareto_candidates。
         def vector(item):
             return (
                 item.estimated_candidate_marginal_system_cost_yuan,
@@ -519,6 +588,9 @@ class CandidateGenerator:
                 retained.append(item)
         return tuple(retained)
 
+    # 作用：综合时间、目标及节点覆盖选出受限候选池。
+    # 上游（直接调用）：v1.scheduler.candidate_generator.CandidateGenerator.prepare_layered_pool_stream。
+    # 下游调用：normalized、self._pareto_candidates、item.candidate_id.encode。
     def _select_layered_pool(self, candidates, limit):
         items = tuple(candidates)
         if len(items) <= limit:
@@ -535,6 +607,8 @@ class CandidateGenerator:
                 for item in items
             ]
 
+            # 作用：将当前比较维度归一化。
+            # 上游（直接调用）：v1.scheduler.candidate_generator.CandidateGenerator._select_layered_pool。
             def normalized(values, index):
                 low, high = min(values), max(values)
                 return 0.0 if high <= low else (values[index] - low) / (high - low)
@@ -576,6 +650,10 @@ class CandidateGenerator:
         frontier = self._pareto_candidates(selected)
         return frontier or (min(items, key=lambda item: item.compute_end_sim),)
 
+    # 作用：按 SLA 分层限额准备候选池和流式上下文。
+    # 上游（直接调用）：v1.scheduler.candidate_generator.CandidateGenerator.prepare_stream。
+    # 调用上下文：分层候选池分支使用；能源指标回调、SLA 限额与节点路径可行性共同决定池内容。
+    # 下游调用：finite_number、self._declared_path_grids、self._adaptive_ticks、self._record_at_tick、self.materialize_context_candidates 等。
     def prepare_layered_pool_stream(
         self,
         task: TaskSpec,
@@ -607,53 +685,64 @@ class CandidateGenerator:
                 0, 0, "decision time is after absolute latest start", metric_evaluator,
             )
 
-        grids = list(self._declared_path_grids(task, decision_time))
-        theoretical_slots = sum(max(0, last - first + 1) for _, _, _, first, last in grids)
+        with candidate_scope(self.profiler, "grid_setup"):
+            grids = list(self._declared_path_grids(task, decision_time))
+            theoretical_slots = sum(max(0, last - first + 1) for _, _, _, first, last in grids)
         anchor_records = []
-        for target_node, path, duration, first, last in grids:
-            for tick in self._adaptive_ticks(task, first, last, 4):
-                record = self._record_at_tick(context, target_node, path, duration, tick)
-                if record is not None:
-                    anchor_records.append(record)
-                    break
-        anchor_candidates = self.materialize_context_candidates(
-            context, anchor_records, metric_evaluator
-        )
+        #第一轮：先用代表候选判断哪些节点值得继续搜索。
+        #- _record_at_tick()：检查这个时间点是否可行，生成候选记录和 ID。
+        #- materialize_context_candidates()：为这些记录计算成本、绿电等精确指标，再构造带完整指标的候选对象。
+        #随后，系统根据 Anchor 的完成时间、成本、绿电、容量等对节点排名，挑出第二轮继续搜索的节点。
+        with candidate_scope(self.profiler, "anchor_pass", phase="anchor"):
+            for target_node, path, duration, first, last in grids:
+                for tick in self._adaptive_ticks(task, first, last, 4):
+                    record = self._record_at_tick(context, target_node, path, duration, tick)
+                    if record is not None:
+                        anchor_records.append(record)
+                        break
+            candidate_count(self.profiler, "anchor_records", len(anchor_records))
+            anchor_candidates = self.materialize_context_candidates(
+                context, anchor_records, metric_evaluator
+            )
         if not anchor_candidates:
             return CompleteCandidateStream(
                 self, context, CandidateGenerationStatus.EMPTY_PHYSICAL,
                 theoretical_slots, 0, "bounded physical candidate pool is empty", metric_evaluator,
             )
 
-        best_by_node = {}
-        for item in anchor_candidates:
-            previous = best_by_node.get(item.target_node)
-            if previous is None or item.compute_end_sim < previous.compute_end_sim:
-                best_by_node[item.target_node] = item
-        nodes = tuple(best_by_node)
-        node_limit = min(self.pool_node_limit_by_sla[task.sla_type.value], len(nodes))
-        rankings = (
-            sorted(nodes, key=lambda node: (best_by_node[node].compute_end_sim, node)),
-            sorted(nodes, key=lambda node: (best_by_node[node].estimated_candidate_marginal_system_cost_yuan, node)),
-            sorted(nodes, key=lambda node: (-(best_by_node[node].estimated_green_coverage + best_by_node[node].estimated_green_absorption_delta), node)),
-            sorted(nodes, key=lambda node: (-best_by_node[node].capacity_margin, node)),
-            sorted(nodes, key=lambda node: hashlib.sha256((task.task_id + "|" + node).encode("utf-8")).digest()),
-        )
-        selected_nodes = set(self._round_robin_unique(rankings, node_limit))
+        with candidate_scope(self.profiler, "anchor_node_ranking", phase="anchor"):
+            best_by_node = {}
+            for item in anchor_candidates:
+                previous = best_by_node.get(item.target_node)
+                if previous is None or item.compute_end_sim < previous.compute_end_sim:
+                    best_by_node[item.target_node] = item
+            nodes = tuple(best_by_node)
+            node_limit = min(self.pool_node_limit_by_sla[task.sla_type.value], len(nodes))
+            rankings = (
+                sorted(nodes, key=lambda node: (best_by_node[node].compute_end_sim, node)),
+                sorted(nodes, key=lambda node: (best_by_node[node].estimated_candidate_marginal_system_cost_yuan, node)),
+                sorted(nodes, key=lambda node: (-(best_by_node[node].estimated_green_coverage + best_by_node[node].estimated_green_absorption_delta), node)),
+                sorted(nodes, key=lambda node: (-best_by_node[node].capacity_margin, node)),
+                sorted(nodes, key=lambda node: hashlib.sha256((task.task_id + "|" + node).encode("utf-8")).digest()),
+            )
+            selected_nodes = set(self._round_robin_unique(rankings, node_limit))
+            candidate_count(self.profiler, "selected_nodes", len(selected_nodes))
         time_samples = self.pool_time_samples_by_sla[task.sla_type.value]
-        records_by_id = {}
-        for target_node, path, duration, first, last in grids:
-            if target_node not in selected_nodes:
-                continue
-            for tick in self._adaptive_ticks(task, first, last, time_samples):
-                record = self._record_at_tick(context, target_node, path, duration, tick)
-                if record is not None:
-                    records_by_id[record.candidate_id] = record
-        preliminary = self.materialize_context_candidates(
-            context,
-            tuple(records_by_id.values()),
-            metric_evaluator,
-        )
+        #第二轮：在选中节点上搜索更多时间点。
+        with candidate_scope(self.profiler, "second_pass", phase="second"):
+            records_by_id = {}
+            for target_node, path, duration, first, last in grids:
+                if target_node not in selected_nodes:
+                    continue
+                for tick in self._adaptive_ticks(task, first, last, time_samples):
+                    record = self._record_at_tick(context, target_node, path, duration, tick)
+                    if record is not None:
+                        records_by_id[record.candidate_id] = record
+            preliminary = self.materialize_context_candidates(
+                context,
+                tuple(records_by_id.values()),
+                metric_evaluator,
+            )
         if not preliminary:
             return CompleteCandidateStream(
                 self, context, CandidateGenerationStatus.EMPTY_PHYSICAL,
@@ -663,50 +752,55 @@ class CandidateGenerator:
             preliminary,
             self.pool_max_by_sla[task.sla_type.value],
         )
-        selected_records = tuple(
-            sorted(
-                (records_by_id[item.candidate_id] for item in selected),
-                key=lambda item: (
-                    item.compute_start_sim,
-                    item.target_node,
-                    item.path.path_id,
-                    item.candidate_id,
-                ),
+        with candidate_scope(self.profiler, "result_assembly"):
+            selected_records = tuple(
+                sorted(
+                    (records_by_id[item.candidate_id] for item in selected),
+                    key=lambda item: (
+                        item.compute_start_sim,
+                        item.target_node,
+                        item.path.path_id,
+                        item.candidate_id,
+                    ),
+                )
             )
-        )
-        selected_by_id = {item.candidate_id: item for item in selected}
-        selected_metrics = tuple(
-            {
-                "system_cost_yuan": selected_by_id[record.candidate_id].estimated_candidate_marginal_system_cost_yuan,
-                "green_coverage": selected_by_id[record.candidate_id].estimated_green_coverage,
-                "marginal_green_energy_mwh": selected_by_id[record.candidate_id].estimated_candidate_marginal_green_energy_mwh,
-                "green_absorption_delta": selected_by_id[record.candidate_id].estimated_green_absorption_delta,
-                "green_opportunity": selected_by_id[record.candidate_id].estimated_green_opportunity,
-            }
-            for record in selected_records
-        )
-        earliest = selected_records[0].compute_start_sim
-        final_context = CandidateGenerationContext(
-            task,
-            decision_time,
-            snapshot,
-            forecast_version,
-            forecast_limit,
-            earliest,
-            CandidateMode.LAYERED_POOL,
-            selected_records,
-            selected_metrics,
-        )
-        return CompleteCandidateStream(
-            self,
-            final_context,
-            CandidateGenerationStatus.OK,
-            theoretical_slots,
-            len(selected_records),
-            "",
-            metric_evaluator,
-        )
+            selected_by_id = {item.candidate_id: item for item in selected}
+            selected_metrics = tuple(
+                {
+                    "system_cost_yuan": selected_by_id[record.candidate_id].estimated_candidate_marginal_system_cost_yuan,
+                    "green_coverage": selected_by_id[record.candidate_id].estimated_green_coverage,
+                    "marginal_green_energy_mwh": selected_by_id[record.candidate_id].estimated_candidate_marginal_green_energy_mwh,
+                    "green_absorption_delta": selected_by_id[record.candidate_id].estimated_green_absorption_delta,
+                    "green_opportunity": selected_by_id[record.candidate_id].estimated_green_opportunity,
+                }
+                for record in selected_records
+            )
+            earliest = selected_records[0].compute_start_sim
+            final_context = CandidateGenerationContext(
+                task,
+                decision_time,
+                snapshot,
+                forecast_version,
+                forecast_limit,
+                earliest,
+                CandidateMode.LAYERED_POOL,
+                selected_records,
+                selected_metrics,
+            )
+            return CompleteCandidateStream(
+                self,
+                final_context,
+                CandidateGenerationStatus.OK,
+                theoretical_slots,
+                len(selected_records),
+                "",
+                metric_evaluator,
+            )
 
+    # 作用：扫描完整节点时间路径空间，准备可重复遍历的候选流。
+    # 上游（直接调用）：v1.scheduler.candidate_generator.CandidateGenerator.generate_complete、v1.scheduler.candidate_generator.CandidateGenerator.prepare_stream。
+    # 调用上下文：完整枚举分支与训练下一状态候选再生成使用；流最终供策略或特征编码消费。
+    # 下游调用：finite_number、self._declared_path_grids、_grid_tick_floor、self.calendar.snapshot、CandidateGenerationContext 等。
     def prepare_complete_stream(
         self,
         task: TaskSpec,
@@ -909,6 +1003,9 @@ class CandidateGenerator:
             metric_evaluator,
         )
 
+    # 作用：根据上下文逐条枚举轻量候选记录。
+    # 上游（直接调用）：v1.scheduler.candidate_generator.CandidateGenerator.feature_chunks_from_context、v1.scheduler.candidate_generator.CandidateGenerator.iter_context_candidates。
+    # 下游调用：self._declared_path_grids、deterministic_candidate_id_v1_fields、self._feasible_item、record._replace、self.calendar.resources_unallocated 等。
     def iter_context_candidate_records(
         self,
         context,
@@ -1119,6 +1216,9 @@ class CandidateGenerator:
                     item["capacity_margin"],
                 )
 
+    # 作用：从上下文候选空间抽样轻量记录。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self._declared_path_grids、make_record、attach_candidate_id、rng.randrange、self.calendar.node_capacity 等。
     def sample_context_candidate_records(
         self,
         context,
@@ -1161,6 +1261,9 @@ class CandidateGenerator:
         selected_record = None
         earliest_record = None
 
+        # 作用：将枚举字段组织为轻量记录。
+        # 上游（直接调用）：v1.scheduler.candidate_generator.CandidateGenerator.sample_context_candidate_records。
+        # 下游调用：CandidateRecord。
         def make_record(
             target_node,
             path,
@@ -1381,6 +1484,9 @@ class CandidateGenerator:
                             float(path_utils[local_index]),
                         )
 
+        # 作用：为局部候选补充确定性标识。
+        # 上游（直接调用）：v1.scheduler.candidate_generator.CandidateGenerator.sample_context_candidate_records。
+        # 下游调用：deterministic_candidate_id_v1_fields、record._replace。
         def attach_candidate_id(record):
             identifier_started = time.perf_counter()
             candidate_id = deterministic_candidate_id_v1_fields(
@@ -1412,6 +1518,9 @@ class CandidateGenerator:
             earliest_record = attach_candidate_id(earliest_record)
         return selected_record, earliest_record, count
 
+    # 作用：从特征块还原指定位置的候选记录。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：CandidateRecord。
     def record_from_feature_chunk(self, chunk, index):
         if not isinstance(chunk, CandidateFeatureRecordChunk):
             raise TypeError("chunk must be a CandidateFeatureRecordChunk")
@@ -1430,6 +1539,9 @@ class CandidateGenerator:
             float(chunk.capacity_margin[position]),
         )
 
+    # 作用：根据上下文字段补充确定性候选标识。
+    # 上游（直接调用）：v1.scheduler.candidate_generator.CandidateGenerator._record_at_tick。
+    # 下游调用：deterministic_candidate_id_v1_fields、record._replace。
     def attach_context_candidate_id(self, context, record):
         identifier_started = time.perf_counter()
         candidate_id = deterministic_candidate_id_v1_fields(
@@ -1454,6 +1566,9 @@ class CandidateGenerator:
             )
         return record._replace(candidate_id=candidate_id)
 
+    # 作用：根据上下文和记录创建单个完整候选。
+    # 上游（直接调用）：v1.scheduler.candidate_generator.CandidateGenerator.iter_context_candidates、v1.scheduler.candidate_generator.CandidateGenerator.materialize_context_candidates。
+    # 下游调用：self.evaluate_context_candidate_metrics、Candidate、self.profiler.increment。
     def materialize_context_candidate(
         self,
         context,
@@ -1538,6 +1653,9 @@ class CandidateGenerator:
             self.profiler.increment("candidate_object_count")
         return candidate
 
+    # 作用：批量创建完整候选并附加评估指标。
+    # 上游（直接调用）：v1.scheduler.candidate_generator.CandidateGenerator.prepare_layered_pool_stream。
+    # 下游调用：self.materialize_context_candidate、self.profiler.increment。
     def materialize_context_candidates(
         self,
         context,
@@ -1602,6 +1720,9 @@ class CandidateGenerator:
             for index, record in enumerate(items)
         )
 
+    # 作用：用上下文能源回调计算成本和绿电指标。
+    # 上游（直接调用）：v1.scheduler.candidate_generator.CandidateGenerator.feature_chunks_from_context、v1.scheduler.candidate_generator.CandidateGenerator.feature_chunks_from_context.encode_chunk、v1.scheduler.candidate_generator.CandidateGenerator.materialize_context_candidate。
+    # 下游调用：self.profiler.increment。
     def evaluate_context_candidate_metrics(
         self,
         context,
@@ -1635,6 +1756,9 @@ class CandidateGenerator:
             self.profiler.increment("candidate_metric_evaluation_count")
         return metrics
 
+    # 作用：把上下文记录流转换为完整候选流。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self.iter_context_candidate_records、self.materialize_context_candidate。
     def iter_context_candidates(self, context, metric_evaluator=None):
         for record in self.iter_context_candidate_records(context):
             yield self.materialize_context_candidate(
@@ -1643,6 +1767,9 @@ class CandidateGenerator:
                 metric_evaluator=metric_evaluator,
             )
 
+    # 作用：分批生成候选特征，避免一次物化完整集合。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self.evaluate_context_candidate_metrics、self._declared_path_grids、self.iter_context_candidate_records、encode_chunk、feature_encoder.encode_record 等。
     def feature_chunks_from_context(
         self,
         context,
@@ -2058,6 +2185,9 @@ class CandidateGenerator:
                 "array feature encoders"
             )
 
+        # 作用：将候选记录批编码为特征矩阵。
+        # 上游（直接调用）：v1.scheduler.candidate_generator.CandidateGenerator.feature_chunks_from_context。
+        # 下游调用：self.evaluate_context_candidate_metrics、feature_encoder.encode_record、self.profiler.increment。
         def encode_chunk(records):
             if not records:
                 return ()
@@ -2152,6 +2282,9 @@ class CandidateGenerator:
         if chunk:
             yield encode_chunk(chunk)
 
+    # 作用：物化完整枚举结果，供兼容接口和小规模诊断使用。
+    # 上游（直接调用）：v1.scheduler.candidate_generator.CandidateGenerator.generate_approximate。
+    # 下游调用：self.prepare_complete_stream、CandidateSetResult、stream.iter_candidates、candidates.sort。
     def generate_complete(
         self,
         task: TaskSpec,
@@ -2197,6 +2330,9 @@ class CandidateGenerator:
             stream.earliest_compute_start_sim,
         )
 
+    # 作用：生成显式近似模式下的候选结果。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self.generate_complete、compress_candidates。
     def generate_approximate(self, *args, **kwargs):
         from .approximate import compress_candidates
 

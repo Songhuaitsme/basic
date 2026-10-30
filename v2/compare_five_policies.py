@@ -1,3 +1,10 @@
+# 文件功能：读取五策略数据，构建指标、图表及来源组成的比较报告。
+# 主要内容：ComparisonReportError、_float_or_none、_read_csv、_tariff_context、load_source_data、mean_ci、_series、_metric_spec 等。
+# 模块上游（导入关系）：tests.v2.test_compare_five_policies。
+# 模块下游（项目依赖）：v2.export_five_policy_metrics。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Build a validated Chinese HTML report for V2 five-policy evaluations."""
 
 from __future__ import annotations
@@ -186,6 +193,9 @@ class ComparisonReportError(ValueError):
     """Raised when source data cannot support a trustworthy report."""
 
 
+# 作用：解析浮点值，无效或缺失时返回空值。
+# 上游（直接调用）：v2.compare_five_policies.load_source_data。
+# 下游调用：ComparisonReportError。
 def _float_or_none(value):
     if value in (None, ""):
         return None
@@ -195,6 +205,9 @@ def _float_or_none(value):
     return result
 
 
+# 作用：读取 CSV 字段映射行。
+# 上游（直接调用）：v2.compare_five_policies.load_source_data。
+# 下游调用：path.is_file、ComparisonReportError、path.open。
 def _read_csv(path: Path) -> list[dict]:
     if not path.is_file():
         raise ComparisonReportError(f"missing source file: {path}")
@@ -202,6 +215,9 @@ def _read_csv(path: Path) -> list[dict]:
         return list(csv.DictReader(handle))
 
 
+# 作用：提取电价模式及比较上下文。
+# 上游（直接调用）：v2.compare_five_policies.build_report_artifact。
+# 下游调用：row.get('tariff_mode', '').strip、source_path.read_text、ComparisonReportError、str((report.get('metadata') or {}).get('tariff_mode', '')).strip。
 def _tariff_context(manifest_rows: list[dict]) -> tuple[str, str]:
     """Return the single paired tariff mode and its Chinese display label."""
     modes = {
@@ -234,6 +250,9 @@ def _tariff_context(manifest_rows: list[dict]) -> tuple[str, str]:
     return tariff_mode, label
 
 
+# 作用：加载指标明细与来源上下文。
+# 上游（直接调用）：v2.compare_five_policies.build_report_artifact。
+# 下游调用：_read_csv、_float_or_none、validation_path.read_text、ComparisonReportError、row.get('paired_metadata_match', '').lower。
 def load_source_data(input_dir: Path):
     validation_path = input_dir / "analysis_validation.json"
     try:
@@ -287,6 +306,9 @@ def load_source_data(input_dir: Path):
     return validation, long_rows, manifest_rows, values, statuses, seeds, metrics
 
 
+# 作用：计算均值和置信区间。
+# 上游（直接调用）：v2.compare_five_policies.build_report_artifact。
+# 下游调用：stats.t.ppf。
 def mean_ci(values: Iterable[float], confidence_level: float = 0.95):
     items = tuple(float(value) for value in values)
     if not items:
@@ -300,6 +322,8 @@ def mean_ci(values: Iterable[float], confidence_level: float = 0.95):
     return mean, mean - half_width, mean + half_width
 
 
+# 作用：提取策略或指标有效序列。
+# 上游（直接调用）：v2.compare_five_policies.build_report_artifact。
 def _series(values, statuses, seeds, policy, metric):
     result = []
     for seed in seeds:
@@ -310,10 +334,14 @@ def _series(values, statuses, seeds, policy, metric):
     return result
 
 
+# 作用：定义指标单位与展示配置。
+# 上游（直接调用）：v2.compare_five_policies.build_report_artifact。
 def _metric_spec(metric: str):
     return METRIC_SPECS.get(metric, ("其他", metric, "number", "neutral"))
 
 
+# 作用：按指标类型格式化数值。
+# 上游（直接调用）：v2.compare_five_policies.build_report_artifact。
 def _format_value(value, unit):
     if value is None:
         return "N/A"
@@ -328,6 +356,8 @@ def _format_value(value, unit):
     return f"{value:,.3f}"
 
 
+# 作用：格式化绝对或相对变化。
+# 上游（直接调用）：v2.compare_five_policies.build_report_artifact。
 def _format_delta(delta, unit, baseline=None):
     if delta is None:
         return "N/A"
@@ -338,6 +368,9 @@ def _format_delta(delta, unit, baseline=None):
     return f"{delta:+.3f}"
 
 
+# 作用：按指标优化方向选择最佳策略。
+# 上游（直接调用）：v2.compare_five_policies.build_report_artifact。
+# 下游调用：' / '.join。
 def _best_policy(policy_means: Mapping[str, float | None], direction: str):
     valid = {policy: value for policy, value in policy_means.items() if value is not None}
     if direction == "neutral" or not valid:
@@ -351,6 +384,9 @@ def _best_policy(policy_means: Mapping[str, float | None], direction: str):
     return ("并列：" + " / ".join(winners) if len(winners) > 1 else winners[0]), target
 
 
+# 作用：构造数据来源说明。
+# 上游（直接调用）：v2.compare_five_policies.build_report_artifact。
+# 下游调用：path.replace。
 def _source(path: str, source_id: str, label: str, generated_at: str, definitions):
     sql_path = path.replace("\\", "/")
     return {
@@ -375,6 +411,8 @@ def _source(path: str, source_id: str, label: str, generated_at: str, definition
     }
 
 
+# 作用：构造报告图表定义。
+# 上游（直接调用）：v2.compare_five_policies.build_report_artifact。
 def _chart(chart_id, title, subtitle, dataset, value_field, value_label, value_format, root):
     return {
         "id": chart_id,
@@ -418,6 +456,9 @@ def _chart(chart_id, title, subtitle, dataset, value_field, value_label, value_f
     }
 
 
+# 作用：将指标、图表、结论和来源组织为报告数据。
+# 上游（直接调用）：v2.compare_five_policies.write_report。
+# 下游调用：load_source_data、_tariff_context、_series、mean_ci、mean 等。
 def build_report_artifact(input_dir: Path, confidence_level: float = 0.95):
     (
         validation, long_rows, manifest_rows, values, statuses, seeds, metrics
@@ -437,9 +478,13 @@ def build_report_artifact(input_dir: Path, confidence_level: float = 0.95):
                 "mean": mean, "ci_low": low, "ci_high": high, "n": len(samples)
             }
 
+    # 作用：计算有效样本均值。
+    # 上游（直接调用）：v2.compare_five_policies.build_report_artifact。
     def mean(metric, policy):
         return summaries[metric][policy]["mean"]
 
+    # 作用：生成策略指标比较行。
+    # 上游（直接调用）：v2.compare_five_policies.build_report_artifact。
     def comparison_rows(metric):
         rows = []
         for policy in POLICIES:
@@ -1007,6 +1052,9 @@ def build_report_artifact(input_dir: Path, confidence_level: float = 0.95):
     return artifact, notes, dqn_delta_rows, best_rows
 
 
+# 作用：按字段顺序保存 CSV。
+# 上游（直接调用）：v2.compare_five_policies.write_report。
+# 下游调用：ComparisonReportError、path.open、writer.writeheader、writer.writerows。
 def _write_csv(path: Path, rows: list[dict]):
     if not rows:
         raise ComparisonReportError(f"cannot write empty table: {path}")
@@ -1016,6 +1064,9 @@ def _write_csv(path: Path, rows: list[dict]):
         writer.writerows(rows)
 
 
+# 作用：查找报告构建工具。
+# 上游（直接调用）：v2.compare_five_policies.write_report。
+# 下游调用：plugin_root.glob、ComparisonReportError、path.stat。
 def _find_builder() -> Path:
     codex_root = Path(os.environ.get("CODEX_HOME", Path.home() / ".codex"))
     plugin_root = codex_root / "plugins" / "cache" / "openai-curated-remote" / "data-analytics"
@@ -1025,6 +1076,9 @@ def _find_builder() -> Path:
     return max(candidates, key=lambda path: path.stat().st_mtime)
 
 
+# 作用：保存报告数据并调用构建工具。
+# 上游（直接调用）：v2.compare_five_policies.main。
+# 下游调用：build_report_artifact、_write_csv、_find_builder、output_dir.mkdir、artifact_path.write_text 等。
 def write_report(
     input_dir: Path,
     output_dir: Path,
@@ -1058,6 +1112,9 @@ def write_report(
     return artifact_path, report_path if report_path.exists() else None
 
 
+# 作用：解析或转发命令行参数，组织本文件执行流程。
+# 调用约定：本文件命令行入口或上层版本入口调用。
+# 下游调用：write_report、parser.add_argument、parser.parse_args、parser.error。
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Generate a validated Chinese HTML comparison report for five V2 policies"

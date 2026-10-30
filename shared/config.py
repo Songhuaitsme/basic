@@ -1,3 +1,9 @@
+# 文件功能：集中定义拓扑、任务、能源价格、候选搜索、DQN 训练及评估的默认配置和版本标识。
+# 主要内容：模块级配置常量和参数分组。
+# 模块上游（导入关系）：legacy.dqn_agent、legacy.evaluate、legacy.gnn_agent、legacy.network_env、legacy.static_metrics 等。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 # ================= v1.0 元数据与兼容运行模式 =================
 REQUIREMENTS_VERSION = "1.0"
 ALGORITHM_VERSION = "1.0"
@@ -116,7 +122,7 @@ PRICE_ALPHA = 2.0
 PRICE_BETA = 3.0
 PRICE_TIER_MULTIPLIERS = {1: 0.9, 2: 1.0, 3: 1.1}
 ELECTRICITY_LOAD_PER_YUAN_MW = 1.0
-BASELINE_ELECTRICITY_PRICE_YUAN_PER_MW = 1.30   
+BASELINE_ELECTRICITY_PRICE_YUAN_PER_MW = 1.30
 USE_UNIFORM_BASE_ELECTRICITY_PRICE = True
 UNIFORM_BASE_ELECTRICITY_PRICE_YUAN_PER_MW = BASELINE_ELECTRICITY_PRICE_YUAN_PER_MW
 MIN_CPU_PRICE = 1e-6

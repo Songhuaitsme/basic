@@ -1,3 +1,10 @@
+# 文件功能：以扫描线累计节点功率事件，构建可缓存的候选能源前缀积分索引。
+# 主要内容：SweepLineEnergyAccounting。
+# 模块上游（导入关系）：v3.accounting、v3.v3_runtime、v6.accounting.energy、v3.tests.test_sweep_line_energy、v5.tests.test_candidate_generator 等。
+# 模块下游（项目依赖）：v1.accounting.energy、v1.domain.models、v1.domain.reservations、v1.domain.units。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Lossless sweep-line candidate accounting for the V3 runtime.
 
 The frozen accounting formulas remain those from :mod:`v1.accounting.energy`.
@@ -28,21 +35,33 @@ class SweepLineEnergyAccounting(ExogenousEnergyAccounting):
 
     SNAPSHOT_ALLOCATION_CACHE_CAPACITY = 64
 
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：v3.v3_runtime.create_v3_runtime。
+    # 调用约定：构造实例时由 Python 调用。
+    # 下游调用：super().__init__。
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._snapshot_allocations_by_node_cache = OrderedDict()
 
+    # 作用：构造序列化状态，按实现排除无需持久化的缓存。
+    # 调用约定：由 pickle/检查点序列化流程调用。
+    # 下游调用：super().__getstate__。
     def __getstate__(self):
         state = super().__getstate__()
         # Snapshot identity is process-local and should never be checkpointed.
         state["_snapshot_allocations_by_node_cache"] = OrderedDict()
         return state
 
+    # 作用：恢复序列化状态，补齐必要索引或默认字段。
+    # 调用约定：由 pickle/检查点反序列化流程调用。
+    # 下游调用：super().__setstate__。
     def __setstate__(self, state):
         super().__setstate__(state)
         if "_snapshot_allocations_by_node_cache" not in self.__dict__:
             self._snapshot_allocations_by_node_cache = OrderedDict()
 
+    # 作用：按节点归集快照中的 CPU 分配。
+    # 上游（直接调用）：v3.accounting.energy.SweepLineEnergyAccounting._node_power_events。
     def _allocations_by_node(self, snapshot):
         """Group CPU allocations once for one immutable snapshot.
 
@@ -81,6 +100,9 @@ class SweepLineEnergyAccounting(ExogenousEnergyAccounting):
             self._snapshot_allocations_by_node_cache.popitem(last=False)
         return result
 
+    # 作用：把节点分配区间转换为功率增减事件供扫描线累计。
+    # 上游（直接调用）：v3.accounting.energy.SweepLineEnergyAccounting._build_candidate_integral_index。
+    # 下游调用：self._allocations_by_node、self.power_model.task_power_mw。
     def _node_power_events(
         self,
         snapshot,
@@ -108,6 +130,9 @@ class SweepLineEnergyAccounting(ExogenousEnergyAccounting):
             events[end] -= power
         return events
 
+    # 作用：构建节点预测区间的候选能源前缀积分索引。
+    # 上游（直接调用）：v3.accounting.energy.SweepLineEnergyAccounting._candidate_integral_index、v6.accounting.energy.V6EnergyAccounting._build_candidate_integral_index。
+    # 下游调用：self._node_power_events、TimeInterval、self._forecasts、tariff.boundaries、green.boundaries 等。
     def _build_candidate_integral_index(
         self,
         task: TaskSpec,
@@ -182,6 +207,9 @@ class SweepLineEnergyAccounting(ExogenousEnergyAccounting):
             hours_per_sim,
         )
 
+    # 作用：查找上下文缓存，必要时构建候选能源积分索引。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：finite_number、self._build_candidate_integral_index、self._forecasts、self.power_model.task_power_mw。
     def _candidate_integral_index(
         self,
         task: TaskSpec,

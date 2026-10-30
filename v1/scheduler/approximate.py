@@ -1,3 +1,10 @@
+# 文件功能：压缩候选集合，为显式启用的近似搜索提供候选子集。
+# 主要内容：CandidateCompressionResult、compress_candidates。
+# 模块上游（导入关系）：v1.scheduler、v1.scheduler.candidate_generator、tests.v1.test_v1_acceptance。
+# 模块下游（项目依赖）：v1.domain.candidates、v1.scheduler.objectives。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Explicit experimental candidate compression, isolated from formal complete mode."""
 
 from dataclasses import dataclass, replace
@@ -18,6 +25,9 @@ class CandidateCompressionResult:
     utility_regret: Optional[float]
 
 
+# 作用：按近似搜索限制保留代表性候选。
+# 上游（直接调用）：v1.scheduler.candidate_generator.CandidateGenerator.generate_approximate。
+# 下游调用：pareto_frontier、CandidateCompressionResult、(item.candidate_id + '|approximate-v1').encode。
 def compress_candidates(
     candidates: Iterable[Candidate],
     max_candidates: int,

@@ -1,3 +1,10 @@
+# 文件功能：管理 CPU 与链路预留日历，提供快照、区间容量检查及原子提交释放。
+# 主要内容：CalendarAllocation、ReservationSnapshot、FeasibilityResult、CommitResult、ReleaseResult、_PeakUsageIndex、ReservationCalendar、_allocation_sort_key 等。
+# 模块上游（导入关系）：v1.accounting.energy、v1.audit_v1、v1.scheduler、v1.scheduler.candidate_generator、v1.scheduler.reservation_manager 等。
+# 模块下游（项目依赖）：v1.domain.reservations、v1.domain.units。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Exact half-open interval calendars and atomic CPU/BW reservation commit."""
 
 from dataclasses import dataclass
@@ -74,6 +81,8 @@ class _PeakUsageIndex:
     boundaries: Tuple[float, ...]
     maximum_levels: Tuple[Tuple[float, ...], ...]
 
+    # 作用：将资源分配区间转换为占用变化边界，建立峰值区间查询索引。
+    # 上游（直接调用）：v1.scheduler.resource_calendar.ReservationCalendar._snapshot_peak_indices。
     @classmethod
     def build(cls, allocations):
         items = tuple(allocations)
@@ -115,6 +124,9 @@ class _PeakUsageIndex:
             span *= 2
         return cls(boundaries, tuple(levels))
 
+    # 作用：查询单个区间的峰值占用。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：count.bit_length。
     def peak(self, interval: TimeInterval) -> float:
         if (
             not self.maximum_levels
@@ -139,6 +151,8 @@ class _PeakUsageIndex:
         values = self.maximum_levels[level]
         return max(values[left], values[right - span + 1])
 
+    # 作用：批量查询多个区间的峰值占用。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     def peak_many(self, starts_sim, ends_sim) -> np.ndarray:
         starts = np.asarray(starts_sim, dtype=np.float64)
         ends = np.asarray(ends_sim, dtype=np.float64)
@@ -196,6 +210,8 @@ class _PeakUsageIndex:
         return peaks
 
 
+# 作用：生成资源分配记录的稳定排序键。
+# 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
 def _allocation_sort_key(item: CalendarAllocation):
     return (
         str(item.resource_id),
@@ -205,6 +221,9 @@ def _allocation_sort_key(item: CalendarAllocation):
     )
 
 
+# 作用：扫描区间事件以计算峰值资源占用。
+# 上游（直接调用）：v1.scheduler.resource_calendar.ReservationCalendar.peak_usage。
+# 下游调用：allocation.interval_sim.overlaps。
 def _peak_usage(
     allocations: Iterable[CalendarAllocation],
     interval: TimeInterval,
@@ -238,6 +257,10 @@ def _peak_usage(
 class ReservationCalendar:
     """Thread-safe reservation calendar with compare-version transactions."""
 
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：v1.v1_runtime.create_v1_runtime。
+    # 调用约定：构造实例时由 Python 调用。
+    # 下游调用：positive_finite、canonical_edge、threading.RLock。
     def __init__(
         self,
         node_capacities: Mapping[str, float],
@@ -274,6 +297,8 @@ class ReservationCalendar:
         self._snapshot_peak_index_cache = OrderedDict()
         self._snapshot_peak_index_capacity = 64
 
+    # 作用：构造序列化状态，按实现排除无需持久化的缓存。
+    # 调用约定：由 pickle/检查点序列化流程调用。
     def __getstate__(self):
         """Make exact training checkpoints possible without serializing locks."""
         state = dict(self.__dict__)
@@ -283,6 +308,9 @@ class ReservationCalendar:
         state["_snapshot_peak_index_cache"] = OrderedDict()
         return state
 
+    # 作用：恢复序列化状态，补齐必要索引或默认字段。
+    # 调用约定：由 pickle/检查点反序列化流程调用。
+    # 下游调用：threading.RLock。
     def __setstate__(self, state):
         self.__dict__.update(state)
         self._lock = threading.RLock()
@@ -344,6 +372,8 @@ class ReservationCalendar:
         if "_snapshot_peak_index_capacity" not in self.__dict__:
             self._snapshot_peak_index_capacity = 64
 
+    # 作用：按资源归集快照中的 CPU 和链路分配。
+    # 上游（直接调用）：v1.scheduler.resource_calendar.ReservationCalendar._snapshot_peak_indices、v1.scheduler.resource_calendar.ReservationCalendar.resources_unallocated。
     def _snapshot_allocations_by_resource(self, snapshot, *, cpu):
         cache_key = (id(snapshot), bool(cpu))
         cached = self._snapshot_allocation_index_cache.get(cache_key)
@@ -366,6 +396,9 @@ class ReservationCalendar:
             self._snapshot_allocation_index_cache.popitem(last=False)
         return indexed
 
+    # 作用：检查指定资源集合是否没有既存占用。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self._snapshot_allocations_by_resource。
     def resources_unallocated(
         self,
         snapshot: ReservationSnapshot,
@@ -386,6 +419,9 @@ class ReservationCalendar:
         )
         return all(not link_allocations.get(edge) for edge in path.resource_edges)
 
+    # 作用：建立或复用快照资源的峰值索引。
+    # 上游（直接调用）：v1.scheduler.resource_calendar.ReservationCalendar._snapshot_peak_usage、v1.scheduler.resource_calendar.ReservationCalendar.cpu_feasible_many、v1.scheduler.resource_calendar.ReservationCalendar.path_feasible_many。
+    # 下游调用：self._snapshot_allocations_by_resource、_PeakUsageIndex.build。
     def _snapshot_peak_indices(self, snapshot, *, cpu):
         cache_key = (id(snapshot), bool(cpu))
         cached = self._snapshot_peak_index_cache.get(cache_key)
@@ -412,6 +448,9 @@ class ReservationCalendar:
             self._snapshot_peak_index_cache.popitem(last=False)
         return indexed
 
+    # 作用：通过快照索引查询区间峰值占用。
+    # 上游（直接调用）：v1.scheduler.resource_calendar.ReservationCalendar.cpu_feasible、v1.scheduler.resource_calendar.ReservationCalendar.path_feasible。
+    # 下游调用：self._snapshot_peak_indices、index.peak。
     def _snapshot_peak_usage(
         self,
         snapshot,
@@ -426,12 +465,16 @@ class ReservationCalendar:
         ).get(resource)
         return 0.0 if index is None else index.peak(interval)
 
+    # 作用：把已提交预留的 CPU 分配加入索引。
+    # 上游（直接调用）：v1.scheduler.resource_calendar.ReservationCalendar.try_commit。
     def _add_cpu_allocation(self, item: CalendarAllocation) -> None:
         self._cpu_allocations[item.reservation_id] = item
         self._cpu_allocations_by_resource.setdefault(
             item.resource_id, {}
         )[item.reservation_id] = item
 
+    # 作用：从索引移除预留 CPU 占用。
+    # 上游（直接调用）：v1.scheduler.resource_calendar.ReservationCalendar._remove_active_allocations。
     def _remove_cpu_allocation(self, reservation_id: str) -> None:
         item = self._cpu_allocations.pop(reservation_id, None)
         if item is None:
@@ -446,6 +489,8 @@ class ReservationCalendar:
                     item.resource_id, None
                 )
 
+    # 作用：把单链路预留占用加入索引。
+    # 上游（直接调用）：v1.scheduler.resource_calendar.ReservationCalendar.try_commit。
     def _add_link_allocation(self, item: CalendarAllocation) -> None:
         key = (item.reservation_id, item.resource_id)
         self._link_allocations[key] = item
@@ -456,6 +501,8 @@ class ReservationCalendar:
             item.reservation_id, {}
         )[item.resource_id] = item
 
+    # 作用：移除预留的全部链路占用。
+    # 上游（直接调用）：v1.scheduler.resource_calendar.ReservationCalendar._remove_active_allocations。
     def _remove_link_allocations(self, reservation_id: str) -> None:
         reservation_items = self._link_allocations_by_reservation.pop(
             reservation_id, {}
@@ -473,11 +520,16 @@ class ReservationCalendar:
                         item.resource_id, None
                     )
 
+    # 作用：移除预留仍在活动索引中的全部占用。
+    # 上游（直接调用）：v1.scheduler.resource_calendar.ReservationCalendar.release_on_failure、v1.scheduler.resource_calendar.ReservationCalendar.release_on_normal_completion、v1.scheduler.resource_calendar.ReservationCalendar.try_commit。
+    # 下游调用：self._remove_cpu_allocation、self._remove_link_allocations。
     def _remove_active_allocations(self, reservation_id: str) -> None:
         self._remove_cpu_allocation(reservation_id)
         self._remove_link_allocations(reservation_id)
         self._snapshot_cache = None
 
+    # 作用：建立按节点和区间查询预留历史的索引。
+    # 上游（直接调用）：v1.scheduler.resource_calendar.ReservationCalendar.try_commit。
     def _index_reservation_history(self, reservation: Reservation) -> None:
         bisect.insort(
             self._reservations_by_node.setdefault(
@@ -489,6 +541,8 @@ class ReservationCalendar:
             ),
         )
 
+    # 作用：从历史索引移除指定预留。
+    # 上游（直接调用）：v1.scheduler.resource_calendar.ReservationCalendar.try_commit。
     def _unindex_reservation_history(self, reservation: Reservation) -> None:
         items = self._reservations_by_node.get(reservation.target_node)
         if not items:
@@ -503,24 +557,35 @@ class ReservationCalendar:
         if not items:
             self._reservations_by_node.pop(reservation.target_node, None)
 
+    # 作用：返回资源日历版本。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     @property
     def version(self) -> int:
         with self._lock:
             return self._version
 
+    # 作用：返回活动预留数量。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     @property
     def active_reservation_count(self) -> int:
         with self._lock:
             return len(self._active_reservation_ids)
 
+    # 作用：查询节点 CPU 总容量。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     def node_capacity(self, node: str) -> Optional[float]:
         """Return immutable configured capacity for static admission checks."""
 
         return self._node_capacities.get(str(node))
 
+    # 作用：查询链路总带宽容量。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：canonical_edge。
     def link_capacity(self, edge: Edge) -> Optional[float]:
         return self._link_capacities.get(canonical_edge(edge))
 
+    # 作用：返回当前仍持有资源的预留。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     def active_reservations(self) -> Tuple[Reservation, ...]:
         with self._lock:
             return tuple(
@@ -528,6 +593,9 @@ class ReservationCalendar:
                 for reservation_id in sorted(self._active_reservation_ids)
             )
 
+    # 作用：返回当前日历版本对应的不可变资源快照。
+    # 上游（直接调用）：v1.scheduler.resource_calendar.ReservationCalendar.try_commit。
+    # 下游调用：ReservationSnapshot。
     def snapshot(self) -> ReservationSnapshot:
         with self._lock:
             cached = self._snapshot_cache
@@ -548,6 +616,9 @@ class ReservationCalendar:
             self._snapshot_cache = snapshot
             return snapshot
 
+    # 作用：查询指定资源区间内的峰值占用。
+    # 上游（直接调用）：v1.audit_v1.scan_scheduler_invariants。
+    # 下游调用：_peak_usage。
     @staticmethod
     def peak_usage(
         allocations: Iterable[CalendarAllocation],
@@ -555,6 +626,9 @@ class ReservationCalendar:
     ) -> float:
         return _peak_usage(allocations, interval)
 
+    # 作用：检查单个计算区间的 CPU 容量可行性。
+    # 上游（直接调用）：v1.scheduler.resource_calendar.ReservationCalendar.try_commit。
+    # 下游调用：positive_finite、self._snapshot_peak_usage、FeasibilityResult。
     def cpu_feasible(
         self,
         snapshot: ReservationSnapshot,
@@ -589,6 +663,9 @@ class ReservationCalendar:
             None if projected <= capacity + 1e-12 else "CPU capacity exceeded",
         )
 
+    # 作用：批量检查计算区间的 CPU 容量可行性。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：positive_finite、self._snapshot_peak_indices、index.peak_many。
     def cpu_feasible_many(
         self,
         snapshot: ReservationSnapshot,
@@ -629,6 +706,9 @@ class ReservationCalendar:
             "projected_peak": projected,
         }
 
+    # 作用：检查路径所有链路的传输带宽可行性。
+    # 上游（直接调用）：v1.scheduler.resource_calendar.ReservationCalendar.try_commit。
+    # 下游调用：positive_finite、self._snapshot_peak_usage、FeasibilityResult。
     def path_feasible(
         self,
         snapshot: ReservationSnapshot,
@@ -683,6 +763,9 @@ class ReservationCalendar:
                 worst = result
         return worst or FeasibilityResult(True, None, 0.0, 0.0, 0.0)
 
+    # 作用：批量检查路径传输区间的带宽可行性。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：positive_finite、self._snapshot_peak_indices、index.peak_many。
     def path_feasible_many(
         self,
         snapshot: ReservationSnapshot,
@@ -744,6 +827,9 @@ class ReservationCalendar:
             "projected_peak": worst_projected,
         }
 
+    # 作用：校验快照版本和容量后原子提交预留，返回成功或冲突结果。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self.snapshot、self.cpu_feasible、self.path_feasible、deterministic_reservation_hash、self._add_cpu_allocation 等。
     def try_commit(
         self,
         request: ReservationRequest,
@@ -861,10 +947,14 @@ class ReservationCalendar:
                 reservation=reservation,
             )
 
+    # 作用：按标识查询预留。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     def get_reservation(self, reservation_id: str) -> Optional[Reservation]:
         with self._lock:
             return self._reservations.get(reservation_id)
 
+    # 作用：返回资源日历保存的预留集合。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     def reservations(self) -> Tuple[Reservation, ...]:
         """Return immutable reservation history in deterministic order."""
 
@@ -874,6 +964,9 @@ class ReservationCalendar:
                 key=lambda item: (item.committed_at_sim, item.task_id, item.reservation_id),
             ))
 
+    # 作用：查询指定节点与区间相交的历史预留。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self._reservations[reservation_id].compute_interval_sim.overlaps。
     def reservations_overlapping_node(
         self,
         node: str,
@@ -895,6 +988,8 @@ class ReservationCalendar:
                 ].compute_interval_sim.overlaps(interval)
             )
 
+    # 作用：核验预留与资源日历分配是否一致。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     def verify_reservation(self, reservation_id: str) -> bool:
         with self._lock:
             reservation = self._reservations.get(reservation_id)
@@ -921,6 +1016,9 @@ class ReservationCalendar:
                 )
             )
 
+    # 作用：任务正常完成时释放预留资源。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self._remove_active_allocations、ReleaseResult、self._active_reservation_ids.remove。
     def release_on_normal_completion(
         self,
         reservation_id: str,
@@ -960,6 +1058,9 @@ class ReservationCalendar:
                 reservation_id,
             )
 
+    # 作用：任务失败时释放预留资源。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self._remove_active_allocations、ReleaseResult、self._active_reservation_ids.remove。
     def release_on_failure(self, reservation_id: str) -> ReleaseResult:
         """Release a broken reservation without treating it as a retry/cancel."""
 

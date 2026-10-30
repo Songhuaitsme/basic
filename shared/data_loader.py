@@ -1,8 +1,18 @@
+# 文件功能：读取网络拓扑文件中的节点、链路及资源属性。
+# 主要内容：DataLoader。
+# 模块上游（导入关系）：shared.topology_manager、v2.coordination_metrics。
+# 模块下游（项目依赖）：shared.config。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 import networkx as nx
 import itertools
 from shared import config
 
 class DataLoader:
+    # 作用：从拓扑输入读取图结构及节点链路属性。
+    # 上游（直接调用）：shared.topology_manager.TopologyManager.__init__、v2.coordination_metrics.node_region_map。
+    # 下游调用：item['编号'].endswith、G.add_node、G.nodes、G.add_edge。
     @staticmethod
     def load_network_topology():
         """

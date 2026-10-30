@@ -1,3 +1,10 @@
+# 文件功能：维护任务生命周期、合法状态转移、状态索引及重试计数。
+# 主要内容：StateTransitionError、StateTransition、TaskStateMachine。
+# 模块上游（导入关系）：v1.scheduler.queue_manager、v1.scheduler.reservation_manager、v1.scheduler.v1_scheduler、v1.simulation、v1.simulation.event_engine 等。
+# 模块下游（项目依赖）：v1.domain.models、v1.domain.units。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Deterministic v1.0 task lifecycle transitions."""
 
 from dataclasses import dataclass, replace
@@ -67,18 +74,26 @@ class StateTransition:
 
 
 class TaskStateMachine:
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：v1.scheduler.v1_scheduler.V1Scheduler.__init__、v1.simulation.event_engine.EventEngine.__init__。
+    # 调用约定：构造实例时由 Python 调用。
     def __init__(self):
         self._specs: Dict[str, TaskSpec] = {}
         self._runtimes: Dict[str, TaskRuntime] = {}
         self._task_ids_by_state = {state: set() for state in TaskState}
         self._registration_index = {}
 
+    # 作用：恢复序列化状态，补齐必要索引或默认字段。
+    # 调用约定：由 pickle/检查点反序列化流程调用。
+    # 下游调用：self._rebuild_state_index。
     def __setstate__(self, state):
         """Restore old checkpoints and rebuild disposable V2 state indices."""
 
         self.__dict__.update(state)
         self._rebuild_state_index()
 
+    # 作用：由运行记录重建按状态分类的任务索引。
+    # 上游（直接调用）：v1.simulation.state_machine.TaskStateMachine.__setstate__。
     def _rebuild_state_index(self) -> None:
         indexed = {state: set() for state in TaskState}
         registration_index = {}
@@ -88,6 +103,9 @@ class TaskStateMachine:
         self._task_ids_by_state = indexed
         self._registration_index = registration_index
 
+    # 作用：注册任务规格并建立初始运行状态。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：StateTransitionError、TaskRuntime。
     def register(self, task_spec: TaskSpec) -> TaskRuntime:
         if task_spec.task_id in self._specs:
             raise StateTransitionError(f"duplicate task_id: {task_spec.task_id}")
@@ -104,18 +122,27 @@ class TaskStateMachine:
         self._task_ids_by_state[TaskState.ARRIVED].add(task_spec.task_id)
         return replace(runtime)
 
+    # 作用：查询不可变任务规格。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：StateTransitionError。
     def task_spec(self, task_id: str) -> TaskSpec:
         try:
             return self._specs[task_id]
         except KeyError:
             raise StateTransitionError(f"unknown task_id: {task_id}")
 
+    # 作用：查询任务当前运行记录。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：StateTransitionError。
     def runtime(self, task_id: str) -> TaskRuntime:
         try:
             return replace(self._runtimes[task_id])
         except KeyError:
             raise StateTransitionError(f"unknown task_id: {task_id}")
 
+    # 作用：校验并执行合法状态转移，同时维护索引。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：finite_number、StateTransitionError、self._task_ids_by_state[previous].remove、StateTransition。
     def transition(
         self,
         task_id: str,
@@ -174,12 +201,17 @@ class TaskStateMachine:
             reservation_id=runtime.reservation_id,
         )
 
+    # 作用：返回各状态的任务数量。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     def count_by_state(self) -> Dict[TaskState, int]:
         return {
             state: len(self._task_ids_by_state[state])
             for state in TaskState
         }
 
+    # 作用：汇集指定状态集合中的任务标识。
+    # 上游（直接调用）：v1.simulation.state_machine.TaskStateMachine.task_ids_in_state。
+    # 下游调用：StateTransitionError。
     def task_ids_in_states(self, states) -> tuple:
         """Return deterministic ids from the maintained state membership index."""
 
@@ -192,9 +224,15 @@ class TaskStateMachine:
             selected.update(self._task_ids_by_state[state])
         return tuple(sorted(selected, key=self._registration_index.__getitem__))
 
+    # 作用：返回指定状态中的任务标识。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self.task_ids_in_states。
     def task_ids_in_state(self, state: TaskState) -> tuple:
         return self.task_ids_in_states((state,))
 
+    # 作用：增加待重试次数。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：StateTransitionError。
     def increment_pending_attempts(self, task_id: str) -> int:
         try:
             runtime = self._runtimes[task_id]
@@ -203,6 +241,9 @@ class TaskStateMachine:
         runtime.pending_attempts += 1
         return runtime.pending_attempts
 
+    # 作用：增加提交尝试次数。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：StateTransitionError。
     def increment_commit_attempts(self, task_id: str) -> int:
         try:
             runtime = self._runtimes[task_id]
@@ -211,16 +252,23 @@ class TaskStateMachine:
         runtime.commit_attempts_current_decision += 1
         return runtime.commit_attempts_current_decision
 
+    # 作用：重置提交重试计数。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：StateTransitionError。
     def reset_commit_attempts(self, task_id: str) -> None:
         try:
             self._runtimes[task_id].commit_attempts_current_decision = 0
         except KeyError:
             raise StateTransitionError(f"unknown task_id: {task_id}")
 
+    # 作用：返回已注册任务总数。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     @property
     def task_count(self) -> int:
         return len(self._specs)
 
+    # 作用：返回已注册任务标识。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     @property
     def task_ids(self):
         return tuple(self._specs.keys())

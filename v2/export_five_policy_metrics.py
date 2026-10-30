@@ -1,3 +1,10 @@
+# 文件功能：将五策略报告的嵌套指标和诊断记录导出为统一分析表。
+# 主要内容：EvaluationDataError、_read_report、_policy_from_name、discover_reports、_finite_scalar、flatten_metrics、_validate_and_group、_write_csv 等。
+# 模块上游（导入关系）：v2.calibrate_warmup、v2.compare_five_policies、v2.evaluate_five_policies、v2.summarize_five_policy_core、tests.v2.test_v2_evaluation_tools。
+# 模块下游（项目依赖）：v2.coordination_metrics。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Export auditable, source-level metrics from V2 five-policy evaluations.
 
 The raw JSON reports remain the source of truth.  This module validates that
@@ -105,6 +112,9 @@ SYSTEM_METRIC_FIELDS = (
 )
 
 
+# 作用：读取并检查报告结构。
+# 上游（直接调用）：v2.export_five_policy_metrics._validate_and_group、v2.export_five_policy_metrics.export_policy_artifacts。
+# 下游调用：path.read_text、EvaluationDataError。
 def _read_report(path: Path) -> dict:
     try:
         report = json.loads(path.read_text(encoding="utf-8"))
@@ -115,6 +125,9 @@ def _read_report(path: Path) -> dict:
     return report
 
 
+# 作用：从文件名识别策略。
+# 上游（直接调用）：v2.export_five_policy_metrics._validate_and_group、v2.export_five_policy_metrics.export_policy_artifacts。
+# 下游调用：stem.endswith、EvaluationDataError。
 def _policy_from_name(path: Path, seed: int) -> str:
     suffix = f"_seed{seed}"
     stem = path.stem
@@ -128,6 +141,9 @@ def _policy_from_name(path: Path, seed: int) -> str:
     return policy
 
 
+# 作用：查找输入目录的策略报告。
+# 上游（直接调用）：v2.evaluate_five_policies.main、v2.export_five_policy_metrics.main。
+# 下游调用：input_dir.rglob、path.stem.startswith、EvaluationDataError。
 def discover_reports(input_dir: Path) -> list[Path]:
     """Return recognized policy reports beneath ``input_dir``."""
 
@@ -140,6 +156,9 @@ def discover_reports(input_dir: Path) -> list[Path]:
     return found
 
 
+# 作用：将有限标量转换为可导出数值。
+# 上游（直接调用）：v2.export_five_policy_metrics.flatten_metrics.visit。
+# 下游调用：EvaluationDataError。
 def _finite_scalar(value, *, path: str):
     if value is None or isinstance(value, bool):
         return value
@@ -150,11 +169,17 @@ def _finite_scalar(value, *, path: str):
     raise EvaluationDataError(f"metric value at {path} is not numeric or null")
 
 
+# 作用：将嵌套指标展开为统一字段。
+# 上游（直接调用）：v2.export_five_policy_metrics.export_reports。
+# 下游调用：visit。
 def flatten_metrics(metrics: Mapping[str, object]) -> list[dict]:
     """Flatten all numeric metric leaves while preserving MetricValue status."""
 
     rows: list[dict] = []
 
+    # 作用：递归访问嵌套指标并收集字段。
+    # 上游（直接调用）：v2.export_five_policy_metrics.flatten_metrics。
+    # 下游调用：_finite_scalar、visit、'.'.join、EvaluationDataError。
     def visit(value, parts: tuple[str, ...]) -> None:
         metric_path = ".".join(parts)
         if isinstance(value, Mapping):
@@ -195,6 +220,9 @@ def flatten_metrics(metrics: Mapping[str, object]) -> list[dict]:
     return rows
 
 
+# 作用：校验报告实验条件并分组。
+# 上游（直接调用）：v2.export_five_policy_metrics.export_reports。
+# 下游调用：_read_report、_policy_from_name、EvaluationDataError、', '.join。
 def _validate_and_group(report_paths: Iterable[Path]):
     grouped: dict[int, dict[str, tuple[Path, dict]]] = {}
     for path in report_paths:
@@ -248,6 +276,9 @@ def _validate_and_group(report_paths: Iterable[Path]):
     return grouped
 
 
+# 作用：按字段顺序保存 CSV。
+# 上游（直接调用）：v2.export_five_policy_metrics._write_dynamic_csv、v2.export_five_policy_metrics.export_policy_artifacts、v2.export_five_policy_metrics.export_reports。
+# 下游调用：path.parent.mkdir、path.open、writer.writeheader、writer.writerows。
 def _write_csv(path: Path, fieldnames: Sequence[str], rows: Sequence[Mapping]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8-sig") as handle:
@@ -256,12 +287,17 @@ def _write_csv(path: Path, fieldnames: Sequence[str], rows: Sequence[Mapping]) -
         writer.writerows(rows)
 
 
+# 作用：把嵌套字段转为 CSV 单元格 JSON。
+# 上游（直接调用）：v2.export_five_policy_metrics._row_with_context。
 def _json_cell(value):
     if isinstance(value, (dict, list, tuple)):
         return json.dumps(value, ensure_ascii=False, sort_keys=True)
     return value
 
 
+# 作用：给行记录补充策略、种子和来源。
+# 上游（直接调用）：v2.export_five_policy_metrics.export_reports。
+# 下游调用：_json_cell。
 def _row_with_context(seed, policy, source_file, row):
     return {
         "seed": seed,
@@ -271,17 +307,25 @@ def _row_with_context(seed, policy, source_file, row):
     }
 
 
+# 作用：合并动态字段集合并写出 CSV。
+# 上游（直接调用）：v2.export_five_policy_metrics.export_policy_artifacts、v2.export_five_policy_metrics.export_reports。
+# 下游调用：_write_csv。
 def _write_dynamic_csv(path: Path, rows: Sequence[Mapping], base_fields: Sequence[str]):
     extra = sorted({key for row in rows for key in row if key not in base_fields})
     fields = tuple(base_fields) + tuple(extra)
     _write_csv(path, fields, rows)
 
 
+# 作用：计算数量、分位数及范围等分布统计。
+# 上游（直接调用）：v2.export_five_policy_metrics._fallback_diagnostics、v2.export_five_policy_metrics.export_reports。
+# 下游调用：percentile。
 def _distribution(values):
     items = sorted(float(value) for value in values if value is not None)
     if not items:
         return {"count": 0, "mean": None, "p50": None, "p95": None, "maximum": None}
 
+    # 作用：计算样本百分位数。
+    # 上游（直接调用）：v2.export_five_policy_metrics._distribution。
     def percentile(percent):
         position = (len(items) - 1) * percent / 100.0
         lower = int(math.floor(position))
@@ -300,6 +344,9 @@ def _distribution(values):
     }
 
 
+# 作用：为旧报告构造兼容诊断。
+# 上游（直接调用）：v2.export_five_policy_metrics._diagnostic_metric_source。
+# 下游调用：_distribution。
 def _fallback_diagnostics(report):
     """Derive the safe subset supported by pre-diagnostics reports."""
 
@@ -357,6 +404,9 @@ def _fallback_diagnostics(report):
     }
 
 
+# 作用：标记诊断来自原报告或兼容重算。
+# 上游（直接调用）：v2.export_five_policy_metrics.export_reports。
+# 下游调用：_fallback_diagnostics。
 def _diagnostic_metric_source(report):
     diagnostics = report.get("diagnostics")
     if not isinstance(diagnostics, Mapping):
@@ -375,12 +425,17 @@ def _diagnostic_metric_source(report):
     }
 
 
+# 作用：从结构化指标读取有效数值。
+# 上游（直接调用）：v2.export_five_policy_metrics.build_unified_system_metrics。
 def _metric_value(value):
     if isinstance(value, Mapping):
         return value.get("value")
     return value
 
 
+# 作用：将多种来源指标转换为统一导出契约。
+# 上游（直接调用）：v2.export_five_policy_metrics.export_policy_artifacts、v2.export_five_policy_metrics.export_reports、v2.summarize_five_policy_core.main。
+# 下游调用：_metric_value。
 def build_unified_system_metrics(report: Mapping, policy: str) -> dict:
     """Build the common five-policy scorecard from one complete report."""
 
@@ -478,6 +533,9 @@ def build_unified_system_metrics(report: Mapping, policy: str) -> dict:
     return system
 
 
+# 作用：生成候选与反事实的协同分析行。
+# 上游（直接调用）：v2.export_five_policy_metrics.export_policy_artifacts。
+# 下游调用：enrich_adjustments。
 def _candidate_coordination_rows(tasks: Sequence[Mapping]) -> list[dict]:
     rows = []
     for original in tasks:
@@ -523,6 +581,9 @@ def _candidate_coordination_rows(tasks: Sequence[Mapping]) -> list[dict]:
     return enrich_adjustments(rows)
 
 
+# 作用：导出单策略指标及逐任务诊断。
+# 上游（直接调用）：v2.evaluate_five_policies.main。
+# 下游调用：_read_report、_policy_from_name、_candidate_coordination_rows、_write_dynamic_csv、build_unified_system_metrics 等。
 def export_policy_artifacts(report_path: Path, output_dir: Path) -> dict:
     """Write one policy's independent task/decision/time/node/system files."""
 
@@ -609,6 +670,9 @@ def export_policy_artifacts(report_path: Path, output_dir: Path) -> dict:
     return system_metrics
 
 
+# 作用：验证并批量导出统一分析表。
+# 上游（直接调用）：v2.evaluate_five_policies.main、v2.export_five_policy_metrics.main。
+# 下游调用：_validate_and_group、build_unified_system_metrics、flatten_metrics、_diagnostic_metric_source、_row_with_context 等。
 def export_reports(report_paths: Iterable[Path], output_dir: Path) -> dict:
     """Validate reports and create long, wide, and provenance source tables."""
 
@@ -766,6 +830,9 @@ def export_reports(report_paths: Iterable[Path], output_dir: Path) -> dict:
             if isinstance(runtime, Mapping):
                 flattened_runtime = {}
 
+                # 作用：递归提取耗时和性能指标。
+                # 上游（直接调用）：v2.export_five_policy_metrics.export_reports。
+                # 下游调用：visit_runtime、'.'.join。
                 def visit_runtime(value, parts):
                     if isinstance(value, Mapping):
                         for key, child in value.items():
@@ -905,6 +972,9 @@ def export_reports(report_paths: Iterable[Path], output_dir: Path) -> dict:
     return validation
 
 
+# 作用：解析或转发命令行参数，组织本文件执行流程。
+# 调用约定：本文件命令行入口或上层版本入口调用。
+# 下游调用：export_reports、discover_reports、parser.add_argument、parser.parse_args。
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Export all metrics from paired V2 five-policy reports"

@@ -1,3 +1,10 @@
+# 文件功能：定义目标权重与尺度，计算成本、绿电和 SLA 评分及 Pareto 前沿。
+# 主要内容：ObjectiveBreakdown、ObjectiveConfig、ObjectiveScorer、_clip、pareto_frontier。
+# 模块上游（导入关系）：v1.evaluate_v1、v1.scheduler、v1.scheduler.approximate、v1.scheduler.policies、v1.train_v1 等。
+# 模块下游（项目依赖）：v1.domain.candidates、v1.domain.models、v1.domain.units。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Fixed-scale v1.0 multi-objective scoring and Pareto diagnostics."""
 
 from dataclasses import dataclass
@@ -10,6 +17,8 @@ from v1.domain.models import SlaType
 from v1.domain.units import finite_number, non_negative_finite, positive_finite
 
 
+# 作用：将输入限制在指定边界内。
+# 上游（直接调用）：v1.scheduler.objectives.ObjectiveScorer.score。
 def _clip(value: float, low: float, high: float) -> float:
     return max(low, min(high, value))
 
@@ -36,6 +45,9 @@ class ObjectiveConfig:
     soft_tardiness_weight: float = 0.0
     flexible_tardiness_weight: float = 0.0
 
+    # 作用：在数据类构造后校验字段或建立派生数据。
+    # 调用约定：由 dataclass 生成的构造流程调用。
+    # 下游调用：finite_number、positive_finite、non_negative_finite。
     def __post_init__(self):
         object.__setattr__(
             self,
@@ -73,6 +85,8 @@ class ObjectiveConfig:
         if self.cost_weight + self.green_weight <= 0.0:
             raise ValueError("cost_weight + green_weight must be positive")
 
+    # 作用：生成包含目标配置身份的策略标识。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     @property
     def policy_id(self) -> str:
         payload = json.dumps(
@@ -84,9 +98,15 @@ class ObjectiveConfig:
 
 
 class ObjectiveScorer:
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：v1.scheduler.policies.EqualWeightPolicy.__init__、v1.train_v1.V1TrainingLoop.__init__、v4.gating.NetBenefitWaitGate.__init__。
+    # 调用约定：构造实例时由 Python 调用。
     def __init__(self, config: ObjectiveConfig):
         self.config = config
 
+    # 作用：计算当前策略或目标配置下的评分。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：SlaType.parse、_clip、ObjectiveBreakdown。
     def score(self, candidate: Candidate, sla_type: SlaType) -> ObjectiveBreakdown:
         if not isinstance(sla_type, SlaType):
             sla_type = SlaType.parse(sla_type)
@@ -138,6 +158,8 @@ class ObjectiveScorer:
         )
 
 
+# 作用：按目标维度筛选未被支配的候选。
+# 上游（直接调用）：v1.scheduler.approximate.compress_candidates。
 def pareto_frontier(candidates: Iterable[Candidate]) -> Tuple[Candidate, ...]:
     """Cost-minimizing, green-score-maximizing non-dominated candidates."""
 

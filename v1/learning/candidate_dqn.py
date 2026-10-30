@@ -1,3 +1,10 @@
+# 文件功能：实现共享候选 Q 网络、候选流策略、Double DQN 目标及批量训练。
+# 主要内容：SharedCandidateQNetwork、CandidateDqnMetadata、CandidateSelectionTrace、CandidateDQNPolicy、CandidateDQNTrainer、mask_q_values、select_candidate_id、double_dqn_target 等。
+# 模块上游（导入关系）：artifacts.v1.benchmarks.cuda_compare.benchmark_inference、v1.evaluate_v1、v1.learning、v1.train_v1、v1.v1_runtime 等。
+# 模块下游（项目依赖）：v1.domain.candidates、v1.domain.units、v1.learning.features、v1.learning.replay、v1.scheduler.policies。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Variable-cardinality shared candidate Q-network and Double-DQN update."""
 
 from dataclasses import dataclass
@@ -9,6 +16,8 @@ import time
 from typing import Callable, Iterable, Optional, Sequence
 
 import numpy as np
+
+from v1.candidate_profiling import candidate_scope
 import torch
 from torch import nn
 
@@ -21,6 +30,10 @@ from v1.scheduler.policies import CandidateStreamSelection
 
 
 class SharedCandidateQNetwork(nn.Module):
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：artifacts.v1.benchmarks.cuda_compare.benchmark_inference.benchmark_device、v1.v1_runtime.create_v1_runtime。
+    # 调用约定：构造实例时由 Python 调用。
+    # 下游调用：super().__init__。
     def __init__(self, global_state_dim: int, candidate_feature_dim: int, hidden_dim: int = 128):
         super().__init__()
         for name, value in (("global_state_dim", global_state_dim), ("candidate_feature_dim", candidate_feature_dim), ("hidden_dim", hidden_dim)):
@@ -41,6 +54,9 @@ class SharedCandidateQNetwork(nn.Module):
             nn.Linear(2 * hidden_dim, hidden_dim), nn.ReLU(), nn.Linear(hidden_dim, 1)
         )
 
+    # 作用：编码全局状态与候选特征，输出各候选 Q 值。
+    # 调用约定：由 PyTorch Module.__call__ 间接调用。
+    # 下游调用：global_state.unsqueeze、candidate_features.unsqueeze、self.global_encoder、self.candidate_encoder、global_embedding.unsqueeze(1).expand 等。
     def forward(self, global_state, candidate_features):
         if global_state.ndim == 1:
             global_state = global_state.unsqueeze(0)
@@ -55,6 +71,9 @@ class SharedCandidateQNetwork(nn.Module):
         )
         return self.q_head(torch.cat((expanded_global, candidate_embedding), dim=-1)).squeeze(-1)
 
+    # 作用：处理扁平变长候选集合，按批索引匹配全局状态并评分。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：candidate_batch_index.to、self.global_encoder、self.candidate_encoder、global_embedding.index_select、self.q_head(torch.cat((expanded_global, candidate_embedding), dim=-1)).squeeze 等。
     def forward_ragged(
         self, global_state, candidate_features, candidate_batch_index
     ):
@@ -74,6 +93,8 @@ class SharedCandidateQNetwork(nn.Module):
         ).squeeze(-1)
 
 
+# 作用：屏蔽不可行动作的 Q 值。
+# 上游（直接调用）：v1.learning.candidate_dqn.CandidateDQNPolicy.score_candidates、v1.learning.candidate_dqn.double_dqn_target、v1.learning.candidate_dqn.select_candidate_id。
 def mask_q_values(q_values: np.ndarray, valid_mask: Optional[Sequence[bool]]) -> np.ndarray:
     values = np.asarray(q_values, dtype=float).copy()
     if valid_mask is None:
@@ -85,6 +106,9 @@ def mask_q_values(q_values: np.ndarray, valid_mask: Optional[Sequence[bool]]) ->
     return values
 
 
+# 作用：从有效 Q 值取最大值，用候选标识稳定打破平局。
+# 上游（直接调用）：tests.v1.test_learning_v1.CandidateDqnV1Test.test_ties_and_masks_are_deterministic、tests.v1.test_v1_acceptance.V1AcceptanceContractTest.test_hard_constraints_precede_policy_and_negative_q_still_selects。
+# 下游调用：mask_q_values。
 def select_candidate_id(candidate_ids: Sequence[str], q_values, valid_mask=None) -> str:
     if not candidate_ids:
         raise ValueError("candidate set cannot be empty")
@@ -98,6 +122,9 @@ def select_candidate_id(candidate_ids: Sequence[str], q_values, valid_mask=None)
     return min(tied)
 
 
+# 作用：在线网络选动作、目标网络估值，计算带终止和折扣处理的目标。
+# 上游（直接调用）：tests.v1.test_learning_v1.CandidateDqnV1Test.test_double_dqn_uses_only_next_feasible_variable_set。
+# 下游调用：finite_number、mask_q_values。
 def double_dqn_target(
     reward: float,
     terminal: bool,
@@ -135,12 +162,17 @@ class CandidateDqnMetadata:
     gamma_per_second: float
     architecture: str = "shared_candidate_q_v1"
 
+    # 作用：从模型元数据生成可追溯标识。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     @property
     def model_id(self):
         payload = json.dumps(self.__dict__, sort_keys=True, separators=(",", ":")).encode("utf-8")
         return "candidate-dqn-" + hashlib.sha256(payload).hexdigest()[:16]
 
 
+# 作用：验证检查点与模型、候选及特征契约兼容性。
+# 上游（直接调用）：v1.evaluate_v1.run_evaluation、v1.train_v1._load_checkpoint。
+# 下游调用：finite_number。
 def validate_checkpoint_metadata(
     metadata,
     expected_feature_schema_hash: str,
@@ -195,6 +227,10 @@ class CandidateSelectionTrace:
 class CandidateDQNPolicy:
     name = "candidate_dqn"
 
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：v1.v1_runtime.create_v1_runtime。
+    # 调用约定：构造实例时由 Python 调用。
+    # 下游调用：finite_number、self.network.to。
     def __init__(
         self,
         network: SharedCandidateQNetwork,
@@ -232,10 +268,15 @@ class CandidateDQNPolicy:
         # selection, replay, rewards, or gradient updates.
         self.audit_candidate_set_hash = True
 
+    # 作用：在启用性能统计时同步设备，确保计时准确。
+    # 上游（直接调用）：v1.learning.candidate_dqn.CandidateDQNPolicy._select_complete_stream_training_greedy、v1.learning.candidate_dqn.CandidateDQNPolicy.select_stream.consume_chunk。
     def _synchronize_profile_device(self):
         if self.profiler is not None and self.device.type == "cuda":
             torch.cuda.synchronize(self.device)
 
+    # 作用：将候选特征输入 Q 网络并返回评分。
+    # 上游（直接调用）：v1.learning.candidate_dqn.CandidateDQNPolicy._select_complete_stream_training_greedy、v1.learning.candidate_dqn.CandidateDQNPolicy.select_stream.consume_chunk。
+    # 下游调用：mask_q_values、self.network.eval、self.network(state, features).cpu().numpy、self.network(state, features).cpu、self.network。
     def score_candidates(self, global_state, candidate_feature_matrix, candidate_mask=None):
         matrix = np.asarray(candidate_feature_matrix, dtype=np.float32)
         if matrix.ndim != 2:
@@ -251,6 +292,11 @@ class CandidateDQNPolicy:
             values = self.network(state, features).cpu().numpy()[0]
         return mask_q_values(values, candidate_mask)
 
+    # 作用：遍历候选流，汇总选中与最早候选及决策信息。
+    # 上游（直接调用）：v1.learning.candidate_dqn.CandidateDQNPolicy.select、v1.learning.candidate_dqn.CandidateDQNPolicy.select_complete_stream。
+    # 调用约定：由调度器或包装器按所选策略动态调用。
+    # 调用上下文：由调度器经策略接口调用；Q 网络评分后保存选择轨迹供训练会话归因。
+    # 下游调用：consume_chunk、self.global_state_provider、self.random.random、candidate.candidate_id.encode、self.random.randrange 等。
     def select_stream(
         self,
         candidates,
@@ -284,6 +330,9 @@ class CandidateDQNPolicy:
         q_sum = 0.0
         chunk_candidates = []
 
+        # 作用：处理当前特征块并更新局部最优评分。
+        # 上游（直接调用）：v1.learning.candidate_dqn.CandidateDQNPolicy.select_stream。
+        # 下游调用：self._synchronize_profile_device、self.score_candidates、self.feature_encoder.encode。
         def consume_chunk():
             nonlocal selected, selected_features, greedy, greedy_features
             nonlocal greedy_q, q_min, q_max, q_sum
@@ -330,12 +379,13 @@ class CandidateDQNPolicy:
         while not exhausted:
             generated_chunk = []
             generation_started = time.perf_counter()
-            for _ in range(self.candidate_chunk_size):
-                try:
-                    generated_chunk.append(next(candidate_iterator))
-                except StopIteration:
-                    exhausted = True
-                    break
+            with candidate_scope(self.profiler, "stream_consume", phase="final_stream"):
+                for _ in range(self.candidate_chunk_size):
+                    try:
+                        generated_chunk.append(next(candidate_iterator))
+                    except StopIteration:
+                        exhausted = True
+                        break
             if self.profiler is not None:
                 self.profiler.add(
                     "candidate_stream_seconds",
@@ -403,6 +453,10 @@ class CandidateDQNPolicy:
             context,
         )
 
+    # 作用：选择完整候选流，保留最早反事实及决策信息。
+    # 调用约定：由调度器或包装器按所选策略动态调用。
+    # 调用上下文：由完整流调度分支调用；V4 及后续版本可能经 NetBenefitGatePolicy 再做门控。
+    # 下游调用：self._select_complete_stream_training_greedy、self.select_stream、self.global_state_provider、self.random.random、stream.iter_candidates 等。
     def select_complete_stream(self, stream, task=None):
         """Select from a complete stream with a metric-lazy explore path.
 
@@ -535,6 +589,9 @@ class CandidateDQNPolicy:
             stream.context,
         )
 
+    # 作用：训练贪心分支分块扫描完整候选流，保存选择轨迹。
+    # 上游（直接调用）：v1.learning.candidate_dqn.CandidateDQNPolicy.select_complete_stream。
+    # 下游调用：self._synchronize_profile_device、self.score_candidates、stream.generator.feature_chunks_from_context、stream.generator.record_from_feature_chunk、stream.generator.attach_context_candidate_id 等。
     def _select_complete_stream_training_greedy(
         self, stream, task, state
     ):
@@ -709,6 +766,9 @@ class CandidateDQNPolicy:
             stream.context,
         )
 
+    # 作用：按当前策略从候选集合返回最终候选。
+    # 调用约定：由调度器或包装器按所选策略动态调用。
+    # 下游调用：self.select_stream。
     def select(self, candidates: Sequence[Candidate], task=None) -> Candidate:
         items = tuple(candidates)
         if not items:
@@ -720,6 +780,8 @@ class CandidateDQNPolicy:
             earliest_compute_start_sim=earliest,
         ).selected_candidate
 
+    # 作用：取出并清空选择轨迹，供训练奖励归因。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     def pop_selection_traces(self):
         traces = tuple(self._selection_traces)
         self._selection_traces.clear()
@@ -727,6 +789,10 @@ class CandidateDQNPolicy:
 
 
 class CandidateDQNTrainer:
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：v1.train_v1.V1TrainingLoop.__init__。
+    # 调用约定：构造实例时由 Python 调用。
+    # 下游调用：positive_finite、online.to、target.to、self.online.parameters。
     def __init__(
         self,
         online,
@@ -776,11 +842,15 @@ class CandidateDQNTrainer:
         self._next_feature_cache = OrderedDict()
         self._next_feature_cache_capacity = 5000
 
+    # 作用：构造序列化状态，按实现排除无需持久化的缓存。
+    # 调用约定：由 pickle/检查点序列化流程调用。
     def __getstate__(self):
         state = dict(self.__dict__)
         state["_next_feature_cache"] = OrderedDict()
         return state
 
+    # 作用：恢复序列化状态，补齐必要索引或默认字段。
+    # 调用约定：由 pickle/检查点反序列化流程调用。
     def __setstate__(self, state):
         self.__dict__.update(state)
         if "double_dqn" not in self.__dict__:
@@ -792,6 +862,8 @@ class CandidateDQNTrainer:
         if "last_td_errors" not in self.__dict__:
             self.last_td_errors = ()
 
+    # 作用：清空下一状态特征缓存。
+    # 上游（直接调用）：v1.learning.candidate_dqn.CandidateDQNTrainer._feature_matrix。
     def clear_next_feature_cache(self):
         if not hasattr(self, "_next_feature_cache"):
             self._next_feature_cache = OrderedDict()
@@ -799,16 +871,27 @@ class CandidateDQNTrainer:
             self._next_feature_cache_capacity = 5000
         self._next_feature_cache.clear()
 
+    # 作用：在启用性能统计时同步设备，确保计时准确。
+    # 上游（直接调用）：v1.learning.candidate_dqn.CandidateDQNTrainer._double_dqn_bootstrap、v1.learning.candidate_dqn.CandidateDQNTrainer._double_dqn_bootstrap_batch、v1.learning.candidate_dqn.CandidateDQNTrainer.train_batch。
     def _synchronize_profile_device(self):
         if self.profiler is not None and self.device.type == "cuda":
             torch.cuda.synchronize(self.device)
 
+    # 作用：将在线网络参数同步到目标网络。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self.target.load_state_dict、self.online.state_dict。
     def update_target(self):
         self.target.load_state_dict(self.online.state_dict())
 
+    # 作用：把单条经验转移交给训练更新流程。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self.train_batch。
     def train_transition(self, transition: ReplayTransition) -> float:
         return self.train_batch((transition,))
 
+    # 作用：整理训练使用的特征矩阵。
+    # 上游（直接调用）：v1.learning.candidate_dqn.CandidateDQNTrainer._double_dqn_bootstrap_batch、v1.learning.candidate_dqn.CandidateDQNTrainer._feature_chunks。
+    # 下游调用：self.clear_next_feature_cache、self.next_candidate_provider、matrix.reshape。
     def _feature_matrix(self, transition):
         if not hasattr(self, "_next_feature_cache"):
             self.clear_next_feature_cache()
@@ -860,11 +943,17 @@ class CandidateDQNTrainer:
             matrix = matrix[:self.bootstrap_candidate_limit]
         return matrix
 
+    # 作用：分批生成下一状态候选特征。
+    # 上游（直接调用）：v1.learning.candidate_dqn.CandidateDQNTrainer._double_dqn_bootstrap。
+    # 下游调用：self._feature_matrix。
     def _feature_chunks(self, transition):
         features = self._feature_matrix(transition)
         for start in range(0, len(features), self.candidate_chunk_size):
             yield features[start:start + self.candidate_chunk_size]
 
+    # 作用：批量由在线网络选择下一动作并取目标网络对应价值。
+    # 上游（直接调用）：v1.learning.candidate_dqn.CandidateDQNTrainer.train_batch。
+    # 下游调用：self._feature_matrix、self._synchronize_profile_device、self.profiler.increment、self.target.forward_ragged、self.online.forward_ragged。
     def _double_dqn_bootstrap_batch(self, batch):
         matrices = []
         states = []
@@ -945,6 +1034,9 @@ class CandidateDQNTrainer:
             )
         return target_values
 
+    # 作用：计算单条经验下一状态的自举价值。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self._feature_chunks、self._synchronize_profile_device、self.profiler.increment、self.target、self.online 等。
     def _double_dqn_bootstrap(self, transition):
         if transition.terminal:
             return None
@@ -1011,6 +1103,10 @@ class CandidateDQNTrainer:
                     remaining -= len(raw_chunk)
         return best_target
 
+    # 作用：计算批量 TD 目标和损失，反向传播更新在线网络。
+    # 上游（直接调用）：v1.learning.candidate_dqn.CandidateDQNTrainer.train_transition。
+    # 调用上下文：由训练会话采样经验后调用；需要下一状态候选特征计算 Double DQN 自举目标。
+    # 下游调用：self._synchronize_profile_device、self._double_dqn_bootstrap_batch、self.online、self.loss_fn、self.optimizer.zero_grad 等。
     def train_batch(self, transitions: Sequence[ReplayTransition]) -> float:
         batch = tuple(transitions)
         if not batch:

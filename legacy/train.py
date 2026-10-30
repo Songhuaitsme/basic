@@ -1,3 +1,10 @@
+# 文件功能：组织旧版预热、调度交互、经验回放和训练监控。
+# 主要内容：LagrangeManager、get_checkpoint_paths、model_path_exists、build_state、build_wait_decision_detail、compute_valid_actions、update_active_tasks、select_warmup_action 等。
+# 模块上游（导入关系）：legacy.evaluate、tests.legacy.test_cpu_occupancy_model。
+# 模块下游（项目依赖）：shared.config、legacy.dqn_agent、legacy.gnn_agent、legacy.network_env、legacy.static_metrics、shared.task_manager 等。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 import argparse
 import os
 
@@ -27,6 +34,8 @@ CHECKPOINT_SUFFIX = ""
 LOG_INTERVAL = 100
 
 
+# 作用：按输出位置构造模型与检查点路径。
+# 上游（直接调用）：legacy.evaluate.default_model_path、legacy.train.train。
 def get_checkpoint_paths():
     suffix = globals().get("CHECKPOINT_SUFFIX", "")
     if config.USE_GNN_AGENT:
@@ -46,10 +55,15 @@ def get_checkpoint_paths():
     return checkpoint_dir, latest_path, final_path
 
 
+# 作用：检查旧版模型或检查点路径。
+# 上游（直接调用）：legacy.evaluate.default_model_path、legacy.train.train。
 def model_path_exists(path):
     return os.path.exists(path) or os.path.exists(f"{path}.weights.h5")
 
 
+# 作用：按代理类型构造向量或图状态。
+# 上游（直接调用）：legacy.evaluate.run_frozen_policy、legacy.train.build_transition_next_state、legacy.train.train。
+# 下游调用：env.get_graph_state、env.get_global_state。
 def build_state(env, task=None, wait_queue=None):
     if config.USE_GNN_AGENT:
         return env.get_graph_state(task, wait_queue=wait_queue)
@@ -57,6 +71,9 @@ def build_state(env, task=None, wait_queue=None):
 
 
 class LagrangeManager:
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：legacy.train.train。
+    # 调用约定：构造实例时由 Python 调用。
     def __init__(self):
         self.enabled = getattr(config, 'ENABLE_CONSTRAINED_RL', True)
         self.lr = getattr(config, 'LAGRANGE_LR', 0.05)
@@ -74,6 +91,8 @@ class LagrangeManager:
             "overload": getattr(config, 'CONSTRAINT_TARGET_OVERLOAD', 0.05),
         }
 
+    # 作用：按拉格朗日乘子加权约束代价，从环境奖励扣除惩罚并返回惩罚值。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     def apply(self, reward, constraint_costs):
         if not self.enabled:
             return float(reward), 0.0
@@ -83,6 +102,8 @@ class LagrangeManager:
         )
         return float(reward) - penalty, penalty
 
+    # 作用：根据各约束平均代价与目标的差异更新非负拉格朗日乘子。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     def update(self, averages):
         if not self.enabled:
             return
@@ -95,6 +116,9 @@ class LagrangeManager:
             ))
 
 
+# 作用：整理当前等待动作诊断。
+# 上游（直接调用）：legacy.train.compute_valid_actions。
+# 下游调用：get_max_retries_for_task、estimate_wait_penalty_detail、estimate_wait_opportunity。
 def build_wait_decision_detail(env, task, wait_queue, global_time, compute_actions, candidates=None):
     queue_delay = max(0.0, global_time - task['generated_time'])
     next_queue_delay = queue_delay + config.SCHEDULING_CYCLE
@@ -160,6 +184,9 @@ def build_wait_decision_detail(env, task, wait_queue, global_time, compute_actio
     return detail
 
 
+# 作用：根据资源和任务约束计算有效动作。
+# 上游（直接调用）：legacy.evaluate.run_frozen_policy、legacy.train.build_transition_next_state、legacy.train.train 等。
+# 下游调用：evaluate_schedule_candidates、build_wait_decision_detail。
 def compute_valid_actions(env, task, wait_queue, global_time, return_wait_detail=False, candidates=None):
     if candidates is None:
         candidates = evaluate_schedule_candidates(env, task, wait_queue, global_time)
@@ -185,6 +212,9 @@ def compute_valid_actions(env, task, wait_queue, global_time, return_wait_detail
     return valid_actions
 
 
+# 作用：推进活动任务并释放结束任务的资源。
+# 上游（直接调用）：legacy.evaluate.run_frozen_policy、legacy.train.train、legacy.train.warmup_environment。
+# 下游调用：env.allocate_path_bandwidth、env.release_path_bandwidth、env.remove_scheduled_allocation。
 def update_active_tasks(env, active_tasks, global_time):
     """
     Update reserved/running task lifecycle:
@@ -210,6 +240,8 @@ def update_active_tasks(env, active_tasks, global_time):
             active_tasks.pop(i)
 
 
+# 作用：选择预热阶段调度动作。
+# 上游（直接调用）：legacy.train.warmup_environment。
 def select_warmup_action(env, valid_actions):
     """
     Basic warm-up policy:
@@ -235,6 +267,9 @@ def select_warmup_action(env, valid_actions):
     return None
 
 
+# 作用：登记成功调度任务及其资源。
+# 上游（直接调用）：legacy.evaluate.run_frozen_policy、legacy.train.train、legacy.train.warmup_environment。
+# 下游调用：env.allocate_path_bandwidth、env.add_scheduled_allocation。
 def add_success_allocation(env, active_tasks, task, info, global_time):
     """
     Write a successfully scheduled task into active_tasks and scheduled_allocations
@@ -261,6 +296,9 @@ def add_success_allocation(env, active_tasks, task, info, global_time):
     return allocation
 
 
+# 作用：在正式训练或评估前建立背景负载。
+# 上游（直接调用）：legacy.evaluate.evaluate_seed、legacy.train.train。
+# 下游调用：update_active_tasks、evaluate_schedule_candidates、compute_valid_actions、select_warmup_action、add_success_allocation 等。
 def warmup_environment(env, task_manager, total_compute_capacity, global_time):
     """
     Basic environment warm-up:
@@ -358,6 +396,9 @@ def warmup_environment(env, task_manager, total_compute_capacity, global_time):
     return global_time, active_tasks, wait_queue
 
 
+# 作用：构造经验转移下一状态。
+# 上游（直接调用）：legacy.train.train。
+# 下游调用：build_state、evaluate_schedule_candidates、compute_valid_actions。
 def build_transition_next_state(env, remaining_queue, requeued_task, global_time):
     pending_queue = list(remaining_queue)
     if requeued_task is not None:
@@ -382,6 +423,8 @@ def build_transition_next_state(env, remaining_queue, requeued_task, global_time
     return build_state(env, next_task_view, wait_queue=pending_queue), transition_done, next_valid_actions
 
 
+# 作用：建立监控指标滚动缓冲。
+# 上游（直接调用）：legacy.train.train。
 def make_metric_buffers():
     return {
         "rewards": [],
@@ -447,22 +490,32 @@ def make_metric_buffers():
     }
 
 
+# 作用：计算均值，空样本返回零。
+# 上游（直接调用）：legacy.train.train。
 def mean_or_zero(values):
     return float(np.mean(values)) if values else 0.0
 
 
+# 作用：计算百分位数，空样本返回零。
+# 上游（直接调用）：legacy.train.train。
 def percentile_or_zero(values, q):
     return float(np.percentile(values, q)) if values else 0.0
 
 
+# 作用：计算最大值，空样本返回零。
+# 上游（直接调用）：legacy.train.train。
 def max_or_zero(values):
     return float(np.max(values)) if values else 0.0
 
 
+# 作用：计算最小值，空样本返回零。
+# 上游（直接调用）：legacy.train.train。
 def min_or_zero(values):
     return float(np.min(values)) if values else 0.0
 
 
+# 作用：计算带零分母保护的除法。
+# 上游（直接调用）：legacy.train.train。
 def safe_div(numerator, denominator, default=0.0):
     denominator = float(denominator)
     if abs(denominator) <= 1e-8:
@@ -470,6 +523,9 @@ def safe_div(numerator, denominator, default=0.0):
     return float(numerator) / denominator
 
 
+# 作用：执行旧代理环境交互、经验回放及模型保存。
+# 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+# 下游调用：NetworkEnvironment、GNNAgent、DQNAgent、TaskManager、TrainingVisualizer 等。
 def train(lightweight=False, max_steps=None, tensorboard_log_dir='artifacts/legacy/logs/tensorboard'):
     original_batch_size = config.BATCH_SIZE
     if lightweight:
@@ -1061,6 +1117,9 @@ def train(lightweight=False, max_steps=None, tensorboard_log_dir='artifacts/lega
         config.BATCH_SIZE = original_batch_size
 
 
+# 作用：定义并解析命令行选项。
+# 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+# 下游调用：parser.add_argument、parser.parse_args。
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--lightweight', action='store_true', help='run a short, non-overwriting training pass')

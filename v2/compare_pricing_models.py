@@ -1,3 +1,9 @@
+# 文件功能：校验并比较电价实验报告，生成指标明细及可视化报告数据。
+# 主要内容：PricingComparisonError、_load_json、_metric_value、_extract_metrics、_checkpoint_hash、_validate_pair、_comparison_rows、_long_rows 等。
+# 模块上游（导入关系）：tests.v2.test_compare_pricing_models。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Build a paired V2 regional-vs-uniform pricing HTML report."""
 
 from __future__ import annotations
@@ -118,12 +124,18 @@ class PricingComparisonError(RuntimeError):
     pass
 
 
+# 作用：读取 JSON 报告或模型摘要。
+# 上游（直接调用）：v2.compare_pricing_models.build_report。
+# 下游调用：path.exists、PricingComparisonError、path.read_text。
 def _load_json(path: Path) -> dict:
     if not path.exists():
         raise PricingComparisonError(f"missing input: {path}")
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+# 作用：从结构化指标读取有效数值。
+# 上游（直接调用）：v2.compare_pricing_models._extract_metrics。
+# 下游调用：PricingComparisonError。
 def _metric_value(value) -> float:
     if isinstance(value, dict):
         if value.get("status") not in (None, "VALID"):
@@ -137,6 +149,9 @@ def _metric_value(value) -> float:
     return result
 
 
+# 作用：提取比较指标。
+# 上游（直接调用）：v2.compare_pricing_models.build_report。
+# 下游调用：_metric_value、PricingComparisonError。
 def _extract_metrics(report: dict) -> dict[str, float]:
     metrics = report.get("metrics") or {}
     tasks = [
@@ -205,6 +220,9 @@ def _extract_metrics(report: dict) -> dict[str, float]:
     }
 
 
+# 作用：取得或计算检查点指纹。
+# 上游（直接调用）：v2.compare_pricing_models._validate_pair。
+# 下游调用：path.exists、PricingComparisonError、path.read_bytes。
 def _checkpoint_hash(path: Path, expected_mode: str) -> str:
     if not path.exists():
         raise PricingComparisonError(f"missing checkpoint: {path}")
@@ -217,6 +235,9 @@ def _checkpoint_hash(path: Path, expected_mode: str) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+# 作用：校验种子、轨迹、模型及配置等配对条件。
+# 上游（直接调用）：v2.compare_pricing_models.build_report。
+# 下游调用：_checkpoint_hash、PricingComparisonError、', '.join。
 def _validate_pair(
     uniform: dict,
     regional: dict,
@@ -282,6 +303,8 @@ def _validate_pair(
     }
 
 
+# 作用：生成基线、实验和变化值组成的比较行。
+# 上游（直接调用）：v2.compare_pricing_models.build_report。
 def _comparison_rows(values: dict[str, dict[str, float]]) -> list[dict]:
     rows = []
     for metric, spec in METRIC_SPECS.items():
@@ -303,6 +326,8 @@ def _comparison_rows(values: dict[str, dict[str, float]]) -> list[dict]:
     return rows
 
 
+# 作用：将指标转换为分析长表。
+# 上游（直接调用）：v2.compare_pricing_models.build_report。
 def _long_rows(values: dict[str, dict[str, float]], seed: int) -> list[dict]:
     rows = []
     for mode, metrics in values.items():
@@ -322,6 +347,9 @@ def _long_rows(values: dict[str, dict[str, float]], seed: int) -> list[dict]:
     return rows
 
 
+# 作用：按字段顺序保存 CSV。
+# 上游（直接调用）：v2.compare_pricing_models.build_report。
+# 下游调用：PricingComparisonError、path.parent.mkdir、path.open、writer.writeheader、writer.writerows。
 def _write_csv(path: Path, rows: list[dict]) -> None:
     if not rows:
         raise PricingComparisonError(f"cannot write empty CSV: {path}")
@@ -332,6 +360,9 @@ def _write_csv(path: Path, rows: list[dict]) -> None:
         writer.writerows(rows)
 
 
+# 作用：构造数据来源说明。
+# 上游（直接调用）：v2.compare_pricing_models._build_artifact。
+# 下游调用：path.replace。
 def _source(
     path: str,
     source_id: str,
@@ -363,6 +394,8 @@ def _source(
     }
 
 
+# 作用：构造基础比较图表。
+# 上游（直接调用）：v2.compare_pricing_models._build_artifact。
 def _simple_chart(
     chart_id: str,
     title: str,
@@ -417,6 +450,8 @@ def _simple_chart(
     }
 
 
+# 作用：整理图表指标行。
+# 上游（直接调用）：v2.compare_pricing_models._build_artifact。
 def _chart_rows(
     values: dict[str, dict[str, float]],
     metric: str,
@@ -443,17 +478,24 @@ def _chart_rows(
     ]
 
 
+# 作用：计算相对基线的百分比变化。
+# 上游（直接调用）：v2.compare_pricing_models._build_artifact。
 def _percentage_delta(values, metric: str) -> float:
     uniform = values["tou_uniform"][metric]
     return (values["tou_region"][metric] - uniform) / uniform
 
 
+# 作用：计算比例指标的百分点差。
+# 上游（直接调用）：v2.compare_pricing_models._build_artifact。
 def _point_delta(values, metric: str) -> float:
     return (
         values["tou_region"][metric] - values["tou_uniform"][metric]
     )
 
 
+# 作用：组织比较报告数据及来源。
+# 上游（直接调用）：v2.compare_pricing_models.build_report。
+# 下游调用：_percentage_delta、_point_delta、_source、_simple_chart、_chart_rows。
 def _build_artifact(
     values: dict[str, dict[str, float]],
     validation: dict,
@@ -931,6 +973,9 @@ def _build_artifact(
     return artifact, notes
 
 
+# 作用：查找报告构建工具。
+# 上游（直接调用）：v2.compare_pricing_models.build_report。
+# 下游调用：plugin_root.glob、PricingComparisonError、path.stat。
 def _find_builder() -> Path:
     codex_root = Path(os.environ.get("CODEX_HOME", Path.home() / ".codex"))
     plugin_root = (
@@ -944,6 +989,9 @@ def _find_builder() -> Path:
     return max(candidates, key=lambda path: path.stat().st_mtime)
 
 
+# 作用：读取并验证输入，生成比较报告。
+# 上游（直接调用）：v2.compare_pricing_models.main。
+# 下游调用：_load_json、_validate_pair、_extract_metrics、_long_rows、_comparison_rows 等。
 def build_report(
     uniform_report_path: Path,
     regional_report_path: Path,
@@ -1037,6 +1085,9 @@ def build_report(
     return artifact_path, report_path
 
 
+# 作用：定义并解析命令行选项。
+# 上游（直接调用）：v2.compare_pricing_models.main。
+# 下游调用：parser.add_argument、parser.parse_args。
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Generate a paired V2 regional-vs-uniform pricing HTML report"
@@ -1049,6 +1100,9 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+# 作用：解析或转发命令行参数，组织本文件执行流程。
+# 调用约定：本文件命令行入口或上层版本入口调用。
+# 下游调用：parse_args、build_report。
 def main() -> None:
     args = parse_args()
     artifact_path, report_path = build_report(

@@ -1,3 +1,10 @@
+# 文件功能：编码成本、绿电、等待及负载等候选特征，支持特征组消融与批量编码。
+# 主要内容：CandidateFeatureConfig、CandidateFeatureEncoder。
+# 模块上游（导入关系）：v1.learning、v1.learning.candidate_dqn、v1.v1_runtime、tests.v1.test_ablation_settings_v1、tests.v1.test_learning_v1 等。
+# 模块下游（项目依赖）：v1.domain.candidates、v1.domain.units。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Frozen v1.0 candidate feature extraction with physical training scales."""
 
 from dataclasses import dataclass
@@ -62,12 +69,18 @@ class CandidateFeatureConfig:
     cpu_scale: float
     bandwidth_scale_mbps: float
 
+    # 作用：在数据类构造后校验字段或建立派生数据。
+    # 调用约定：由 dataclass 生成的构造流程调用。
+    # 下游调用：positive_finite。
     def __post_init__(self):
         for field in self.__dataclass_fields__:
             object.__setattr__(self, field, positive_finite(field, getattr(self, field)))
 
 
 class CandidateFeatureEncoder:
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：v1.v1_runtime.create_v1_runtime。
+    # 调用约定：构造实例时由 Python 调用。
     def __init__(
         self,
         node_index: Mapping[str, int],
@@ -101,10 +114,14 @@ class CandidateFeatureEncoder:
             if name in disabled_names
         )
 
+    # 作用：返回特征维数。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     @property
     def feature_dim(self) -> int:
         return len(CANDIDATE_FEATURE_NAMES)
 
+    # 作用：根据特征顺序及配置生成契约哈希。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     @property
     def feature_schema_hash(self) -> str:
         schema = {
@@ -120,11 +137,15 @@ class CandidateFeatureEncoder:
         ).encode("utf-8")
         return hashlib.sha256(payload).hexdigest()
 
+    # 作用：对批量特征应用禁用特征组掩码。
+    # 上游（直接调用）：v1.learning.features.CandidateFeatureEncoder.encode_candidate_arrays、v1.learning.features.CandidateFeatureEncoder.encode_records_batch。
     def _mask_matrix(self, matrix):
         if self._disabled_feature_indices:
             matrix[:, self._disabled_feature_indices] = 0.0
         return matrix
 
+    # 作用：对单条特征应用禁用特征组掩码。
+    # 上游（直接调用）：v1.learning.features.CandidateFeatureEncoder._encode_values。
     def _mask_values(self, values):
         if not self._disabled_feature_indices:
             return values
@@ -133,6 +154,9 @@ class CandidateFeatureEncoder:
             mutable[index] = 0.0
         return tuple(mutable)
 
+    # 作用：把单候选转换为模型特征。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self._encode_values。
     def encode(self, candidate: Candidate, earliest_compute_start_sim: float) -> Tuple[float, ...]:
         return self._encode_values(
             target_node=candidate.target_node,
@@ -167,6 +191,9 @@ class CandidateFeatureEncoder:
             bandwidth_demand_mbps=candidate.bandwidth_demand_mbps,
         )
 
+    # 作用：编码轻量候选记录及其指标。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self._encode_values。
     def encode_record(self, context, record, metrics) -> Tuple[float, ...]:
         """Encode a complete candidate record without constructing Candidate."""
 
@@ -204,6 +231,9 @@ class CandidateFeatureEncoder:
             bandwidth_demand_mbps=task.bandwidth_demand_mbps,
         )
 
+    # 作用：批量编码候选轻量记录。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：metric_values、self._mask_matrix、metric_values('green_opportunity', default=False, dtype=np.bool_).astype、(np.abs(starts - context.earliest_compute_start_sim) <= 1e-12).astype、self._mask_matrix(matrix).astype。
     def encode_records_batch(self, context, records, metrics) -> np.ndarray:
         """Encode an aligned record batch with the scalar feature semantics."""
 
@@ -212,6 +242,8 @@ class CandidateFeatureEncoder:
         if count == 0:
             return np.empty((0, self.feature_dim), dtype=np.float32)
 
+        # 作用：提取记录的指标数值供特征编码。
+        # 上游（直接调用）：v1.learning.features.CandidateFeatureEncoder.encode_records_batch。
         def metric_values(name, default=0.0, dtype=np.float64):
             raw = metrics.get(name)
             if raw is None:
@@ -320,6 +352,9 @@ class CandidateFeatureEncoder:
         )
         return self._mask_matrix(matrix).astype(np.float32, copy=False)
 
+    # 作用：以数组运算批量构造特征矩阵。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：metric_values、self._mask_matrix、metric_values('green_opportunity', default=False, dtype=np.bool_).astype、arrays[3].astype、(np.abs(starts - context.earliest_compute_start_sim) <= 1e-12).astype 等。
     def encode_candidate_arrays(
         self,
         context,
@@ -391,6 +426,8 @@ class CandidateFeatureEncoder:
             else node_indices / max_node
         )
 
+        # 作用：提取记录的指标数值供特征编码。
+        # 上游（直接调用）：v1.learning.features.CandidateFeatureEncoder.encode_candidate_arrays。
         def metric_values(name, default=0.0, dtype=np.float64):
             raw = metrics.get(name)
             if raw is None:
@@ -447,6 +484,9 @@ class CandidateFeatureEncoder:
         )
         return self._mask_matrix(matrix).astype(np.float32, copy=False)
 
+    # 作用：按固定顺序归一化并组合原始字段。
+    # 上游（直接调用）：v1.learning.features.CandidateFeatureEncoder.encode、v1.learning.features.CandidateFeatureEncoder.encode_record。
+    # 下游调用：self._mask_values。
     def _encode_values(
         self,
         *,

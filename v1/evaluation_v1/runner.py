@@ -1,3 +1,10 @@
+# 文件功能：在预热、正式到达和排空阶段运行冻结策略，检查不变量并记录逐任务结果。
+# 主要内容：EvaluationStatus、EvaluationMetadata、TaskEvaluationRecord、EvaluationReport、EvaluationRunner。
+# 模块上游（导入关系）：v1.calibrate_v1_objective、v1.evaluate_v1、v1.evaluation_v1、tests.v1.test_evaluation_v1。
+# 模块下游（项目依赖）：v1.accounting.energy、v1.audit_v1、v1.domain.models、v1.domain.reservations、v1.domain.units、v1.scheduler.v1_scheduler 等。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Three-phase v1.0 frozen-policy evaluation runner."""
 
 from dataclasses import dataclass
@@ -52,6 +59,9 @@ class EvaluationMetadata:
     ci_resample_count: int = 0
     ci_random_seed: int = 0
 
+    # 作用：在数据类构造后校验字段或建立派生数据。
+    # 调用约定：由 dataclass 生成的构造流程调用。
+    # 下游调用：finite_number。
     def __post_init__(self):
         versions = (
             self.requirements_version, self.algorithm_version,
@@ -152,6 +162,9 @@ class EvaluationRunner:
         TaskState.RUNNING,
     }
 
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：v1.calibrate_v1_objective.run_multi_seed_calibration、v1.evaluate_v1.run_evaluation。
+    # 调用约定：构造实例时由 Python 调用。
     def __init__(
         self,
         scheduler: V1Scheduler,
@@ -186,6 +199,9 @@ class EvaluationRunner:
         self.audit_mode = audit_mode
         self.audit_interval = audit_interval
 
+    # 作用：在固定轨迹运行冻结策略，处理预热、测量及排空。
+    # 调用上下文：由评估入口提供固定轨迹和运行时；持续驱动 scheduler.run_cycle 直到规定排空条件满足。
+    # 下游调用：finite_number、self._warmup_snapshot、run_batch、self._invalid、self._task_ids_in_states 等。
     def run_frozen_policy(
         self,
         tasks: Iterable[TaskSpec],
@@ -226,6 +242,9 @@ class EvaluationRunner:
             if abs(warmup_start - start) <= 1e-12 else None
         )
 
+        # 作用：批量执行多种子或多策略冻结评估。
+        # 上游（直接调用）：v1.evaluation_v1.runner.EvaluationRunner.run_frozen_policy。
+        # 下游调用：self._assert_invariants、self.scheduler.run_cycle。
         def run_batch(time_sim, arrivals=(), phase="measurement"):
             nonlocal current, last_run_time
             if len(results) >= self.safety_cap:
@@ -401,18 +420,27 @@ class EvaluationRunner:
             warmup_snapshot or self._warmup_snapshot(start),
         )
 
+    # 作用：查询任务对应的已提交预留。
+    # 上游（直接调用）：v1.evaluation_v1.runner.EvaluationRunner._task_records、v1.evaluation_v1.runner.EvaluationRunner.run_frozen_policy。
+    # 下游调用：self.scheduler.state_machine.runtime、self.scheduler.calendar.get_reservation。
     def calendar_reservation_for(self, task_id: str):
         runtime = self.scheduler.state_machine.runtime(task_id)
         if runtime.reservation_id is None:
             return None
         return self.scheduler.calendar.get_reservation(runtime.reservation_id)
 
+    # 作用：查询指定状态集合中的任务标识。
+    # 上游（直接调用）：v1.evaluation_v1.runner.EvaluationRunner._invalid、v1.evaluation_v1.runner.EvaluationRunner.run_frozen_policy。
+    # 下游调用：self.scheduler.state_machine.task_ids_in_states。
     def _task_ids_in_states(self, states, cohort=None):
         task_ids = self.scheduler.state_machine.task_ids_in_states(states)
         if cohort is None:
             return task_ids
         return tuple(task_id for task_id in task_ids if task_id in cohort)
 
+    # 作用：检查评估中的调度和资源不变量。
+    # 上游（直接调用）：v1.evaluation_v1.runner.EvaluationRunner.run_frozen_policy、v1.evaluation_v1.runner.EvaluationRunner.run_frozen_policy.run_batch。
+    # 下游调用：scan_scheduler_invariants、'; '.join。
     def _assert_invariants(self, cycle_result=None):
         violations = scan_scheduler_invariants(self.scheduler, cycle_result)
         if violations:
@@ -421,6 +449,9 @@ class EvaluationRunner:
             )
             raise RuntimeError(f"v1.0 invariant gate failed: {detail}")
 
+    # 作用：组织版本、配置及来源元数据。
+    # 上游（直接调用）：v1.evaluation_v1.runner.EvaluationRunner._invalid、v1.evaluation_v1.runner.EvaluationRunner.run_frozen_policy。
+    # 下游调用：EvaluationMetadata。
     def _metadata(self, warmup_start, start, cutoff, seed, final_time):
         values = dict(
             system_version=self.system_version,
@@ -442,6 +473,9 @@ class EvaluationRunner:
         values.update(self.metadata_context)
         return EvaluationMetadata(**values)
 
+    # 作用：为异常或前提不满足的评估生成无效记录。
+    # 上游（直接调用）：v1.evaluation_v1.runner.EvaluationRunner.run_frozen_policy。
+    # 下游调用：self._task_ids_in_states、self._metadata、EvaluationReport。
     def _invalid(
         self, warmup_start, start, cutoff, seed, current, results,
         phase_counts, measured_task_ids,
@@ -469,6 +503,9 @@ class EvaluationRunner:
             None,
         )
 
+    # 作用：记录预热结束的队列、资源和任务状态。
+    # 上游（直接调用）：v1.evaluation_v1.runner.EvaluationRunner.run_frozen_policy。
+    # 下游调用：canonical_edge、self.scheduler.calendar.snapshot、self.scheduler.state_machine.count_by_state、allocation.interval_sim.contains、self.scheduler.calendar.node_capacity 等。
     def _warmup_snapshot(self, time_sim):
         snapshot = self.scheduler.calendar.snapshot()
         state_counts = self.scheduler.state_machine.count_by_state()
@@ -537,6 +574,9 @@ class EvaluationRunner:
             ),
         }
 
+    # 作用：仅汇总正式测量任务群的核算。
+    # 上游（直接调用）：v1.evaluation_v1.runner.EvaluationRunner.run_frozen_policy。
+    # 下游调用：AccountingReport、full_report.system_green_absorption_rate.not_applicable。
     @staticmethod
     def _cohort_accounting(full_report, measured_task_ids, system_report):
         records = tuple(
@@ -577,6 +617,9 @@ class EvaluationRunner:
             system_report.system_green_absorption_rate,
         )
 
+    # 作用：汇集逐任务决策、SLA、等待和实际核算。
+    # 上游（直接调用）：v1.evaluation_v1.runner.EvaluationRunner.run_frozen_policy。
+    # 下游调用：self.calendar_reservation_for、self.scheduler.state_machine.runtime、self.scheduler.committed_candidate、self.scheduler.committed_earliest_candidate、TaskEvaluationRecord 等。
     def _task_records(self, tasks, accounting):
         realized_by_task = {
             record.task_id: record for record in accounting.task_records

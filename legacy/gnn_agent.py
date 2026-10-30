@@ -1,3 +1,10 @@
+# 文件功能：实现旧版图神经网络策略，编码图状态并训练动作价值网络。
+# 主要内容：GraphQNetwork、GNNAgent。
+# 模块上游（导入关系）：legacy.evaluate、legacy.train。
+# 模块下游（项目依赖）：shared.config、legacy.dqn_agent。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 import os
 os.environ.setdefault('TF_CPP_MIN_LOG_LEVEL', '3')
 os.environ.setdefault('PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION', 'python')
@@ -15,6 +22,10 @@ from legacy.dqn_agent import _ensure_runtime_compatibility
 class GraphQNetwork(tf.keras.Model):
     """Lightweight GCN + dueling Q head for graph-based scheduling."""
 
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：legacy.gnn_agent.GNNAgent.__init__。
+    # 调用约定：构造实例时由 Python 调用。
+    # 下游调用：super().__init__。
     def __init__(self, node_feature_dim, compute_node_indices, action_dim):
         super().__init__()
         self.compute_node_indices = tf.constant(compute_node_indices, dtype=tf.int32)
@@ -42,6 +53,9 @@ class GraphQNetwork(tf.keras.Model):
 
         self._node_feature_dim = node_feature_dim
 
+    # 作用：执行旧版图网络前向传播并输出动作价值。
+    # 调用约定：由 Keras 模型调用协议间接调用。
+    # 下游调用：self.input_proj、self.gcn_1、self.gcn_2、self.value_head、self.node_adv_head 等。
     def call(self, inputs, training=False):
         node_features = inputs["node_features"]
         adjacency = inputs["adjacency"]
@@ -70,6 +84,10 @@ class GNNAgent:
     action 0..N-1 maps to compute nodes, action N maps to WAIT.
     """
 
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：legacy.evaluate.create_agent、legacy.train.train。
+    # 调用约定：构造实例时由 Python 调用。
+    # 下游调用：_ensure_runtime_compatibility、GraphQNetwork、self._build_networks、self.update_target_model。
     def __init__(self, graph_state_template, action_dim=None):
         _ensure_runtime_compatibility()
         self.action_dim = action_dim if action_dim is not None else config.NODE_NUM
@@ -86,11 +104,16 @@ class GNNAgent:
         self._build_networks(graph_state_template)
         self.update_target_model()
 
+    # 作用：创建图策略在线和目标网络。
+    # 上游（直接调用）：legacy.gnn_agent.GNNAgent.__init__。
+    # 下游调用：self._state_batch、self.model、self.target_model。
     def _build_networks(self, graph_state_template):
         batch = self._state_batch([graph_state_template])
         self.model(batch, training=False)
         self.target_model(batch, training=False)
 
+    # 作用：复制状态，避免环境后续更新污染经验。
+    # 上游（直接调用）：legacy.gnn_agent.GNNAgent.remember。
     @staticmethod
     def _copy_state(state):
         return {
@@ -100,6 +123,8 @@ class GNNAgent:
             "wait_action_index": int(state.get("wait_action_index", len(state["compute_node_indices"])))
         }
 
+    # 作用：整理图状态的网络批输入。
+    # 上游（直接调用）：legacy.gnn_agent.GNNAgent._build_networks、legacy.gnn_agent.GNNAgent.act、legacy.gnn_agent.GNNAgent.replay。
     @staticmethod
     def _state_batch(states):
         return {
@@ -111,9 +136,15 @@ class GNNAgent:
             )
         }
 
+    # 作用：将在线模型参数同步到目标模型。
+    # 上游（直接调用）：legacy.gnn_agent.GNNAgent.__init__、legacy.gnn_agent.GNNAgent.load。
+    # 下游调用：self.target_model.set_weights、self.model.get_weights。
     def update_target_model(self):
         self.target_model.set_weights(self.model.get_weights())
 
+    # 作用：根据状态执行探索或按价值选择有效动作。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self._state_batch、self.model(self._state_batch([state]), training=False).numpy、self.model。
     def act(self, state, valid_actions=None):
         if np.random.rand() <= self.epsilon:
             if valid_actions is not None and len(valid_actions) > 0:
@@ -127,6 +158,8 @@ class GNNAgent:
             q_values[mask] = -np.inf
         return int(np.argmax(q_values))
 
+    # 作用：屏蔽不可行动作的价值。
+    # 上游（直接调用）：legacy.gnn_agent.GNNAgent.replay。
     @staticmethod
     def _mask_q_values(q_values, valid_actions_batch):
         masked = np.array(q_values, copy=True)
@@ -143,6 +176,9 @@ class GNNAgent:
             masked[row, mask] = -np.inf
         return masked
 
+    # 作用：把状态、动作、奖励及下一状态保存到回放。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self._copy_state。
     def remember(self, state, action, reward, next_state, done,
                  valid_actions=None, next_valid_actions=None, info=None):
         self.memory.append((
@@ -155,6 +191,9 @@ class GNNAgent:
             list(next_valid_actions) if next_valid_actions is not None else None
         ))
 
+    # 作用：采样经验，更新网络及经验优先级。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self._state_batch、self._mask_q_values、self.model(next_state_batch, training=False).numpy、self.model、self.target_model(next_state_batch, training=False).numpy 等。
     def replay(self):
         if len(self.memory) < config.BATCH_SIZE:
             return None
@@ -194,12 +233,18 @@ class GNNAgent:
 
         return float(loss.numpy())
 
+    # 作用：保存模型参数及相关状态。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：filepath.endswith、self.model.save_weights。
     def save(self, filepath):
         weights_path = filepath if filepath.endswith(".weights.h5") else f"{filepath}.weights.h5"
         os.makedirs(os.path.dirname(weights_path), exist_ok=True)
         self.model.save_weights(weights_path)
         print(f"GNN 模型权重已保存至: {weights_path}")
 
+    # 作用：加载模型参数及相关状态。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self.update_target_model、self.model.load_weights。
     def load(self, filepath):
         candidates = [filepath, f"{filepath}.weights.h5"]
         for candidate in candidates:

@@ -12,7 +12,29 @@ __pycache__/
 *.last.pt
 artifacts/**/logs/
 
-# Generated legacy reports.
-artifacts/legacy/training_metrics*.csv
-artifacts/legacy/training_report*.png
-artifacts/v2/evaluation/five_policy_formal_seed42/source_data/time_metrics.csv
+# 排除整个 artifacts 目录
+/artifacts/
+
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# 虚拟环境
+.venv/
+venv/
+
+# 临时文件
+*.log
+*.tmp
+
+# 本地环境与密钥
+.env
+.env.*
+!.env.example
+
+# Local generated files and editor settings
+/.agents/
+/.idea/
+/.vscode/

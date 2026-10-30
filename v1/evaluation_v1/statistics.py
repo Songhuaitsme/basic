@@ -1,3 +1,10 @@
+# 文件功能：计算配对 t 统计、Bootstrap 区间、相对变化及负载摘要。
+# 主要内容：PairedStatus、PairedSummary、BootstrapSummary、UtilizationInterval、LoadMetrics、paired_t_summary、_invalid_pair、paired_bootstrap 等。
+# 模块上游（导入关系）：v1.evaluation_v1、v1.evaluation_v1.diagnostics、tests.v1.test_evaluation_v1、tests.v1.test_v1_acceptance。
+# 模块下游（项目依赖）：v1.domain.models、v1.domain.units。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Seed-paired inference and event-duration-weighted load metrics."""
 
 from dataclasses import dataclass
@@ -30,6 +37,9 @@ class PairedSummary:
     reason: str = ""
 
 
+# 作用：根据配对样本计算差值均值及 t 统计。
+# 上游（直接调用）：tests.v1.test_evaluation_v1.EvaluationV1Test.test_pair_invalidity_is_symmetric_and_bootstrap_is_reproducible、tests.v1.test_evaluation_v1.EvaluationV1Test.test_seed_pairing_uses_seed_ids_and_sample_ddof_one。
+# 下游调用：finite_number、_invalid_pair、MetricValue.not_applicable、MetricValue.valid、PairedSummary 等。
 def paired_t_summary(
     baseline_by_seed: Mapping[int, MetricValue],
     treatment_by_seed: Mapping[int, MetricValue],
@@ -82,6 +92,9 @@ def paired_t_summary(
     )
 
 
+# 作用：生成样本不足或配对无效的统计结果。
+# 上游（直接调用）：v1.evaluation_v1.statistics.paired_t_summary。
+# 下游调用：MetricValue.invalid、PairedSummary。
 def _invalid_pair(seeds, reason):
     invalid = MetricValue.invalid(reason)
     return PairedSummary(
@@ -105,6 +118,9 @@ class BootstrapSummary:
     random_seed: int
 
 
+# 作用：对配对差值重采样并估计置信区间。
+# 上游（直接调用）：tests.v1.test_evaluation_v1.EvaluationV1Test.test_pair_invalidity_is_symmetric_and_bootstrap_is_reproducible。
+# 下游调用：finite_number、rng.integers、values[indices].mean、BootstrapSummary、values.mean。
 def paired_bootstrap(
     differences: Iterable[float],
     *,
@@ -136,6 +152,9 @@ def paired_bootstrap(
     )
 
 
+# 作用：计算相对基线变化并处理不可计算情况。
+# 上游（直接调用）：tests.v1.test_evaluation_v1.EvaluationV1Test.test_pair_invalidity_is_symmetric_and_bootstrap_is_reproducible、tests.v1.test_v1_acceptance.V1AcceptanceContractTest.test_not_applicable_wait_relative_change_and_finite_json。
+# 下游调用：finite_number、MetricValue.not_applicable、MetricValue.valid。
 def relative_change(treatment: float, baseline: float) -> MetricValue:
     treatment_value = finite_number("treatment", treatment)
     baseline_value = finite_number("baseline", baseline)
@@ -148,6 +167,9 @@ def relative_change(treatment: float, baseline: float) -> MetricValue:
     )
 
 
+# 作用：统计可配对有效样本数。
+# 上游（直接调用）：tests.v1.test_v1_acceptance.V1AcceptanceContractTest.test_formal_quality_gate_and_power_rules。
+# 下游调用：non_negative_finite、positive_finite、finite_number、stats.norm.ppf。
 def paired_sample_size(
     pilot_difference_sd: float,
     minimum_effect: float,
@@ -176,6 +198,9 @@ class UtilizationInterval:
     duration_seconds: float
     node_utilizations: Tuple[float, ...]
 
+    # 作用：在数据类构造后校验字段或建立派生数据。
+    # 调用约定：由 dataclass 生成的构造流程调用。
+    # 下游调用：positive_finite、non_negative_finite。
     def __post_init__(self):
         object.__setattr__(
             self,
@@ -201,6 +226,9 @@ class LoadMetrics:
     physical_overcapacity_time_ratio: float
 
 
+# 作用：汇总任务负载及容量统计。
+# 上游（直接调用）：v1.evaluation_v1.diagnostics._resource_records。
+# 下游调用：values.mean、values.std、values.max、weighted_values.sort、LoadMetrics。
 def summarize_load(intervals: Iterable[UtilizationInterval]) -> LoadMetrics:
     items = tuple(intervals)
     if not items:

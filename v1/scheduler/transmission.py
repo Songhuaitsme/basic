@@ -1,3 +1,10 @@
+# 文件功能：构造路径规格，计算传输时长和紧邻计算开始的 JIT 传输区间。
+# 主要内容：TransmissionDuration、JitSchedule、TransmissionModel、_path_id、build_path_spec。
+# 模块上游（导入关系）：shared.topology_manager、v1.scheduler、v1.scheduler.candidate_generator、v1.scheduler.path_provider、v1.v1_runtime 等。
+# 模块下游（项目依赖）：v1.domain.models、v1.domain.reservations、v1.domain.units。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Fixed-bandwidth pipelined transmission and JIT interval construction."""
 
 from dataclasses import dataclass
@@ -34,11 +41,16 @@ class JitSchedule:
     feasible_from_decision: bool
 
 
+# 作用：从路径节点生成稳定标识。
+# 上游（直接调用）：v1.scheduler.transmission.build_path_spec。
 def _path_id(nodes: Sequence[str]) -> str:
     encoded = json.dumps(tuple(nodes), separators=(",", ":")).encode("utf-8")
     return "path-" + hashlib.sha256(encoded).hexdigest()[:20]
 
 
+# 作用：从节点序列构造带链路距离和容量的路径规格。
+# 上游（直接调用）：shared.topology_manager.TopologyManager.calculate_transmission_delay、v1.scheduler.path_provider.StaticPathProvider.candidate_paths。
+# 下游调用：ReservationValidationError、_path_id、positive_finite、non_negative_finite、PathSpec 等。
 def build_path_spec(graph, ordered_nodes: Iterable[str], path_id: Optional[str] = None) -> PathSpec:
     """Build and validate a PathSpec from a NetworkX-compatible graph."""
 
@@ -93,6 +105,10 @@ def build_path_spec(graph, ordered_nodes: Iterable[str], path_id: Optional[str] 
 class TransmissionModel:
     """End-to-end reserved-rate transmission with one serialization term."""
 
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：v1.v1_runtime.create_v1_runtime。
+    # 调用约定：构造实例时由 Python 调用。
+    # 下游调用：positive_finite。
     def __init__(
         self,
         converter: TimeConverter,
@@ -106,11 +122,15 @@ class TransmissionModel:
         self._duration_cache = OrderedDict()
         self._duration_cache_capacity = 4096
 
+    # 作用：构造序列化状态，按实现排除无需持久化的缓存。
+    # 调用约定：由 pickle/检查点序列化流程调用。
     def __getstate__(self):
         state = dict(self.__dict__)
         state["_duration_cache"] = OrderedDict()
         return state
 
+    # 作用：恢复序列化状态，补齐必要索引或默认字段。
+    # 调用约定：由 pickle/检查点反序列化流程调用。
     def __setstate__(self, state):
         self.__dict__.update(state)
         if "_duration_cache" not in self.__dict__:
@@ -118,6 +138,9 @@ class TransmissionModel:
         if "_duration_cache_capacity" not in self.__dict__:
             self._duration_cache_capacity = 4096
 
+    # 作用：根据数据量、带宽和距离计算传输仿真时长。
+    # 上游（直接调用）：v1.scheduler.transmission.TransmissionModel.jit_schedule。
+    # 下游调用：ReservationValidationError、DataUnitConverter.decimal_mb_to_megabits、TransmissionDuration、self.converter.seconds_to_sim。
     def duration(self, task: TaskSpec, path: PathSpec) -> TransmissionDuration:
         cache_key = (task, path)
         cached = self._duration_cache.get(cache_key)
@@ -158,6 +181,9 @@ class TransmissionModel:
             self._duration_cache.popitem(last=False)
         return result
 
+    # 作用：以计算开始时刻为终点反推 JIT 传输区间。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：ReservationValidationError、self.duration、JitSchedule、TimeInterval。
     def jit_schedule(
         self,
         task: TaskSpec,

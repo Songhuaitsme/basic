@@ -1,3 +1,9 @@
+# 文件功能：重算并核验预热测量窗口，输出不同预热设置的比较表。
+# 主要内容：recompute_window、fmt、write_csv、validate_warmup_recalculation、build、main。
+# 使用入口：命令行执行，或由其他脚本导入后调用。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Build a cohort-aligned comparison of V3 warm-up and no-warm-up reports."""
 
 from __future__ import annotations
@@ -29,6 +35,8 @@ METRICS = (
 START_SIM, END_SIM, SECONDS_PER_SIM = 576.0, 864.0, 300.0
 
 
+# 作用：按逐任务记录重算测量窗口。
+# 上游（直接调用）：v3.build_warmup_comparison.build。
 def recompute_window(report: dict, start_sim: float = START_SIM,
                      end_sim: float = END_SIM) -> tuple[dict, dict]:
     tasks = [r for r in report["task_records"] if start_sim <= r["arrival_time_sim"] < end_sim]
@@ -77,6 +85,8 @@ def recompute_window(report: dict, start_sim: float = START_SIM,
     return values, audit
 
 
+# 作用：格式化报告可选指标。
+# 上游（直接调用）：v3.build_warmup_comparison.build。
 def fmt(value, unit):
     if value is None:
         return "—"
@@ -87,6 +97,9 @@ def fmt(value, unit):
     return f"{value:,.4f}"
 
 
+# 作用：将行记录按约定字段写入 CSV。
+# 上游（直接调用）：v3.build_warmup_comparison.build。
+# 下游调用：path.open、writer.writeheader、writer.writerows。
 def write_csv(path: Path, rows: list[dict]) -> None:
     with path.open("w", newline="", encoding="utf-8-sig") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
@@ -94,6 +107,8 @@ def write_csv(path: Path, rows: list[dict]) -> None:
         writer.writerows(rows)
 
 
+# 作用：校验预热重算与原指标口径一致。
+# 上游（直接调用）：v3.build_warmup_comparison.build。
 def validate_warmup_recalculation(report: dict, values: dict, policy_key: str) -> None:
     """The aligned window equals the original warm-up measurement window."""
     percent_fields = {"completion_rate", "reservation_reliability",
@@ -112,6 +127,9 @@ def validate_warmup_recalculation(report: dict, values: dict, policy_key: str) -
             raise ValueError(f"Warm-up recalculation mismatch: {policy_key}/{field}: {values[field]} vs {published}")
 
 
+# 作用：读取预热实验报告，重算并核验窗口指标后写出比较结果。
+# 上游（直接调用）：v3.build_warmup_comparison.main。
+# 下游调用：recompute_window、validate_warmup_recalculation、write_csv、fmt、pattern.format 等。
 def build(root: Path, output: Path) -> None:
     conditions = (
         ("no_warmup", "No warm-up (last day)", root / "artifacts/v3/evaluation/no_warmup_600k", "{key}_seed42.json"),
@@ -191,6 +209,9 @@ def build(root: Path, output: Path) -> None:
         encoding="utf-8")
 
 
+# 作用：解析或转发命令行参数，组织本文件执行流程。
+# 调用约定：本文件命令行入口或上层版本入口调用。
+# 下游调用：build、parser.add_argument、parser.parse_args、Path(__file__).resolve、args.output.is_absolute。
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, default=Path("artifacts/v3/evaluation/warmup_comparison"))

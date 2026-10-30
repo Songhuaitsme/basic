@@ -1,3 +1,9 @@
+# 文件功能：读取训练日志，绘制奖励、损失和训练监控曲线。
+# 主要内容：_read_rows、_number、_plot_curve、generate_training_curves、main。
+# 模块上游（导入关系）：v1.train_v1、tests.v1.test_training_monitoring_v1。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Render CandidateDQN training and fixed-validation curves from CSV logs."""
 
 from __future__ import annotations
@@ -19,6 +25,9 @@ INK = "#263238"
 GRID = "#D9DEE3"
 
 
+# 作用：读取训练 CSV 行。
+# 上游（直接调用）：v1.plot_training_v1.generate_training_curves。
+# 下游调用：target.is_file、target.open。
 def _read_rows(path):
     target = Path(path)
     if not target.is_file():
@@ -37,6 +46,8 @@ def _read_rows(path):
     return tuple(by_cycle[key] for key in sorted(by_cycle))
 
 
+# 作用：解析并验证当前上下文的数值。
+# 上游（直接调用）：v1.plot_training_v1._plot_curve。
 def _number(row, field):
     try:
         value = float(row.get(field, ""))
@@ -45,6 +56,9 @@ def _number(row, field):
     return value if math.isfinite(value) else None
 
 
+# 作用：按选定字段绘制训练曲线。
+# 上游（直接调用）：v1.plot_training_v1.generate_training_curves。
+# 下游调用：_number、axis.plot、axis.set_title、axis.set_xlabel、axis.set_ylabel 等。
 def _plot_curve(path, title, ylabel, series, *, unit_note, ratio=False):
     fig, axis = plt.subplots(figsize=(9.6, 5.4))
     plotted = 0
@@ -99,6 +113,9 @@ def _plot_curve(path, title, ylabel, series, *, unit_note, ratio=False):
     return path
 
 
+# 作用：读取训练日志并生成监控曲线。
+# 上游（直接调用）：v1.plot_training_v1.main、v1.train_v1.run_training。
+# 下游调用：_read_rows、_plot_curve、output.mkdir。
 def generate_training_curves(training_csv, validation_csv, output_dir):
     """Create the eight required monitoring figures and return their paths."""
 
@@ -207,6 +224,9 @@ def generate_training_curves(training_csv, validation_csv, output_dir):
     return tuple(paths)
 
 
+# 作用：解析或转发命令行参数，组织本文件执行流程。
+# 调用约定：本文件命令行入口或上层版本入口调用。
+# 下游调用：generate_training_curves、parser.add_argument、parser.parse_args。
 def main():
     parser = argparse.ArgumentParser(
         description="Render v1 CandidateDQN training and validation curves"

@@ -1,3 +1,10 @@
+# 文件功能：从候选流采样，校准目标函数的成本和绿电尺度。
+# 主要内容：ReservoirCalibrationPolicy、_distribution、run_multi_seed_calibration、run_calibration、main。
+# 模块上游（导入关系）：tests.v1.test_calibration_v1。
+# 模块下游（项目依赖）：shared.config、v1.evaluate_v1、v1.evaluation_v1.runner、v1.scheduler.policies、v1.v1_runtime。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Pilot calibration for fixed v1.0 candidate feature/objective scales."""
 
 import argparse
@@ -18,6 +25,9 @@ from v1.v1_runtime import create_v1_runtime
 class ReservoirCalibrationPolicy:
     name = "calibration_earliest_feasible"
 
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：v1.calibrate_v1_objective.run_multi_seed_calibration。
+    # 调用约定：构造实例时由 Python 调用。
     def __init__(self, capacity, seed):
         if capacity <= 0:
             raise ValueError("reservoir capacity must be positive")
@@ -26,6 +36,8 @@ class ReservoirCalibrationPolicy:
         self.samples = []
         self.seen = 0
 
+    # 作用：构造稳定采样或索引键。
+    # 上游（直接调用）：v1.calibrate_v1_objective.ReservoirCalibrationPolicy.select_stream。
     @staticmethod
     def _key(candidate):
         return (
@@ -35,6 +47,9 @@ class ReservoirCalibrationPolicy:
             candidate.candidate_id,
         )
 
+    # 作用：将候选加入校准采样统计。
+    # 上游（直接调用）：v1.calibrate_v1_objective.ReservoirCalibrationPolicy.select_stream。
+    # 下游调用：self.random.randrange。
     def _observe(self, candidate, task=None):
         self.seen += 1
         sample = {
@@ -55,6 +70,9 @@ class ReservoirCalibrationPolicy:
         if index < self.capacity:
             self.samples[index] = sample
 
+    # 作用：遍历候选流，汇总选中与最早候选及决策信息。
+    # 调用约定：由调度器或包装器按所选策略动态调用。
+    # 下游调用：self._observe、self._key、candidate.candidate_id.encode、CandidateStreamSelection、digest.hexdigest。
     def select_stream(self, candidates, task=None, context=None):
         selected = None
         count = 0
@@ -73,6 +91,8 @@ class ReservoirCalibrationPolicy:
         )
 
 
+# 作用：计算数量、分位数及范围等分布统计。
+# 上游（直接调用）：v1.calibrate_v1_objective.run_multi_seed_calibration。
 def _distribution(samples, field, *, applicable_only=False, sla_type=None):
     values = [
         float(item[field])
@@ -95,6 +115,9 @@ def _distribution(samples, field, *, applicable_only=False, sla_type=None):
     }
 
 
+# 作用：跨种子采样候选并汇总尺度校准。
+# 上游（直接调用）：v1.calibrate_v1_objective.main、v1.calibrate_v1_objective.run_calibration。
+# 下游调用：ReservoirCalibrationPolicy、create_v1_runtime、_generate_trace、EvaluationRunner、_distribution 等。
 def run_multi_seed_calibration(
     cutoff,
     seeds,
@@ -203,6 +226,9 @@ def run_multi_seed_calibration(
     }
 
 
+# 作用：执行单次候选采样和尺度校准。
+# 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+# 下游调用：run_multi_seed_calibration。
 def run_calibration(cutoff, seed, reservoir_size, safety_cap):
     return run_multi_seed_calibration(
         cutoff,
@@ -213,6 +239,9 @@ def run_calibration(cutoff, seed, reservoir_size, safety_cap):
     )
 
 
+# 作用：解析或转发命令行参数，组织本文件执行流程。
+# 调用约定：本文件命令行入口或上层版本入口调用。
+# 下游调用：run_multi_seed_calibration、parser.add_argument、parser.parse_args、output.parent.mkdir、output.write_text。
 def main():
     parser = argparse.ArgumentParser(description="Calibrate fixed v1.0 objective scales")
     parser.add_argument("--arrival-cutoff", type=float, default=1.0)

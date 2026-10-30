@@ -1,3 +1,10 @@
+# 文件功能：核算候选及完成任务的能耗、电费与绿电归因，提供前缀积分和批量评估。
+# 主要内容：LinearPowerModel、CandidateAccountingMetrics、TaskAccountingRecord、AccountingReport、_CandidateIntegralIndex、ExogenousEnergyAccounting。
+# 模块上游（导入关系）：v1.accounting、v1.accounting.ledger、v1.evaluation_v1.metrics、v1.evaluation_v1.runner、v1.v1_runtime 等。
+# 模块下游（项目依赖）：v1.domain.models、v1.domain.reservations、v1.domain.units、v1.scheduler.resource_calendar、v1.accounting.forecast。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Linear incremental CPU power and dimensionally correct energy billing."""
 
 import math
@@ -20,6 +27,9 @@ from .forecast import PiecewiseConstantForecast
 class LinearPowerModel:
     incremental_cpu_power_mw_per_cpu: float
 
+    # 作用：在数据类构造后校验字段或建立派生数据。
+    # 调用约定：由 dataclass 生成的构造流程调用。
+    # 下游调用：positive_finite。
     def __post_init__(self):
         object.__setattr__(
             self,
@@ -30,6 +40,9 @@ class LinearPowerModel:
             ),
         )
 
+    # 作用：把 CPU 需求换算为兆瓦功率。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：positive_finite。
     def task_power_mw(self, cpu_demand: float) -> float:
         return positive_finite("cpu_demand", cpu_demand) * (
             self.incremental_cpu_power_mw_per_cpu
@@ -47,6 +60,8 @@ class CandidateAccountingMetrics:
     green_absorption_delta: MetricValue
     green_opportunity: bool
 
+    # 作用：将能源结果整理为候选评分需要的指标映射。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     def as_candidate_metrics(self) -> dict:
         return {
             "system_cost_yuan": self.candidate_marginal_system_cost_yuan,
@@ -95,12 +110,16 @@ class _CandidateIntegralIndex:
     prefixes: Tuple[Tuple[float, ...], ...]
     hours_per_sim: float
 
+    # 作用：检查索引是否覆盖指定区间。
+    # 上游（直接调用）：v1.accounting.energy._CandidateIntegralIndex.integrate。
     def covers(self, start_sim: float, end_sim: float) -> bool:
         return (
             start_sim >= self.boundaries[0] - 1e-12
             and end_sim <= self.boundaries[-1] + 1e-12
         )
 
+    # 作用：查询单时刻之前的累计能源与费用积分。
+    # 上游（直接调用）：v1.accounting.energy._CandidateIntegralIndex.integrate。
     def _cumulative(self, time_sim: float) -> Tuple[float, ...]:
         if time_sim <= self.boundaries[0] + 1e-12:
             return tuple(0.0 for _ in self.prefixes)
@@ -115,6 +134,9 @@ class _CandidateIntegralIndex:
             for prefix, rate in zip(self.prefixes, self.rates)
         )
 
+    # 作用：用区间端点累计值之差计算能源与费用。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self.covers、self._cumulative。
     def integrate(self, start_sim: float, end_sim: float) -> Tuple[float, ...]:
         if not self.covers(start_sim, end_sim):
             raise ValueError("candidate interval is outside integral-index coverage")
@@ -122,6 +144,8 @@ class _CandidateIntegralIndex:
         after = self._cumulative(end_sim)
         return tuple(right - left for left, right in zip(before, after))
 
+    # 作用：批量查询多个时刻之前的累计积分。
+    # 上游（直接调用）：v1.accounting.energy._CandidateIntegralIndex.integrate_many。
     def _cumulative_many(self, times_sim) -> np.ndarray:
         times = np.asarray(times_sim, dtype=np.float64)
         if times.ndim != 1:
@@ -151,6 +175,9 @@ class _CandidateIntegralIndex:
             )
         return result
 
+    # 作用：批量计算候选区间的能源与费用。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
+    # 下游调用：self._cumulative_many。
     def integrate_many(self, starts_sim, ends_sim) -> np.ndarray:
         starts = np.asarray(starts_sim, dtype=np.float64)
         ends = np.asarray(ends_sim, dtype=np.float64)
@@ -171,6 +198,9 @@ class _CandidateIntegralIndex:
 class ExogenousEnergyAccounting:
     """Interval integrator for candidate counterfactuals and realized ledgers."""
 
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：v1.v1_runtime.create_v1_runtime、v3.accounting.energy.SweepLineEnergyAccounting.__init__。
+    # 调用约定：构造实例时由 Python 调用。
     def __init__(
         self,
         time_converter: TimeConverter,
@@ -189,6 +219,9 @@ class ExogenousEnergyAccounting:
         self._candidate_index_cache = OrderedDict()
         self._candidate_index_cache_capacity = 256
 
+    # 作用：构造序列化状态，按实现排除无需持久化的缓存。
+    # 上游（直接调用）：v3.accounting.energy.SweepLineEnergyAccounting.__getstate__。
+    # 调用约定：由 pickle/检查点序列化流程调用。
     def __getstate__(self):
         state = dict(self.__dict__)
         # Performance caches are reproducible from immutable forecasts and the
@@ -196,6 +229,9 @@ class ExogenousEnergyAccounting:
         state["_candidate_index_cache"] = OrderedDict()
         return state
 
+    # 作用：恢复序列化状态，补齐必要索引或默认字段。
+    # 上游（直接调用）：v3.accounting.energy.SweepLineEnergyAccounting.__setstate__。
+    # 调用约定：由 pickle/检查点反序列化流程调用。
     def __setstate__(self, state):
         self.__dict__.update(state)
         if "_candidate_index_cache" not in self.__dict__:
@@ -203,12 +239,17 @@ class ExogenousEnergyAccounting:
         if "_candidate_index_cache_capacity" not in self.__dict__:
             self._candidate_index_cache_capacity = 256
 
+    # 作用：取得节点电价和绿电预测。
+    # 上游（直接调用）：v1.accounting.energy.ExogenousEnergyAccounting._build_candidate_integral_index、v1.accounting.energy.ExogenousEnergyAccounting._candidate_boundaries、v1.accounting.energy.ExogenousEnergyAccounting._candidate_integral_index 等。
     def _forecasts(self, node: str):
         try:
             return self.tariff_by_node[node], self.green_by_node[node]
         except KeyError:
             raise ValueError(f"missing physical forecast for node {node}")
 
+    # 作用：按节点计费模型或外部电价计算费用速率。
+    # 上游（直接调用）：v1.accounting.energy.ExogenousEnergyAccounting.evaluate_candidate、v1.accounting.energy.ExogenousEnergyAccounting.realize。
+    # 下游调用：finite_number、self.node_bill_rate_model。
     def _bill_rate(
         self,
         node: str,
@@ -228,6 +269,9 @@ class ExogenousEnergyAccounting:
         )
         return finite_number("node_bill_rate_yuan_per_hour", value)
 
+    # 作用：计算既有分配在指定时刻的功率。
+    # 上游（直接调用）：v1.accounting.energy.ExogenousEnergyAccounting._build_candidate_integral_index、v1.accounting.energy.ExogenousEnergyAccounting.evaluate_candidate。
+    # 下游调用：power_model.task_power_mw、item.interval_sim.contains。
     @staticmethod
     def _allocation_power_at(
         allocations: Iterable[CalendarAllocation],
@@ -241,6 +285,9 @@ class ExogenousEnergyAccounting:
             if item.resource_id == node and item.interval_sim.contains(time_sim)
         )
 
+    # 作用：合并区间内资源、电价及绿电变化边界。
+    # 上游（直接调用）：v1.accounting.energy.ExogenousEnergyAccounting.evaluate_candidate。
+    # 下游调用：self._forecasts、tariff.boundaries、green.boundaries、allocation.interval_sim.overlaps。
     def _candidate_boundaries(
         self,
         interval: TimeInterval,
@@ -255,6 +302,9 @@ class ExogenousEnergyAccounting:
                 boundaries.add(min(interval.end_sim, allocation.interval_sim.end_sim))
         return tuple(sorted(boundaries))
 
+    # 作用：核算单候选相对既有预留的边际成本、能耗和绿电收益。
+    # 上游（直接调用）：v1.accounting.energy.ExogenousEnergyAccounting.candidate_metric_evaluator.evaluate、v1.accounting.energy.ExogenousEnergyAccounting.candidate_metric_evaluator.evaluate_batch。
+    # 下游调用：self._forecasts、self._candidate_boundaries、self._allocation_power_at、self._bill_rate、MetricValue.valid 等。
     def evaluate_candidate(
         self,
         *,
@@ -329,6 +379,9 @@ class ExogenousEnergyAccounting:
             opportunity,
         )
 
+    # 作用：构建节点预测区间的候选能源前缀积分索引。
+    # 上游（直接调用）：v1.accounting.energy.ExogenousEnergyAccounting._candidate_integral_index。
+    # 下游调用：self._forecasts、self._allocation_power_at、TimeInterval、tariff.boundaries、green.boundaries 等。
     def _build_candidate_integral_index(
         self,
         task: TaskSpec,
@@ -396,6 +449,9 @@ class ExogenousEnergyAccounting:
             hours_per_sim,
         )
 
+    # 作用：查找上下文缓存，必要时构建候选能源积分索引。
+    # 上游（直接调用）：v1.accounting.energy.ExogenousEnergyAccounting.candidate_metric_evaluator.evaluate、v1.accounting.energy.ExogenousEnergyAccounting.candidate_metric_evaluator.evaluate_batch。
+    # 下游调用：self._forecasts、finite_number、self._build_candidate_integral_index。
     def _candidate_integral_index(
         self,
         task: TaskSpec,
@@ -450,9 +506,14 @@ class ExogenousEnergyAccounting:
             self._candidate_index_cache.popitem(last=False)
         return index
 
+    # 作用：创建绑定快照的指标回调，并附加批量评估入口。
+    # 调用上下文：运行时或调度器传入资源快照；返回回调供候选生成器评分，批处理入口挂在回调属性上。
     def candidate_metric_evaluator(self, reservation_snapshot: ReservationSnapshot):
         indices = {}
 
+        # 作用：将单候选能源核算结果转为评分使用的指标映射。
+        # 上游（直接调用）：v1.accounting.energy.ExogenousEnergyAccounting.candidate_metric_evaluator.evaluate_batch。
+        # 下游调用：self._candidate_integral_index、self.evaluate_candidate、MetricValue.valid、MetricValue.not_applicable、index.covers 等。
         def evaluate(**kwargs):
             task = kwargs["task"]
             target_node = kwargs.get("target_node", kwargs["path"].target_node)
@@ -518,6 +579,9 @@ class ExogenousEnergyAccounting:
                 reservation_snapshot=snapshot,
             ).as_candidate_metrics()
 
+        # 作用：批量评估区间，返回对齐的成本和绿电指标数组。
+        # 调用约定：作为指标回调的 evaluate_batch 属性供候选批处理调用。
+        # 下游调用：evaluate、self._candidate_integral_index、self.evaluate_candidate、index.covers、index.integrate_many。
         def evaluate_batch(**kwargs):
             starts = np.asarray(
                 kwargs["compute_start_sim"], dtype=np.float64
@@ -626,6 +690,9 @@ class ExogenousEnergyAccounting:
         evaluate.evaluate_batch = evaluate_batch
         return evaluate
 
+    # 作用：根据完成预留计算实际能耗、电费和绿电归因。
+    # 调用上下文：由核算账本记录完成预留时调用；实际结算结果也用于训练奖励修正。
+    # 下游调用：self._forecasts、self._bill_rate、MetricValue.valid、MetricValue.not_applicable、item.compute_interval_sim.overlaps 等。
     def realize(
         self,
         reservations: Iterable[Reservation],

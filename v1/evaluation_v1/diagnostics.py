@@ -1,3 +1,10 @@
+# 文件功能：从任务与资源区间汇总节点、链路和全系统的利用率等诊断统计。
+# 主要内容：_summary、_weighted_percentile、_add_interval_events、_resource_records、build_evaluation_diagnostics。
+# 模块上游（导入关系）：v1.evaluate_v1、v1.evaluation_v1、tests.v1.test_evaluation_v1。
+# 模块下游（项目依赖）：v1.domain.reservations、v1.evaluation_v1.metrics、v1.evaluation_v1.statistics。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Derived four-level diagnostics for frozen-policy evaluation reports.
 
 All values in this module are reconstructed from committed reservations,
@@ -35,6 +42,9 @@ METRIC_DEFINITIONS = {
 }
 
 
+# 作用：计算诊断数据的摘要统计。
+# 上游（直接调用）：v1.evaluation_v1.diagnostics.build_evaluation_diagnostics。
+# 下游调用：linear_percentile。
 def _summary(values: Iterable[float]) -> dict:
     items = tuple(float(value) for value in values if value is not None)
     if not items:
@@ -48,6 +58,8 @@ def _summary(values: Iterable[float]) -> dict:
     }
 
 
+# 作用：按权重计算资源指标百分位数。
+# 上游（直接调用）：v1.evaluation_v1.diagnostics._resource_records。
 def _weighted_percentile(value_weights, percentile):
     items = sorted(
         (float(value), float(weight))
@@ -65,6 +77,8 @@ def _weighted_percentile(value_weights, percentile):
     return items[-1][0]
 
 
+# 作用：把资源区间拆成开始和结束增量事件。
+# 上游（直接调用）：v1.evaluation_v1.diagnostics._resource_records。
 def _add_interval_events(events, interval, resource, amount, start, end):
     left = max(start, interval.start_sim)
     right = min(end, interval.end_sim)
@@ -74,6 +88,9 @@ def _add_interval_events(events, interval, resource, amount, start, end):
     events[right][resource] -= amount
 
 
+# 作用：整理资源占用诊断记录。
+# 上游（直接调用）：v1.evaluation_v1.diagnostics.build_evaluation_diagnostics。
+# 下游调用：_add_interval_events、summarize_load、_weighted_percentile、TimeInterval、energy_accounting.tariff_by_node[node].boundaries 等。
 def _resource_records(
     reservations: tuple[Reservation, ...],
     *,
@@ -379,6 +396,9 @@ def _resource_records(
     return time_records, time_summary, node_records, link_records
 
 
+# 作用：汇总节点、链路和系统的资源利用诊断。
+# 上游（直接调用）：v1.evaluate_v1.run_evaluation。
+# 下游调用：canonical_edge、_resource_records、_summary、time_converter.sim_to_seconds、time_converter.sim_to_hours 等。
 def build_evaluation_diagnostics(
     report,
     *,

@@ -1,6 +1,14 @@
+# 文件功能：累计训练阶段耗时与计数，提供可序列化的性能摘要。
+# 主要内容：TrainingPerformanceProfiler。
+# 模块上游（导入关系）：v1.evaluate_v1、v1.train_v1、v5.profiling、tests.v1.test_training_profile_v1、v5.tests.test_candidate_generator。
+# 调用说明：函数上游仅列可静态定位的直接调用，下游保留源码调用表达式。
+# 动态策略、回调及工厂注入需结合入口与运行时装配代码阅读。
+
 """Stable, pickle-safe wall-clock profiling data for v1 training."""
 
 import math
+
+from v1.candidate_profiling import CandidateDetailProfiler
 
 
 PROFILE_DETAIL_KEYS = (
@@ -47,7 +55,11 @@ PROFILE_NESTED_STAGE_KEYS = (
 class TrainingPerformanceProfiler:
     """Accumulates exclusive wall-clock stages for a profiling training run."""
 
+    # 作用：保存依赖与配置，建立实例初始状态。
+    # 上游（直接调用）：v1.evaluate_v1.run_evaluation、v1.train_v1.run_training、v5.profiling.V5TrainingPerformanceProfiler.__init__。
+    # 调用约定：构造实例时由 Python 调用。
     def __init__(self):
+        self.candidate_detail = None
         self.timings = {key: 0.0 for key in PROFILE_DETAIL_KEYS}
         self.counters = {
             "scheduler_decision_count": 0,
@@ -66,8 +78,12 @@ class TrainingPerformanceProfiler:
             "candidate_object_count": 0,
         }
 
+    # 作用：恢复序列化状态，补齐必要索引或默认字段。
+    # 上游（直接调用）：v5.profiling.V5TrainingPerformanceProfiler.__setstate__。
+    # 调用约定：由 pickle/检查点反序列化流程调用。
     def __setstate__(self, state):
         self.__dict__.update(state)
+        self.__dict__.setdefault("candidate_detail", None)
         for key in PROFILE_DETAIL_KEYS:
             self.timings.setdefault(key, 0.0)
         self.counters.setdefault("virtual_cycle_count", 0)
@@ -76,6 +92,8 @@ class TrainingPerformanceProfiler:
         self.counters.setdefault("policy_selection_count", 0)
         self.counters.setdefault("reservation_commit_attempt_count", 0)
 
+    # 作用：向缓冲区或统计容器追加记录。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     def add(self, key, seconds):
         if key not in self.timings:
             raise KeyError(f"unknown profiling timing: {key}")
@@ -83,7 +101,11 @@ class TrainingPerformanceProfiler:
         if value < 0.0 or not math.isfinite(value):
             raise ValueError("profiling seconds must be finite and non-negative")
         self.timings[key] += value
+        if self.candidate_detail is not None:
+            self.candidate_detail.record_leaf(key, value)
 
+    # 作用：增加指定性能计数器。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     def increment(self, key, amount=1):
         if key not in self.counters:
             raise KeyError(f"unknown profiling counter: {key}")
@@ -91,10 +113,19 @@ class TrainingPerformanceProfiler:
         if value < 0:
             raise ValueError("profiling counter increment cannot be negative")
         self.counters[key] += value
+        if self.candidate_detail is not None:
+            self.candidate_detail.count(key, value)
 
+    def enable_candidate_detail(self):
+        self.candidate_detail = CandidateDetailProfiler()
+
+    # 作用：返回可嵌套阶段的累计耗时。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     def nested_stage_seconds(self):
         return sum(self.timings[key] for key in PROFILE_NESTED_STAGE_KEYS)
 
+    # 作用：生成当前统计对象的汇总。
+    # 调用约定：供所属对象、导入方或回调流程使用；未静态定位到直接调用。
     def summary(self, total_wall_seconds):
         total = max(0.0, float(total_wall_seconds))
         sections = {
@@ -178,7 +209,7 @@ class TrainingPerformanceProfiler:
         feasibility_internal["feasibility_other"] = max(
             0.0, feasibility_total - sum(feasibility_internal.values())
         )
-        return {
+        result = {
             "total_wall_seconds": total,
             "sections_seconds": sections,
             "sections_percent": percentages,
@@ -220,3 +251,8 @@ class TrainingPerformanceProfiler:
                 "profiling is enabled; percentages are exclusive wall-clock stages."
             ),
         }
+        if self.candidate_detail is not None:
+            result["candidate_detail"] = self.candidate_detail.summary(
+                sections["candidate_slot_generation"]
+            )
+        return result
