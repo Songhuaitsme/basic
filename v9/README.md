@@ -57,6 +57,27 @@ resource snapshot, forecast change or decision boundary.
 
 ## Running evaluations later
 
+For an end-to-end, multi-seed system comparison, run these phases separately.
+Each seed has one persisted task trace, two warm-up days and one measured day
+(288 simulation units). All variants use the same frozen DQN checkpoint.
+
+```powershell
+py -m v9.evaluate_full_comparison --phase overall --seeds 42 43 44 45 46
+# Inspect artifacts/v9/full_comparison/overall_summary.json before continuing.
+py -m v9.evaluate_full_comparison --phase ablation --seeds 42 43 44 45 46
+```
+
+The first phase compares full V7 with full V9 E3. The second compares V9
+E0/E1/E2/E3 on those same seeds and traces. `--resume` reuses reports only when
+their seed, model, trace and time settings match. `--summary-only` reads existing
+reports without running simulations. Use `--arrival-cutoff 864` in both phases
+to measure three days per seed, and choose a fresh `--output-dir` for that run.
+The summaries include per-seed rows, medians and paired differences. Across
+different seeds, assess paired differences; a single-seed timing is not a
+general performance conclusion.
+
+The commands below remain available for one-off evaluations:
+
 Use the same frozen checkpoint and task trace in each command, changing only
 `--search-stage 0`, `1`, `2`, `3`. For example:
 
