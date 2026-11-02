@@ -229,8 +229,12 @@ class V9CandidateGenerator(V8CandidateGenerator):
                     continue
                 grid = (node, path, duration, first, last)
                 ticks = self._ordered_ticks(context, grid, stats, preview_cache)
+                energy_priority = min((self._preview_key(preview_cache[(node, tick)], tick)
+                    for tick in ticks if (node, tick) in preview_cache),
+                    default=(math.inf, 0, math.inf))
                 states.append({"grid": grid, "ticks": ticks, "tested": set(),
-                               "records": {}, "feasible": 0})
+                               "records": {}, "feasible": 0,
+                               "energy_priority": energy_priority})
             # Every static-feasible node receives coverage of both ends and middle.
             for state in states:
                 grid = state["grid"]
@@ -240,9 +244,11 @@ class V9CandidateGenerator(V8CandidateGenerator):
                         break
                     self._probe(context, grid, tick, state, stats)
             if self.search_stage == 3:
-                # Deterministic round robin; unresolved nodes receive a bonus.
+                # Allocate one probe at a time. A per-grid cap prevents one
+                # unresolved node from consuming the entire global budget.
                 while stats["time_probes"] < stats["time_probe_budget"]:
-                    pending = [s for s in states if len(s["tested"]) < len(s["ticks"])]
+                    pending = [s for s in states if len(s["tested"]) <
+                               min(len(s["ticks"]), 2 * per_grid)]
                     if not pending:
                         break
                     def priority(state):
@@ -250,18 +256,12 @@ class V9CandidateGenerator(V8CandidateGenerator):
                         best = min((r.compute_start_sim for r in records), default=math.inf)
                         rate = state["feasible"] / max(1, len(state["tested"]))
                         unexplored = (len(state["ticks"]) - len(state["tested"])) / len(state["ticks"])
-                        preview = [preview_cache.get((state["grid"][0], t)) for t in state["ticks"]]
-                        energy = min((self._preview_key(m, t) for t, m in
-                                      zip(state["ticks"], preview) if m is not None),
-                                     default=(math.inf, 0, math.inf))
                         return (-int(not state["feasible"]), -unexplored,
-                                -rate, energy, best, state["grid"][0])
-                    for state in sorted(pending, key=priority):
-                        if stats["time_probes"] >= stats["time_probe_budget"]:
-                            break
-                        tick = next(t for t in state["ticks"] if
-                                    (state["grid"][0], state["grid"][1].path_id, t) not in state["tested"])
-                        self._probe(context, state["grid"], tick, state, stats)
+                                -rate, state["energy_priority"], best, state["grid"][0])
+                    state = min(pending, key=priority)
+                    tick = next(t for t in state["ticks"] if
+                                (state["grid"][0], state["grid"][1].path_id, t) not in state["tested"])
+                    self._probe(context, state["grid"], tick, state, stats)
             else:
                 for state in states:
                     for tick in state["ticks"]:

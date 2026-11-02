@@ -36,7 +36,7 @@ comes afterward. The `complete` mode enumerates the fixed path/grid space.
 | E0 | Original V8 generator and runtime |
 | E1 | Grid-aligned endpoints/middle/SLA anchors; resource-boundary rescue; multiple feasible times per node |
 | E2 | Bounded exact-energy previews at forecast boundaries, including execution duration and existing green consumption |
-| E3 | Equal total time-probe ceiling with deterministic priority for unresolved nodes, unexplored slots, feasible rate, energy and wait |
+| E3 | Equal total time-probe ceiling; after base exploration, assign each next probe to the highest-priority node, with a per-grid cap of twice the SLA sample count |
 
 E1–E3 share the unchanged candidate features, DQN, reward, Wait Gate, resource
 commit and accounting formulas. Energy only orders probes. Every emitted

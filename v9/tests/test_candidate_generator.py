@@ -221,6 +221,43 @@ class V9SearchTest(unittest.TestCase):
         self.assertTrue(all(r.compute_start_sim == int(r.compute_start_sim)
                             for r in second_records))
 
+    def test_e3_reallocates_probes_to_unresolved_node(self):
+        graph = nx.Graph()
+        graph.add_edge("S", "A", capacity=100, cost=1, distance_km=1)
+        graph.add_edge("S", "B", capacity=100, cost=1, distance_km=1)
+        calendar = ReservationCalendar({"S": 10, "A": 10, "B": 10},
+                                       {("S", "A"): 100, ("S", "B"): 100})
+
+        class ControlledSearch(V9CandidateGenerator):
+            def _ordered_ticks(self, context, grid, stats, preview_cache):
+                return tuple(range(grid[3], grid[4] + 1))
+
+            def _record_at_tick(self, context, target_node, path, duration, tick):
+                self.probes[target_node] += 1
+                if target_node == "B" and tick != 10:
+                    return None
+                return super()._record_at_tick(context, target_node, path, duration, tick)
+
+        results = {}
+        for stage in (2, 3):
+            generator = ControlledSearch(
+                ("A", "B"), 1, CachedStaticPathProvider(graph),
+                TransmissionModel(TimeConverter(3600), 200000), calendar,
+                search_stage=stage,
+                candidate_mode="layered_pool",
+                pool_time_samples_by_sla={s: 8 for s in ("Hard", "Soft", "Flexible")},
+            )
+            generator.probes = {"A": 0, "B": 0}
+            stream = generator.prepare_stream(self.task(latest=20), 0,
+                                              reservation_snapshot=calendar.snapshot())
+            results[stage] = ({r.target_node for r in stream.iter_candidate_records()},
+                              generator.probes, generator.last_search_stats)
+        self.assertNotIn("B", results[2][0])
+        self.assertEqual(results[3][2]["feasible_nodes"], 2, results)
+        self.assertGreater(results[3][1]["B"], 8)
+        self.assertLessEqual(results[3][2]["time_probes"],
+                             results[3][2]["time_probe_budget"])
+
 
 if __name__ == "__main__":
     unittest.main()
